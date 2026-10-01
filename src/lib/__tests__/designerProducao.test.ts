@@ -201,6 +201,13 @@ describe('filtro por intervalo de datas', () => {
     const largo = contarEntre(artes, inicioDoDia - 3 * DIA_MS, fimDoDia)
     expect(largo).toBe(3) // hoje (2) + a de 2 dias atrás; a de +5 dias fica fora
   })
+  it('registros manuais contam um por um (todos têm itemId -1)', () => {
+    const manuais: EntregaManual[] = [1, 2, 3].map(n => ({
+      id: `m${n}`, autor: 'julio', cliente: 'Luthita', titulo: `Manual ${n}`, ts: DIA,
+    } as EntregaManual))
+    const comManuais = artesDoDesigner(items, st, {}, PAINEIS_VAZIO, 'julio', new Set(), { manuais })
+    expect(contarEntre(comManuais, inicioDoDia, fimDoDia)).toBe(5) // 2 cards + 3 à mão
+  })
   it('lista e quebra por cliente respeitam o intervalo', () => {
     expect(aprovadasEntre(artes, inicioDoDia, fimDoDia)).toHaveLength(2)
     expect(porClienteEntre(artes, inicioDoDia, fimDoDia)).toEqual([{ cliente: 'Frango d\'Água', n: 2 }])

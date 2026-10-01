@@ -1,19 +1,19 @@
-/* DesignersTab — a área administrativa de produção dos designers.
+/* DesignersTab — "Entregas do time" (aba 25).
 
-   Visível só para quem tem `canViewDesignerManagement` (Mateus Testa e Arthur).
-   Mostra, por período, quantas artes APROVADAS cada designer produziu — o número
-   que a gestão usa para fechar o mês. A conta vem toda de `lib/designerProducao`
-   (pura e testada); aqui é só apresentação.
+   Era a área só dos designers; em 2026-10-01 (pedido do dono) virou a visão das
+   entregas do time inteiro: VÍDEOS do editor e ARTES dos designers, com filtro
+   de pessoa, tipo e cliente. Visível só para quem tem `canViewDesignerManagement`.
 
-   A contagem é idempotente por construção (deriva do status atual do card), então
-   nada aqui soma evento: a mesma arte nunca vira dois. Ver a lib para as regras.
+   A conta é a mesma da produção (`CONTA_POR_ENTREGA`, lib/designerProducao):
+   vídeo e arte contam quando quem produziu ENTREGA para a Revisão, um card uma
+   vez só, com o dono pelo `autorDoCard`. Aqui é só apresentação.
 */
 import { useMemo, useState, useEffect, type ReactNode } from 'react'
 import {
-  Box, Paper, Typography, Tooltip, Collapse, TextField, MenuItem, Divider,
+  Box, Paper, Typography, Tooltip, Collapse, TextField, MenuItem,
 } from '@mui/material'
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
-import PaletteIcon from '@mui/icons-material/Palette'
+import GroupsIcon from '@mui/icons-material/Groups'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment'
 import BoltIcon from '@mui/icons-material/Bolt'
@@ -21,10 +21,11 @@ import type { Client, ContentItem, ItemState } from '../types'
 import { STATUS_CONFIG } from '../types'
 import {
   artesDoDesigner, resumoDesigner, contarEntre, aprovadasEntre, porClienteEntre,
-  serieDiariaAprovadas, CONTA_POR_ENTREGA, type ArteDesigner,
+  serieDiariaAprovadas, CONTA_POR_ENTREGA, TIPOS_VIDEO, type ArteDesigner,
 } from '../lib/designerProducao'
 import { carregarManuais } from '../lib/producaoEditor'
 import { carregarPaineis, carregarAtribuicoes } from '../lib/paineis'
+import { membrosDoCargo } from '../lib/access'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { DS, ctaGradient } from '../theme'
 import { clickable } from '../shared/a11y'
@@ -36,20 +37,23 @@ interface Props {
   now: Date
 }
 
-/** Cores da disputa: distintas entre si (o NAME_MAP deixa os dois cinza). */
-const CORES_DESIGNER = [DS.accent, DS.purpleSoft, DS.cyan, DS.pink]
+/** Uma cor por pessoa — o NAME_MAP deixa quase todos cinza, e aqui é preciso distinguir. */
+const CORES_PESSOA = [DS.accent, DS.cyan, DS.green, DS.purple, DS.amber]
 
-/** Designers que este módulo acompanha — cargo Design no NAME_MAP. Julio primeiro
-    para casar com o "Julio × Jhones" que a gestão usa. */
-function designersDoSistema(): string[] {
-  const todos = Object.keys(NAME_MAP).filter(u => NAME_MAP[u].role === 'Design')
-  const ordem = ['julio', 'jhones']
-  return todos.sort((a, b) => {
-    const ia = ordem.indexOf(a), ib = ordem.indexOf(b)
-    if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
-    return getDisplayName(a).localeCompare(getDisplayName(b))
-  })
+type Tipo = 'video' | 'arte'
+type TipoFiltro = 'todos' | Tipo
+/** Uma entrega com o tipo — vídeo (Reel) ou arte (o resto). */
+type Entrega = ArteDesigner & { tipo: Tipo }
+
+/** Quem produz: editor(es) primeiro, depois designers. */
+function pessoasDoTime(): string[] {
+  const editores = membrosDoCargo('editor')
+  const designers = membrosDoCargo('design').sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)))
+  return [...editores, ...designers]
 }
+
+const ehEditor = (u: string) => membrosDoCargo('editor').includes(u)
+const funcaoDe = (u: string) => (ehEditor(u) ? 'Vídeo' : 'Design')
 
 type PeriodoKey = 'hoje' | 'ontem' | 'semana' | 'mes' | 'mesAnterior' | 'custom'
 
@@ -101,6 +105,12 @@ const PERIODOS: { key: PeriodoKey; rotulo: string }[] = [
   { key: 'custom', rotulo: 'Personalizado' },
 ]
 
+const TIPOS: { key: TipoFiltro; rotulo: string }[] = [
+  { key: 'todos', rotulo: 'Tudo' },
+  { key: 'video', rotulo: 'Vídeos' },
+  { key: 'arte', rotulo: 'Artes' },
+]
+
 function Numero({ valor, cor, tamanho = '2.4rem' }: { valor: number; cor: string; tamanho?: string }) {
   return (
     <Typography key={valor} sx={{
@@ -113,191 +123,212 @@ function Numero({ valor, cor, tamanho = '2.4rem' }: { valor: number; cor: string
   )
 }
 
-export default function DesignersTab({ items, states, allClients, now }: Props) {
+function Chip({ ativo, onClick, children }: { ativo: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <Box {...clickable(onClick)} aria-pressed={ativo} sx={{
+      px: 1.2, py: 0.55, borderRadius: '8px', cursor: 'pointer',
+      fontSize: { xs: '0.68rem', xl: '0.76rem' }, fontWeight: 700,
+      color: ativo ? DS.onAccent : DS.t3,
+      background: ativo ? ctaGradient(90) : DS.field,
+      border: `1px solid ${ativo ? 'transparent' : DS.border}`,
+      transition: 'all 0.18s ease', '&:hover': { color: ativo ? DS.onAccent : DS.t1 },
+    }}>
+      {children}
+    </Box>
+  )
+}
+
+const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
+
+export default function DesignersTab({ items, states, now }: Props) {
   const [periodo, setPeriodo] = useState<PeriodoKey>('mes')
   const [de, setDe] = useState(() => inputDoDia(new Date(now.getFullYear(), now.getMonth(), 1)))
   const [ate, setAte] = useState(() => inputDoDia(now))
-  const [designerFiltro, setDesignerFiltro] = useState<'todos' | string>('todos')
+  const [pessoaFiltro, setPessoaFiltro] = useState<'todos' | string>('todos')
+  const [tipoFiltro, setTipoFiltro] = useState<TipoFiltro>('todos')
   const [clienteFiltro, setClienteFiltro] = useState<'todos' | string>('todos')
   const [auditoriaAberta, setAuditoriaAberta] = useState(false)
 
   const paineis = useMemo(() => carregarPaineis(), [])
   const atrib = useMemo(() => carregarAtribuicoes(), [])
-  const designers = useMemo(() => designersDoSistema(), [])
+  const pessoas = useMemo(() => pessoasDoTime(), [])
 
   const janela = useMemo(() => janelaDoPeriodo(periodo, now, de, ate), [periodo, now, de, ate])
 
-  // Artes de cada designer (todas, para poder contar por período e por status).
-  const artesPorDesigner = useMemo(() => {
-    const m: Record<string, ArteDesigner[]> = {}
-    for (const d of designers) m[d] = artesDoDesigner(items, states, atrib, paineis, d, new Set(), { ...CONTA_POR_ENTREGA, manuais: carregarManuais() })
+  // Tipo de cada card: Reel é vídeo, o resto é arte. Registro manual (sem card)
+  // segue a função de quem lançou.
+  const tipoDoItem = useMemo(() => {
+    const m = new Map<number, Tipo>()
+    for (const it of items) m.set(it.i, TIPOS_VIDEO.has(it.tp) ? 'video' : 'arte')
     return m
-  }, [items, states, atrib, paineis, designers])
+  }, [items])
 
-  const mostrados = designerFiltro === 'todos' ? designers : [designerFiltro]
-
-  // Números por designer no período selecionado.
-  const dados = useMemo(() => mostrados.map((d, i) => {
-    const artes = artesPorDesigner[d] ?? []
-    const resumo = resumoDesigner(artes, janela.ref)
-    const noPeriodo = contarEntre(artes, janela.inicio, janela.fim)
-    return { designer: d, cor: CORES_DESIGNER[designers.indexOf(d) % CORES_DESIGNER.length] || DS.accent, resumo, noPeriodo, artes }
-  }), [mostrados, artesPorDesigner, janela, designers])
-
-  const maxPeriodo = Math.max(1, ...dados.map(d => d.noPeriodo))
-  const disputaAtiva = designerFiltro === 'todos' && dados.length === 2
-  const lider = disputaAtiva
-    ? (dados[0].noPeriodo === dados[1].noPeriodo ? null : dados[0].noPeriodo > dados[1].noPeriodo ? dados[0] : dados[1])
-    : null
-  const diff = disputaAtiva ? Math.abs(dados[0].noPeriodo - dados[1].noPeriodo) : 0
-
-  // Auditoria: artes aprovadas do período, opcionalmente filtradas por cliente.
-  const auditoria = useMemo(() => {
-    const linhas: ArteDesigner[] = []
-    for (const d of mostrados) {
-      for (const a of aprovadasEntre(artesPorDesigner[d] ?? [], janela.inicio, janela.fim)) {
-        if (clienteFiltro !== 'todos' && a.cliente !== clienteFiltro) continue
-        linhas.push(a)
-      }
+  // Tudo de cada pessoa, já com tipo — os filtros de tipo e cliente cortam daqui.
+  const todasPorPessoa = useMemo(() => {
+    const manuais = carregarManuais()
+    const m: Record<string, Entrega[]> = {}
+    for (const p of pessoas) {
+      m[p] = artesDoDesigner(items, states, atrib, paineis, p, new Set(), { ...CONTA_POR_ENTREGA, manuais })
+        .map(a => ({ ...a, tipo: tipoDoItem.get(a.itemId) ?? (ehEditor(p) ? 'video' : 'arte') }))
     }
-    return linhas.sort((a, b) => (b.aprovadaEm ?? 0) - (a.aprovadaEm ?? 0))
-  }, [mostrados, artesPorDesigner, janela, clienteFiltro])
+    return m
+  }, [items, states, atrib, paineis, pessoas, tipoDoItem])
 
+  const dados = useMemo(() => {
+    const mostrados = pessoaFiltro === 'todos' ? pessoas : [pessoaFiltro]
+    return mostrados.map(p => {
+      const artes = (todasPorPessoa[p] ?? []).filter(a =>
+        (tipoFiltro === 'todos' || a.tipo === tipoFiltro) && (clienteFiltro === 'todos' || a.cliente === clienteFiltro))
+      const doPeriodo = aprovadasEntre(artes, janela.inicio, janela.fim) as Entrega[]
+      return {
+        designer: p,
+        cor: CORES_PESSOA[pessoas.indexOf(p) % CORES_PESSOA.length] || DS.accent,
+        artes,
+        resumo: resumoDesigner(artes, janela.ref),
+        noPeriodo: contarEntre(artes, janela.inicio, janela.fim),
+        videos: doPeriodo.filter(a => a.tipo === 'video').length,
+        artesN: doPeriodo.filter(a => a.tipo === 'arte').length,
+      }
+    })
+  }, [pessoaFiltro, pessoas, todasPorPessoa, janela, tipoFiltro, clienteFiltro])
+
+  const total = dados.reduce((s, d) => s + d.noPeriodo, 0)
+  const totalVideos = dados.reduce((s, d) => s + d.videos, 0)
+  const totalArtes = dados.reduce((s, d) => s + d.artesN, 0)
+
+  const ranking = [...dados].sort((a, b) => b.noPeriodo - a.noPeriodo)
+  const maxPeriodo = Math.max(1, ...dados.map(d => d.noPeriodo))
+  const comparar = dados.length >= 2
+  const lider = comparar && ranking[0].noPeriodo > ranking[1].noPeriodo ? ranking[0] : null
+  const diff = comparar ? ranking[0].noPeriodo - ranking[1].noPeriodo : 0
+
+  const auditoria = useMemo(() => {
+    const linhas: Entrega[] = []
+    for (const d of dados) linhas.push(...(aprovadasEntre(d.artes, janela.inicio, janela.fim) as Entrega[]))
+    return linhas.sort((a, b) => (b.aprovadaEm ?? 0) - (a.aprovadaEm ?? 0))
+  }, [dados, janela])
+
+  // Clientes com alguma entrega no período (antes do filtro de cliente, senão a lista some ao escolher).
   const clientesDisponiveis = useMemo(() => {
     const s = new Set<string>()
-    for (const d of designers) for (const a of aprovadasEntre(artesPorDesigner[d] ?? [], janela.inicio, janela.fim)) s.add(a.cliente)
+    for (const p of pessoas) for (const a of aprovadasEntre(todasPorPessoa[p] ?? [], janela.inicio, janela.fim)) s.add(a.cliente)
     return [...s].sort((a, b) => a.localeCompare(b))
-  }, [designers, artesPorDesigner, janela])
+  }, [pessoas, todasPorPessoa, janela])
+
+  const unidade = tipoFiltro === 'video' ? ['vídeo', 'vídeos'] : tipoFiltro === 'arte' ? ['arte', 'artes'] : ['entrega', 'entregas']
+  const colunasCartoes = dados.length > 2 ? 'repeat(3, 1fr)' : dados.length > 1 ? '1fr 1fr' : '1fr'
 
   return (
-    <Box sx={{ maxWidth: 1160, mx: 'auto', px: { xs: 0, md: 0.5 }, animation: 'fadeInUp 0.4s cubic-bezier(0.16,1,0.3,1) both' }}>
+    <Box sx={{ maxWidth: { xs: 1160, xl: 1400 }, mx: 'auto', px: { xs: 0, md: 0.5 }, animation: 'fadeInUp 0.4s cubic-bezier(0.16,1,0.3,1) both' }}>
       {/* ── Cabeçalho ── */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.4, mb: 2 }}>
         <Box sx={{
           width: 42, height: 42, borderRadius: '12px', flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: `${DS.accent}14`,
-          border: `1px solid ${DS.accent}44`, color: DS.accent,
+          background: `${DS.accent}14`, border: `1px solid ${DS.accent}44`, color: DS.accent,
         }}>
-          <PaletteIcon />
+          <GroupsIcon />
         </Box>
         <Box>
-          <Typography sx={{ fontSize: { xs: '1.15rem', md: '1.45rem' }, fontWeight: 800, color: DS.t1, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-            Designers
+          <Typography sx={{ fontSize: { xs: '1.15rem', md: '1.45rem', xl: '1.7rem' }, fontWeight: 800, color: DS.t1, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+            Entregas do time
           </Typography>
-          <Typography sx={{ fontSize: '0.72rem', color: DS.t3 }}>
-            Artes aprovadas por designer — {janela.label}
+          <Typography sx={{ fontSize: { xs: '0.72rem', xl: '0.8rem' }, color: DS.t3 }}>
+            Vídeos e artes entregues por pessoa — {janela.label}. Conta quando o card é entregue para a Revisão.
           </Typography>
         </Box>
       </Box>
 
       {/* ── Filtros ── */}
-      <Paper sx={{ p: 1.4, mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center', border: `1px solid ${DS.border}`, borderRadius: 3 }}>
-        <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap' }}>
-          {PERIODOS.map(p => (
-            <Box
-              key={p.key}
-              {...clickable(() => setPeriodo(p.key))}
-              sx={{
-                px: 1.2, py: 0.55, borderRadius: '8px', cursor: 'pointer',
-                fontSize: '0.68rem', fontWeight: 700,
-                color: periodo === p.key ? DS.onAccent : DS.t3,
-                background: periodo === p.key ? ctaGradient(90) : DS.field,
-                border: `1px solid ${periodo === p.key ? 'transparent' : DS.border}`,
-                transition: 'all 0.18s ease', '&:hover': { color: periodo === p.key ? DS.onAccent : DS.t1 },
-              }}
-            >
-              {p.rotulo}
-            </Box>
-          ))}
-        </Box>
-        {periodo === 'custom' && (
-          <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center' }}>
-            <TextField size="small" type="date" label="De" value={de} onChange={e => setDe(e.target.value)}
-              slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: inputDoDia(now) } }} sx={{ width: 150 }} />
-            <TextField size="small" type="date" label="Até" value={ate} onChange={e => setAte(e.target.value)}
-              slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: inputDoDia(now) } }} sx={{ width: 150 }} />
+      <Paper sx={{ p: 1.4, mb: 2, display: 'flex', flexDirection: 'column', gap: 1.2, border: `1px solid ${DS.border}`, borderRadius: 3 }}>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap' }}>
+            {PERIODOS.map(p => <Chip key={p.key} ativo={periodo === p.key} onClick={() => setPeriodo(p.key)}>{p.rotulo}</Chip>)}
           </Box>
-        )}
-        <Box sx={{ flex: 1 }} />
-        <TextField
-          select size="small" label="Designer" value={designerFiltro}
-          onChange={e => setDesignerFiltro(e.target.value)} sx={{ minWidth: 140 }}
-        >
-          <MenuItem value="todos" sx={{ fontSize: '0.8rem' }}>Todos</MenuItem>
-          {designers.map(d => (
-            <MenuItem key={d} value={d} sx={{ fontSize: '0.8rem' }}>{getDisplayName(d)}</MenuItem>
-          ))}
-        </TextField>
+          {periodo === 'custom' && (
+            <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center' }}>
+              <TextField size="small" type="date" label="De" value={de} onChange={e => setDe(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: inputDoDia(now) } }} sx={{ width: 150, '& input': { colorScheme: 'dark' } }} />
+              <TextField size="small" type="date" label="Até" value={ate} onChange={e => setAte(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: inputDoDia(now) } }} sx={{ width: 150, '& input': { colorScheme: 'dark' } }} />
+            </Box>
+          )}
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: DS.t3, letterSpacing: '0.08em', mr: 0.4 }}>TIPO</Typography>
+            {TIPOS.map(t => <Chip key={t.key} ativo={tipoFiltro === t.key} onClick={() => setTipoFiltro(t.key)}>{t.rotulo}</Chip>)}
+          </Box>
+          <Box sx={{ flex: 1 }} />
+          <TextField select size="small" label="Pessoa" value={pessoaFiltro} onChange={e => setPessoaFiltro(e.target.value)} sx={{ minWidth: 170 }}>
+            <MenuItem value="todos" sx={{ fontSize: '0.8rem' }}>Todo o time</MenuItem>
+            {pessoas.map(p => (
+              <MenuItem key={p} value={p} sx={{ fontSize: '0.8rem' }}>{getDisplayName(p)} · {funcaoDe(p)}</MenuItem>
+            ))}
+          </TextField>
+          <TextField select size="small" label="Cliente" value={clienteFiltro} onChange={e => setClienteFiltro(e.target.value)} sx={{ minWidth: 190 }}>
+            <MenuItem value="todos" sx={{ fontSize: '0.8rem' }}>Todos os clientes</MenuItem>
+            {clientesDisponiveis.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{c}</MenuItem>)}
+          </TextField>
+        </Box>
       </Paper>
 
-      {/* ── Bloco 1: Competição (só na visão dos dois) ── */}
-      {disputaAtiva && (
-        <Paper sx={{
-          p: { xs: 2, md: 2.6 }, mb: 2, borderRadius: 3, position: 'relative', overflow: 'hidden',
-          background: DS.surface,
-          border: `1px solid ${DS.border}`,
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 2, justifyContent: 'center' }}>
-            <EmojiEventsIcon sx={{ fontSize: 20, color: DS.amber }} />
+      {/* ── Totais do período ── */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(3, 1fr)' }, gap: 1.5, mb: 2 }}>
+        {[
+          { rotulo: `Total · ${janela.label}`, valor: total },
+          { rotulo: 'Vídeos', valor: totalVideos },
+          { rotulo: 'Artes', valor: totalArtes },
+        ].map(k => (
+          <Paper key={k.rotulo} sx={{ p: 2, borderRadius: 3, border: `1px solid ${DS.border}` }}>
+            <Typography sx={{ fontSize: { xs: '0.6rem', xl: '0.68rem' }, fontWeight: 800, color: DS.t3, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.8 }}>{k.rotulo}</Typography>
+            <Numero valor={k.valor} cor={DS.t1} tamanho="2.2rem" />
+          </Paper>
+        ))}
+      </Box>
+
+      {/* ── Ranking (quando há mais de uma pessoa na tela) ── */}
+      {comparar && (
+        <Paper sx={{ p: { xs: 2, md: 2.6 }, mb: 2, borderRadius: 3, border: `1px solid ${DS.border}` }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 1.8 }}>
+            <EmojiEventsIcon sx={{ fontSize: 20, color: DS.accent }} />
             <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: DS.t2 }}>
-              Disputa · {janela.label}
+              Ranking · {janela.label}
             </Typography>
           </Box>
-
-          <Box sx={{ display: 'flex', gap: { xs: 2, md: 4 }, alignItems: 'flex-end', justifyContent: 'center', mb: 2 }}>
-            {dados.map(d => {
-              const ganhando = lider?.designer === d.designer
-              return (
-                <Box key={d.designer} sx={{ flex: 1, maxWidth: 240, textAlign: 'center' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mb: 0.5 }}>
-                    {ganhando && <EmojiEventsIcon sx={{ fontSize: 16, color: DS.amber, animation: 'none' }} />}
-                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: ganhando ? DS.t1 : DS.t2, letterSpacing: '-0.01em' }}>
-                      {getDisplayName(d.designer)}
-                    </Typography>
-                  </Box>
-                  <Numero valor={d.noPeriodo} cor={d.cor} tamanho="3rem" />
-                  <Typography sx={{ fontSize: '0.6rem', color: DS.t3, mt: 0.3, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    aprovadas
-                  </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.1, mb: 1.6 }}>
+            {ranking.map((d, i) => (
+              <Box key={d.designer} sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                <Typography sx={{ width: 18, fontSize: '0.8rem', fontWeight: 900, color: i === 0 && d.noPeriodo > 0 ? DS.accent : DS.t3, textAlign: 'right' }}>{i + 1}</Typography>
+                <Box sx={{ width: { xs: 90, md: 130 }, flexShrink: 0 }}>
+                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: DS.t1, lineHeight: 1.1 }} noWrap>{getDisplayName(d.designer)}</Typography>
+                  <Typography sx={{ fontSize: '0.6rem', color: DS.t3 }}>{funcaoDe(d.designer)}</Typography>
                 </Box>
-              )
-            })}
-          </Box>
-
-          {/* Barras proporcionais — a animação é o preenchimento suave da largura. */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.9, maxWidth: 640, mx: 'auto', mb: 1.6 }}>
-            {dados.map(d => (
-              <Box key={d.designer} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography sx={{ width: 58, fontSize: '0.66rem', color: DS.t3, textAlign: 'right', flexShrink: 0 }} noWrap>
-                  {getDisplayName(d.designer)}
-                </Typography>
                 <Box sx={{ flex: 1, height: 14, borderRadius: '7px', bgcolor: DS.field, overflow: 'hidden' }}>
-                  <Box sx={{
-                    height: '100%', borderRadius: '7px',
-                    width: `${(d.noPeriodo / maxPeriodo) * 100}%`,
-                    background: d.cor,
-                    transition: 'width 0.7s cubic-bezier(0.16,1,0.3,1)',
-                    boxShadow: lider?.designer === d.designer ? `0 0 12px ${d.cor}66` : 'none',
-                  }} />
+                  <Box sx={{ height: '100%', borderRadius: '7px', width: `${(d.noPeriodo / maxPeriodo) * 100}%`, background: d.cor, transition: 'width 0.7s cubic-bezier(0.16,1,0.3,1)' }} />
+                </Box>
+                <Box sx={{ width: { xs: 70, md: 160 }, textAlign: 'right', flexShrink: 0 }}>
+                  <Typography component="span" sx={{ fontSize: '1.05rem', fontWeight: 900, color: DS.t1 }}>{d.noPeriodo}</Typography>
+                  <Typography component="span" sx={{ display: { xs: 'none', md: 'inline' }, fontSize: '0.62rem', color: DS.t3, ml: 0.8 }}>
+                    {plural(d.videos, 'vídeo', 'vídeos')} · {plural(d.artesN, 'arte', 'artes')}
+                  </Typography>
                 </Box>
               </Box>
             ))}
           </Box>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.6 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
             {lider ? (
               <>
                 <LocalFireDepartmentIcon sx={{ fontSize: 16, color: lider.cor }} />
                 <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: DS.t1 }}>
-                  {getDisplayName(lider.designer)} está {diff} {diff === 1 ? 'arte' : 'artes'} na frente
+                  {getDisplayName(lider.designer)} lidera, {plural(diff, unidade[0], unidade[1])} na frente
                 </Typography>
               </>
             ) : (
               <>
                 <BoltIcon sx={{ fontSize: 16, color: DS.amber }} />
                 <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: DS.t1 }}>
-                  Empate! {dados[0].noPeriodo} x {dados[1].noPeriodo}
+                  {total === 0 ? 'Nenhuma entrega no período ainda.' : `Empate no topo: ${ranking[0].noPeriodo} x ${ranking[1].noPeriodo}`}
                 </Typography>
               </>
             )}
@@ -305,96 +336,78 @@ export default function DesignersTab({ items, states, allClients, now }: Props) 
         </Paper>
       )}
 
-      {/* ── Bloco 2: Cartões por designer ── */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: mostrados.length > 1 ? '1fr 1fr' : '1fr' }, gap: 2, mb: 2 }}>
+      {/* ── Cartões por pessoa ── */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: dados.length > 1 ? '1fr 1fr' : '1fr', lg: colunasCartoes }, gap: 2, mb: 2 }}>
         {dados.map(d => (
-          <Paper key={d.designer} sx={{
-            p: 2.2, borderRadius: 3, border: `1px solid ${d.cor}33`,
-            background: DS.surface,
-          }}>
+          <Paper key={d.designer} sx={{ p: 2.2, borderRadius: 3, border: `1px solid ${d.cor}33`, background: DS.surface }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.6 }}>
               <Box sx={{
                 width: 34, height: 34, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: `${d.cor}1e`, border: `1px solid ${d.cor}44`, fontSize: '1rem',
+                background: `${d.cor}1e`, border: `1px solid ${d.cor}44`, fontSize: '0.8rem', fontWeight: 800, color: DS.t1,
               }}>
                 {NAME_MAP[d.designer]?.initials}
               </Box>
               <Box>
-                <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: DS.t1, lineHeight: 1.1 }}>
-                  {getDisplayName(d.designer)}
-                </Typography>
-                <Typography sx={{ fontSize: '0.62rem', color: DS.t3 }}>Design</Typography>
+                <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: DS.t1, lineHeight: 1.1 }}>{getDisplayName(d.designer)}</Typography>
+                <Typography sx={{ fontSize: '0.62rem', color: DS.t3 }}>{funcaoDe(d.designer)}</Typography>
               </Box>
               <Box sx={{ ml: 'auto', textAlign: 'right' }}>
                 <Numero valor={d.noPeriodo} cor={d.cor} />
                 <Typography sx={{ fontSize: '0.58rem', color: DS.t3, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  aprovadas · {janela.label.toLowerCase()}
+                  {unidade[1]} · {janela.label.toLowerCase()}
                 </Typography>
               </Box>
             </Box>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <MiniStat rotulo="Vídeos" valor={d.videos} />
+              <MiniStat rotulo="Artes" valor={d.artesN} />
               <MiniStat rotulo="Hoje" valor={d.resumo.aprovadasHoje} />
               <MiniStat rotulo="Semana" valor={d.resumo.aprovadasSemana} />
               <MiniStat rotulo="Mês" valor={d.resumo.aprovadasMes} />
-              <MiniStat rotulo="Aguardando" valor={d.resumo.aguardando} cor={DS.amber} />
-              <MiniStat rotulo="Em correção" valor={d.resumo.correcao} cor={DS.red} />
+              <MiniStat rotulo="Em ajuste" valor={d.resumo.correcao} cor={DS.red} />
             </Box>
           </Paper>
         ))}
       </Box>
 
-      {/* ── Bloco 3: Produção diária ── */}
+      {/* ── Produção diária ── */}
       <CalendarioDiario dados={dados} janela={janela} now={now}
         onSelectDia={chave => { setDe(chave); setAte(chave); setPeriodo('custom') }} />
 
-      {/* ── Bloco 4: Por cliente ── */}
+      {/* ── Por cliente ── */}
       <PorCliente dados={dados} janela={janela} />
 
-      {/* ── Bloco 5: Auditoria das artes aprovadas ── */}
+      {/* ── Auditoria ── */}
       <Paper sx={{ p: { xs: 1.6, md: 2 }, borderRadius: 3, border: `1px solid ${DS.border}` }}>
-        <Box
-          {...clickable(() => setAuditoriaAberta(v => !v))}
-          sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', mb: auditoriaAberta ? 1.4 : 0 }}
-        >
+        <Box {...clickable(() => setAuditoriaAberta(v => !v))}
+          sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', mb: auditoriaAberta ? 1.4 : 0 }}>
           <ExpandMoreIcon sx={{ fontSize: 20, color: DS.t2, transition: 'transform 0.2s ease', transform: auditoriaAberta ? 'rotate(180deg)' : 'none' }} />
           <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, color: DS.t1 }}>
-            Artes contabilizadas ({auditoria.length})
+            Entregas contabilizadas ({auditoria.length})
           </Typography>
-          <Box sx={{ flex: 1 }} />
-          <TextField
-            select size="small" label="Cliente" value={clienteFiltro}
-            onClick={e => e.stopPropagation()}
-            onChange={e => setClienteFiltro(e.target.value)} sx={{ minWidth: 150 }}
-          >
-            <MenuItem value="todos" sx={{ fontSize: '0.8rem' }}>Todos os clientes</MenuItem>
-            {clientesDisponiveis.map(c => (
-              <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{c}</MenuItem>
-            ))}
-          </TextField>
         </Box>
         <Collapse in={auditoriaAberta} unmountOnExit>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1.2fr 1.6fr 0.8fr 1fr auto', gap: 0.5, alignItems: 'center' }}>
-            {['Cliente', 'Arte', 'Data', 'Designer', 'Status'].map(h => (
-              <Typography key={h} sx={{ fontSize: '0.58rem', fontWeight: 800, color: DS.t3, textTransform: 'uppercase', letterSpacing: '0.07em', pb: 0.5 }}>
-                {h}
-              </Typography>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1.1fr 1.6fr 0.6fr 0.7fr 0.9fr auto', gap: 0.5, alignItems: 'center' }}>
+            {['Cliente', 'Conteúdo', 'Tipo', 'Data', 'Quem', 'Status'].map(h => (
+              <Typography key={h} sx={{ fontSize: '0.58rem', fontWeight: 800, color: DS.t3, textTransform: 'uppercase', letterSpacing: '0.07em', pb: 0.5 }}>{h}</Typography>
             ))}
             {auditoria.length === 0 && (
               <Typography sx={{ gridColumn: '1 / -1', fontSize: '0.75rem', color: DS.t3, py: 2, textAlign: 'center' }}>
-                Nenhuma arte aprovada neste período.
+                Nenhuma entrega neste período.
               </Typography>
             )}
             {auditoria.map(a => {
               const cfg = STATUS_CONFIG[a.status]
               return (
-                <Box key={`${a.designer}-${a.itemId}`} sx={{ display: 'contents' }}>
+                <Box key={`${a.designer}-${a.manual ? a.manualId : a.itemId}`} sx={{ display: 'contents' }}>
                   <Cel>{a.cliente}</Cel>
                   <Cel forte>{a.titulo}</Cel>
+                  <Cel>{a.tipo === 'video' ? 'Vídeo' : 'Arte'}</Cel>
                   <Cel>{a.aprovadaEm ? new Date(a.aprovadaEm).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '—'}</Cel>
                   <Cel>{getDisplayName(a.designer)}</Cel>
                   <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, py: 0.6 }}>
                     <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: cfg?.color, flexShrink: 0 }} />
-                    <Typography sx={{ fontSize: '0.66rem', color: DS.t2 }} noWrap>{cfg?.shortLabel}</Typography>
+                    <Typography sx={{ fontSize: '0.66rem', color: DS.t2 }} noWrap>{a.manual ? 'Registro manual' : cfg?.shortLabel}</Typography>
                   </Box>
                 </Box>
               )
@@ -564,7 +577,7 @@ function PorCliente({ dados, janela }: { dados: { designer: string; cor: string;
               {getDisplayName(d.designer)} · por cliente
             </Typography>
             {porCliente.length === 0 ? (
-              <Typography sx={{ fontSize: '0.72rem', color: DS.t3, py: 1 }}>Nenhuma arte aprovada no período.</Typography>
+              <Typography sx={{ fontSize: '0.72rem', color: DS.t3, py: 1 }}>Nenhuma entrega no período.</Typography>
             ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                 {porCliente.slice(0, 8).map(c => (

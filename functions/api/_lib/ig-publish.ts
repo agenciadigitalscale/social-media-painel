@@ -89,11 +89,12 @@ export function planejar(
     ? `"${f.name}" não é MP4 nem MOV — o Instagram recusa esse formato de vídeo.`
     : `"${f.name}" não é JPG — pela integração o Instagram só aceita imagem em JPG.`
 
-  if (tp === 'Reel') {
-    const video = arquivos.find(ehVideo)
-    if (!video) return { ok: false, motivo: 'Reel sem vídeo: o criativo do card não é um arquivo de vídeo.' }
-    if (!ehVideoAceito(video)) return { ok: false, motivo: motivoFormato(video) }
-    return { ok: true, plano: { tipo: 'REELS', midias: [midia(video)] } }
+  // Reel com vídeo sai como Reel. Reel em que o Social anexou só arte: quem manda
+  // é o que foi anexado (pedido do dono) — cai no post/carrossel abaixo.
+  const videoDoReel = tp === 'Reel' ? arquivos.find(ehVideo) : undefined
+  if (videoDoReel) {
+    if (!ehVideoAceito(videoDoReel)) return { ok: false, motivo: motivoFormato(videoDoReel) }
+    return { ok: true, plano: { tipo: 'REELS', midias: [midia(videoDoReel)] } }
   }
 
   if (tp === 'Story') {

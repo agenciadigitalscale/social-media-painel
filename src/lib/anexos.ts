@@ -30,7 +30,35 @@ async function ler<T>(r: Response): Promise<T & { ok: boolean; error?: string }>
   return await lerResposta(r) as T & { ok: boolean; error?: string }
 }
 
-export async function enviarArquivo(arquivo: File, progresso: (fracao: number) => void): Promise<Anexo> {
+/**
+ * PNG vira JPG antes de subir: pela integração o Instagram só publica imagem em
+ * JPG, e exigir que o Social converta à mão era o erro garantido. Transparência
+ * vira fundo branco (o JPG não tem canal alfa). Se o navegador não conseguir
+ * converter, sobe o original — o aviso da prévia diz o que fazer.
+ */
+export async function paraJpeg(arquivo: File): Promise<File> {
+  if (tipoDoArquivo(arquivo) !== 'image/png') return arquivo
+  try {
+    const img = await createImageBitmap(arquivo)
+    const canvas = document.createElement('canvas')
+    canvas.width = img.width
+    canvas.height = img.height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return arquivo
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.drawImage(img, 0, 0)
+    img.close()
+    const blob = await new Promise<Blob | null>(res => canvas.toBlob(res, 'image/jpeg', 0.92))
+    if (!blob) return arquivo
+    return new File([blob], arquivo.name.replace(/\.png$/i, '') + '.jpg', { type: 'image/jpeg' })
+  } catch {
+    return arquivo
+  }
+}
+
+export async function enviarArquivo(original: File, progresso: (fracao: number) => void): Promise<Anexo> {
+  const arquivo = await paraJpeg(original)
   const tipo = tipoDoArquivo(arquivo)
   const ini = await ler<{ key: string; uploadId: string }>(await fetch('/api/midia', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },

@@ -744,10 +744,10 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
         )
       })()}
 
-      {/* Saiu da produção: quem fez cola o link do material final e copia a
-          mensagem padrão do cliente pronta, com ele. */}
+      {/* Quem produziu cola o link do material final (Revisão/Ajuste). Copiar a mensagem do
+          cliente só em Aprovado (3), para Social/sócio — é quem manda ao cliente. */}
       {!bulkMode && onLinkMaterial && [2, 3, 4, 5, 6].includes(state.status) && (
-        <LinkMaterial item={item} state={state} onSalvar={onLinkMaterial} onCopiada={onMensagemCopiada} />
+        <LinkMaterial item={item} state={state} onSalvar={onLinkMaterial} onCopiada={state.status === 3 ? onMensagemCopiada : undefined} />
       )}
 
       {/* Bottom row: delay dot + date + secondary date + responsible */}

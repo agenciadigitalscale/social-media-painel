@@ -105,6 +105,25 @@ export default function LinkMaterial({ item, state, onSalvar, onCopiada }: {
     )
   }
 
+  // Antes de Aprovado (ou para quem não manda ao cliente): só o link, sem a mensagem.
+  if (!onCopiada) {
+    return (
+      <Box sx={{ mt: 0.8, display: 'flex', gap: 0.4, alignItems: 'center' }}>
+        <Box sx={{
+          flex: 1, minWidth: 0, py: 0.55, px: 0.8, borderRadius: '8px',
+          display: 'flex', alignItems: 'center', gap: 0.5, border: `1px solid ${DS.border}`,
+        }}>
+          <CheckCircleIcon sx={{ fontSize: 12, color: DS.green, flexShrink: 0 }} />
+          <Typography noWrap sx={{ fontSize: '0.6rem', fontWeight: 700, color: DS.t2 }}>
+            Link do material salvo
+          </Typography>
+        </Box>
+        {miniBtn('Abrir o material', <OpenInNewIcon sx={{ fontSize: 12 }} />, () => window.open(link, '_blank', 'noopener'))}
+        {miniBtn('Trocar o link', <EditIcon sx={{ fontSize: 12 }} />, abrir)}
+      </Box>
+    )
+  }
+
   return (
     <Box sx={{ mt: 0.8, display: 'flex', gap: 0.4, alignItems: 'center' }}>
       <Tooltip title="Copia a mensagem padrão do cliente com este link — é só colar no WhatsApp" placement="top">

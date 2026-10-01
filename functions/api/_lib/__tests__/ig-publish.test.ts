@@ -12,9 +12,11 @@ describe('planejar', () => {
     expect(r.ok && r.plano.tipo).toBe('REELS')
   })
 
-  it('Reel sem vídeo não publica, e diz por quê', () => {
+  it('Reel em que o Social anexou arte sai como post — o anexo manda, não o tipo do card', () => {
     const r = planejar('Reel', [jpg('a')], url)
-    expect(r.ok).toBe(false)
+    expect(r.ok && r.plano.tipo).toBe('IMAGE')
+    const varias = planejar('Reel', [jpg('a'), jpg('b')], url)
+    expect(varias.ok && varias.plano.tipo).toBe('CAROUSEL')
   })
 
   it('post com uma arte vira IMAGE; com várias, carrossel na ordem', () => {

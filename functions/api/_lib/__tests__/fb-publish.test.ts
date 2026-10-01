@@ -20,6 +20,11 @@ describe('planejarFacebook', () => {
     expect(planejarFacebook('Story', [img('a')], url).ok).toBe(false)
   })
 
+  it('Reel com arte anexada sai como foto', () => {
+    const r = planejarFacebook('Reel', [img('a', 'image/png')], url)
+    expect(r.ok && r.plano.tipo).toBe('FOTO')
+  })
+
   it('vídeo misturado com foto não publica', () => {
     expect(planejarFacebook('Carrossel', [img('a'), mp4('v')], url).ok).toBe(false)
   })

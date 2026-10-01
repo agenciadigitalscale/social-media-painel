@@ -1232,9 +1232,21 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > (`normalizarHora` em `lib/programacao.ts`: "1437", "14h30", "9:5") com atalhos. Os campos
 > nativos do navegador saíram porque seguiam o idioma dele ("09/30/2026", AM/PM) e pintavam azul.
 > Diálogos/menus/tooltips são grafite (`rgba(16,18,23,…)`), não mais o marinho `rgba(10,17,32,…)`.
+> **Aba 25 "Entregas do time" (2026-10-01, era "Designers")** — `DesignersTab.tsx`: vídeos do
+> editor + artes dos designers, filtros de período, **Tipo** (Tudo/Vídeos/Artes), **Pessoa** e
+> **Cliente**; totais, ranking, cartão por pessoa, calendário diário, por cliente e auditoria.
+> Pessoas = `membrosDoCargo('editor')` + `('design')`; tipo pelo card (Reel = vídeo). Mesma conta
+> da produção (`CONTA_POR_ENTREGA`). Só sócios. ⚠️ `contarEntre` contava registro manual pelo
+> `itemId` (todos -1) e juntava todos num só — agora usa `chaveArte`, como o resto.
+> **O anexo manda, não o tipo do card (2026-10-01):** card Reel em que o Social anexou só
+> arte sai como post (1 imagem) ou carrossel (várias) — no Instagram e no Facebook; com vídeo,
+> segue Reel. PNG vira JPG no navegador antes de subir (`paraJpeg` em `lib/anexos.ts`, fundo
+> branco no lugar da transparência), porque pela integração o Instagram só aceita JPG.
+> Nome com ".." era recusado nas partes do upload ("Parte inválida") — `nomeSeguro` colapsa.
 > **Link do material (2026-09-30):** `ItemState.linkMaterial` — o editor/designer cola no card
-> (Revisão → Ajuste, status 2–6; também no "Editar conteúdo") o link do vídeo/arte FINAL, e o
-> card vira **"Copiar mensagem p/ cliente"**: a mensagem padrão (`generateApprovalMessage`) com
+> (Revisão → Ajuste, status 2–6; também no "Editar conteúdo") o link do vídeo/arte FINAL. Só em
+> **Aprovado (3)** e só para **Social/sócio** (2026-10-01, pedido do dono) o card mostra
+> **"Copiar mensagem p/ cliente"** — antes disso, "Link do material salvo": a mensagem padrão (`generateApprovalMessage`) com
 > esse link, pronta para colar no WhatsApp (`producao/LinkMaterial.tsx` + `lib/linkMaterial.ts`).
 > Campo próprio e não o `link`, porque a esteira/Inbox reescreve o `link` ao vincular arquivo.
 > No **Agendamento** (linha e revisão) aparece o link do material (`calendario/LinkDoMaterial.tsx`,

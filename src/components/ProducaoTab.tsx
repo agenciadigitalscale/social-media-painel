@@ -42,7 +42,7 @@ import { BRAND, DS, typeColor, ctaGradient } from '../theme'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
 import { syncToCloud, forceSync, onSyncStatus } from '../lib/storage'
 import { NAME_MAP } from '../lib/users'
-import { donoDoCard, isIsolado, membrosDoCargo } from '../lib/access'
+import { cargoDe, donoDoCard, isIsolado, isSocio, membrosDoCargo } from '../lib/access'
 import DriveVideoInbox from './DriveVideoInbox'
 import DriveInboxDrawer from './DriveInboxDrawer'
 import AutomationHealthPanel from './AutomationHealthPanel'
@@ -1859,7 +1859,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       editorDe={editorDe}
                       onTrocarEditor={areaAtual ? abrirTrocaEditor : undefined}
                       onSendToClient={onSendToClient ? (id, cn) => { setSendIsTraffic(false); setSendConfirmItem({ id, clientName: cn }) } : undefined}
-                      onSendToReview={onSendToReview}
+                      onSendToReview={isSocio(currentUser) || cargoDe(currentUser) === 'social' ? onSendToReview : undefined}
                       onRemindClient={onRemindClient}
                       onReadyDrop={handleReadyDrop}
                       onRetryReady={handleRetryReady}
@@ -1868,7 +1868,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       onOpenReview={(itemId, fileId) => setReviewModal({ itemId, fileId })}
                       onImpedimento={onUpdateState ? (id, texto) => onUpdateState(id, { impedimento: texto ?? '' }) : undefined}
                       onLinkMaterial={onUpdateState ? (id, link) => onUpdateState(id, { linkMaterial: link }) : undefined}
-                      onMensagemCopiada={onAppendHistory ? (id) => onAppendHistory(id, 'Mensagem para o cliente copiada') : undefined}
+                      onMensagemCopiada={isSocio(currentUser) || cargoDe(currentUser) === 'social' ? (id) => onAppendHistory?.(id, 'Mensagem para o cliente copiada') : undefined}
                     />
                   ) : null
                 ))}
@@ -2786,7 +2786,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               onAppendHistory?.(it.i, `Revisão interna: ajuste solicitado${notes ? ` — ${notes}` : ''}`)
               close()
             }}
-            onOpenWhatsApp={onReviewNotify ? () => {
+            onOpenWhatsApp={onReviewNotify && (isSocio(currentUser) || cargoDe(currentUser) === 'social') ? () => {
               void onReviewNotify(it.i, it.c, null).then(opened => {
                 // Só marca quando abriu de verdade — popup bloqueado não avisou ninguém.
                 if (opened) onUpdateState?.(it.i, { whatsappOpenedAt: Date.now() })

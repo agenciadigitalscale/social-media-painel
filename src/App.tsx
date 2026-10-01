@@ -1794,6 +1794,13 @@ export default function App() {
 
   // ── Revisão interna: card arrastado pra Revisão vai pro grupo da agência ────
   const handleSendToReview = useCallback(async (itemId: number, clientName: string) => {
+    // Mandar o link do criativo ao grupo de revisão é do Social (e dos sócios) —
+    // editor/designer entregam no card, não avisam o grupo.
+    const quem = currentUserRef.current
+    if (!isSocio(quem) && cargoDe(quem) !== 'social') {
+      setSnack({ msg: 'Só o Social envia o link para a revisão.', severity: 'warning' })
+      return
+    }
     const itemState    = states[itemId]
     const contentTitle = itemState?.title || allItems.find(i => i.i === itemId)?.n || `Item ${itemId}`
 
@@ -1854,6 +1861,13 @@ export default function App() {
     itemId: number, clientName: string, reservedTab?: Window | null,
   ): Promise<boolean> => {
     const closeTab = () => { try { reservedTab?.close() } catch { /* aba já fechada */ } }
+
+    const quem = currentUserRef.current
+    if (!isSocio(quem) && cargoDe(quem) !== 'social') {
+      closeTab()
+      setSnack({ msg: 'Só o Social envia o link para a revisão.', severity: 'warning' })
+      return false
+    }
 
     const contentTitle = states[itemId]?.title || allItems.find(i => i.i === itemId)?.n || `Item ${itemId}`
 
@@ -2925,7 +2939,7 @@ export default function App() {
     // 25 — produção dos designers (Julio × Jhones). Visível só para quem tem a
     // permissão (Mateus Testa e Arthur): o `hidden` dinâmico esconde a aba da
     // sidebar, do mobile e dos atalhos de dígito para todos os outros.
-    { label: 'Designers',   icon: <EmojiEventsIcon />, mobileOnly: false, hidden: !canViewDesignerManagement(currentUser ?? ''), mobileHidden: true }, // 25
+    { label: 'Entregas do time', icon: <EmojiEventsIcon />, mobileOnly: false, hidden: !canViewDesignerManagement(currentUser ?? ''), mobileHidden: true }, // 25
     // 26 — produção de vídeo do Kaique em tempo real, para a liderança (sócios +
     // head). Nasce da cobrança do Pradox por "quantos vídeos foram feitos"; o
     // `hidden` dinâmico esconde a aba de todos os outros. Mostra no mobile ("Mais").
@@ -3047,7 +3061,7 @@ export default function App() {
         : <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', height:'50vh', flexDirection:'column', gap:2 }}>
             <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
-            <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente Mateus Testa e Arthur têm acesso à produção dos designers.</Typography>
+            <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente os sócios veem as entregas do time.</Typography>
           </Box>
       case 26: return canViewProducaoKaique(currentUser ?? '')
         ? <ProducaoKaiqueTab items={itensProducao} states={states} allClients={allClients} now={now} currentUser={currentUser ?? ''} onReatribuir={(id, m) => reatribuir([id], m)} />

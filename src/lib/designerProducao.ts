@@ -495,9 +495,11 @@ export function aprovadasEntre(artes: ArteDesigner[], inicio: number, fim: numbe
 
 /** Contagem de aprovadas no intervalo — nunca conta o mesmo card duas vezes. */
 export function contarEntre(artes: ArteDesigner[], inicio: number, fim: number): number {
-  const ids = new Set<number>()
-  for (const a of aprovadasEntre(artes, inicio, fim)) ids.add(a.itemId)
-  return ids.size
+  // Pela chave da linha, não pelo itemId: todo registro manual tem itemId -1 e
+  // virava UM só — 4 vídeos lançados à mão contavam 1.
+  const chaves = new Set<string>()
+  for (const a of aprovadasEntre(artes, inicio, fim)) chaves.add(chaveArte(a))
+  return chaves.size
 }
 
 /** Aprovadas por cliente num intervalo, mais produtivo primeiro. */

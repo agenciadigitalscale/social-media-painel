@@ -37,8 +37,8 @@ export function planejarFacebook(
   const midia = (f: ArquivoCriativo): FbMidia => ({ url: urlDe(f, ehVideo(f)), video: ehVideo(f), nome: f.name })
 
   const videos = arquivos.filter(ehVideo)
-  if (tp === 'Reel' || (arquivos.length === 1 && videos.length === 1)) {
-    if (videos.length === 0) return { ok: false, motivo: 'O criativo do card não é um vídeo.' }
+  // Reel sem vídeo (Social anexou arte) segue como foto(s) — o anexo manda.
+  if ((tp === 'Reel' && videos.length > 0) || (arquivos.length === 1 && videos.length === 1)) {
     return { ok: true, plano: { tipo: 'VIDEO', midias: [midia(videos[0])] } }
   }
   if (videos.length > 0) return { ok: false, motivo: 'O Facebook não aceita vídeo misturado com fotos num mesmo post.' }
