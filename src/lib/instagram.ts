@@ -174,8 +174,8 @@ export async function conectarInstagram(clientName: string, accessToken: string,
 }
 
 /** Páginas (e o Instagram ligado a cada uma) que o token enxerga. */
-export async function descobrirContas(accessToken: string): Promise<{ ok: boolean; contas?: ContaMeta[]; faltando?: string[]; error?: string }> {
-  return post<{ contas?: ContaMeta[]; faltando?: string[] }>({ action: 'discover', accessToken })
+export async function descobrirContas(accessToken: string): Promise<{ ok: boolean; contas?: ContaMeta[]; faltando?: string[]; usuario?: string; tokenSalvo?: boolean; error?: string }> {
+  return post<{ contas?: ContaMeta[]; faltando?: string[]; usuario?: string; tokenSalvo?: boolean }>({ action: 'discover', accessToken })
 }
 
 export async function desconectarInstagram(clientName: string): Promise<{ ok: boolean; error?: string }> {

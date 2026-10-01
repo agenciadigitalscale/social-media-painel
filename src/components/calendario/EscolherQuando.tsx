@@ -49,7 +49,7 @@ export default function EscolherQuando({ data, hora, onData, onHora, direcao = '
   onData: (v: string) => void
   onHora: (v: string) => void
   /** futuro = agendar (dias passados bloqueados); passado = registrar o que já saiu. */
-  direcao?: 'futuro' | 'passado'
+  direcao?: 'futuro' | 'passado' | 'livre'
 }) {
   const [ancora, setAncora] = useState<HTMLElement | null>(null)
   const [mes, setMes] = useState(() => { const d = deInput(data) ?? new Date(); return new Date(d.getFullYear(), d.getMonth(), 1, 12) })
@@ -66,13 +66,13 @@ export default function EscolherQuando({ data, hora, onData, onHora, direcao = '
     setAncora(el)
   }
   const escolher = (v: string) => { onData(v); setAncora(null) }
-  const bloqueado = (v: string) => (direcao === 'futuro' ? v < hoje : v > hoje)
+  const bloqueado = (v: string) => (direcao === 'futuro' ? v < hoje : direcao === 'passado' ? v > hoje : false)
 
   const inicio = new Date(mes.getFullYear(), mes.getMonth(), 1 - mes.getDay(), 12)
   const dias = Array.from({ length: 42 }, (_, i) => { const d = new Date(inicio); d.setDate(inicio.getDate() + i); return d })
   const anoAtual = new Date().getFullYear()
   const anos = [anoAtual - 1, anoAtual, anoAtual + 1, anoAtual + 2]
-  const atalhos = direcao === 'futuro'
+  const atalhos = direcao !== 'passado'
     ? [{ rotulo: 'Hoje', d: 0 }, { rotulo: 'Amanhã', d: 1 }, { rotulo: 'Daqui a 7 dias', d: 7 }]
     : [{ rotulo: 'Hoje', d: 0 }, { rotulo: 'Ontem', d: -1 }, { rotulo: 'Há 7 dias', d: -7 }]
 
@@ -135,7 +135,7 @@ export default function EscolherQuando({ data, hora, onData, onHora, direcao = '
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, mb: 2 }}>
           <Box>
             <Typography sx={{ fontSize: { xs: '0.62rem', xl: '0.7rem' }, fontWeight: 900, letterSpacing: '0.14em', color: DS.accent }}>
-              {direcao === 'futuro' ? 'DIA DA PUBLICAÇÃO' : 'DIA EM QUE FOI PUBLICADO'}
+              {direcao === 'passado' ? 'DIA EM QUE FOI PUBLICADO' : 'DIA DA PUBLICAÇÃO'}
             </Typography>
             <Typography sx={{ fontSize: { xs: '1.15rem', xl: '1.3rem' }, fontWeight: 800, color: DS.t1, mt: 0.3 }}>Escolha o dia</Typography>
           </Box>

@@ -11,10 +11,19 @@ import { isRealLate } from '../lib/todaySignals'
 import { ALL_TYPES } from './producao/shared'
 import {
   TIPOS_PADRAO, ROTULO_TIPO, TIPO_DO_CARD, EVENTO_PADRAO, PADRAO_VAZIO,
-  carregarPadroes, salvarPadroes, padraoDo, metaDoMes, tipoDoPadrao,
-  doClienteNoMes, planejarDistribuicao, planejarRestauracao, tituloPlanejado,
-  type PadraoCliente, type PadroesStore, type TipoPadrao,
+  carregarPadroes, salvarPadroes, padraoDo, metaDoMes, tipoDoPadrao, diasDaSemana,
+  doClienteNoMes, planejarRestauracao, tituloPlanejado,
+  type PadroesStore,
 } from '../lib/padraoEditorial'
+import {
+  carregarPrefMes, salvarPrefMes, preferenciasDoMes, comPreferencias, garantirMes,
+  carregarCarteira, salvarCarteira, ativoNoMes, naCarteira,
+  type PrefMesStore, type CarteiraStore,
+} from '../lib/planejamentoMes'
+import { carregarCapacidade, salvarCapacidade, cargaPorDia } from '../lib/datasEntrega'
+import PadraoDialog from './calendario/PadraoDialog'
+import DistribuirDialog from './calendario/DistribuirDialog'
+import EditarConteudoPainel, { type EdicaoConteudo } from './calendario/EditarConteudoPainel'
 import { aguardandoSocial, horaValida, postagemDoCard } from '../lib/programacao'
 import { useIgStatus, type AgendamentosDoCard, type IgConta } from '../lib/instagram'
 import { MarcaIG, SituacaoIG, destinosDa } from './calendario/ProgramacaoIG'
@@ -85,9 +94,17 @@ interface Props {
   onReprogramar: (id: number) => void
   /** Abre a aba "Aprovar e programar". */
   onAbrirFila: () => void
+  /** Painel lateral: cliente, nome, tipo, data/hora, etapa, observação, etiquetas. */
+  onEditarConteudo: (id: number, e: EdicaoConteudo) => void
+  /** Distribuição: cria vários de uma vez (com entrega e encaixe na fila). */
+  onAdicionarVarios: (lista: { cliente: string; tipo: ContentType; titulo: string; data: Date; hora?: string }[]) => void
+  /** "Reordenar datas": encaixa a fila de entrega na capacidade. Devolve quantos mudaram. */
+  onReordenar: (modo: 'completo' | 'empurrar', capacidade?: number) => number
+  /** Cards criados à mão — só esses trocam de cliente. */
+  idsCriadosAMao: Set<number>
 }
 
-export default function CalendarioPostagem({ items, states, now, clients, podeRemarcar, onReschedule, onAbrirProducao, planos, podeExcluirTudo, onAdicionar, onMudarTipo, onExcluir, onProgramar, onMudarHora, onReprogramar, onAbrirFila }: Props) {
+export default function CalendarioPostagem({ items, states, now, clients, podeRemarcar, onReschedule, onAbrirProducao, planos, podeExcluirTudo, onAdicionar, onMudarTipo, onExcluir, onProgramar, onMudarHora, onReprogramar, onAbrirFila, onEditarConteudo, onAdicionarVarios, onReordenar, idsCriadosAMao }: Props) {
   const [ref, setRef] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1))
   const [modo, setModo] = useState<'mes' | 'semana'>('mes')
   const [cliente, setCliente] = useState('todos')
@@ -98,14 +115,27 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
   const [arrastando, setArrastando] = useState<number | null>(null)
   const [alvo, setAlvo] = useState<string | null>(null)
 
-  // Padrão Editorial — relido quando muda aqui ou chega de outro aparelho.
+  // Padrão Editorial, preferências do mês, carteira e capacidade — relidos quando
+  // mudam aqui ou chegam de outro aparelho (mesmo evento).
   const [padroes, setPadroes] = useState<PadroesStore>(() => carregarPadroes())
+  const [prefs, setPrefs] = useState<PrefMesStore>(() => carregarPrefMes())
+  const [carteira, setCarteira] = useState<CarteiraStore>(() => carregarCarteira())
+  const [capacidade, setCapacidade] = useState(() => carregarCapacidade())
   useEffect(() => {
-    const reler = () => setPadroes(carregarPadroes())
+    const reler = () => {
+      setPadroes(carregarPadroes()); setPrefs(carregarPrefMes()); setCarteira(carregarCarteira()); setCapacidade(carregarCapacidade())
+    }
     window.addEventListener(EVENTO_PADRAO, reler)
     return () => window.removeEventListener(EVENTO_PADRAO, reler)
   }, [])
-  const [padraoAberto, setPadraoAberto] = useState(false)
+  const [padraoAberto, setPadraoAberto] = useState<'padrao' | 'mes' | null>(null)
+  const [distribuirAberto, setDistribuirAberto] = useState(false)
+  const [reordenarAberto, setReordenarAberto] = useState(false)
+  const [capacidadeTxt, setCapacidadeTxt] = useState('')
+  const [editando, setEditando] = useState<number | null>(null)
+  // Postagem = pela data de publicação · Entregas = pela data de entrega (fila de produção)
+  const [visao, setVisao] = useState<'postagem' | 'entregas'>('postagem')
+  const [etiqueta, setEtiqueta] = useState('todas')
   // Adicionar conteúdo num dia qualquer (exceção ao padrão é normal).
   const [novoAberto, setNovoAberto] = useState(false)
   const [novoCliente, setNovoCliente] = useState('')
@@ -118,9 +148,17 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
   const [confirmarRestaurar, setConfirmarRestaurar] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const clienteSel = cliente !== 'todos' ? cliente : null
-  const padrao = clienteSel ? padraoDo(padroes, clienteSel) : PADRAO_VAZIO
+  // O mês da tela (vale na visão Semana também).
+  const anoRef = ref.getFullYear(), mesRef = ref.getMonth()
+  const prefDoMes = clienteSel ? preferenciasDoMes(prefs, padroes, clienteSel, anoRef, mesRef) : { padrao: PADRAO_VAZIO, proprio: false }
+  const padrao = prefDoMes.padrao
+  const padraoBase = clienteSel ? padraoDo(padroes, clienteSel) : PADRAO_VAZIO
   const plano = clienteSel ? planos.find(p => p.name === clienteSel) : undefined
   const meta = metaDoMes(padrao, plano)
+  const freelancer = clienteSel ? naCarteira(carteira, clienteSel).tipo === 'freelancer' : false
+  // Carteira mensal: só quem está ativo no mês aparece na escolha de cliente.
+  const clientesDoMes = useMemo(() => clients.filter(c => ativoNoMes(carteira, c, anoRef, mesRef)), [clients, carteira, anoRef, mesRef])
+  const etiquetas = useMemo(() => [...new Set(items.flatMap(it => states[it.i]?.tags ?? []))].sort((a, b) => a.localeCompare(b)), [items, states])
 
   const filtrados = useMemo(() => {
     const permitidos = ETAPAS.find(e => e.key === etapa)!.status
@@ -132,20 +170,26 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
       if (tipo !== 'todos' && it.tp !== tipo) return false
       if (permitidos.length && !permitidos.includes(s)) return false
       if (q && !`${it.c} ${st?.title || ''} ${it.n}`.toLowerCase().includes(q)) return false
+      if (etiqueta !== 'todas' && !(st?.tags ?? []).includes(etiqueta)) return false
       return true
     })
-  }, [items, states, cliente, tipo, etapa, busca])
+  }, [items, states, cliente, tipo, etapa, busca, etiqueta])
 
   const porDia = useMemo(() => {
     const m = new Map<string, ContentItem[]>()
     for (const it of filtrados) {
-      const k = chaveDia(dataDePostagem(it, states[it.i]))
+      const st = states[it.i]
+      // Entregas: só o que tem data de entrega (a fila de produção).
+      if (visao === 'entregas' && !st?.deliveryDate) continue
+      const k = chaveDia(visao === 'entregas' ? new Date(st!.deliveryDate!) : dataDePostagem(it, st))
       const lista = m.get(k)
       if (lista) lista.push(it); else m.set(k, [it])
     }
     for (const lista of m.values()) lista.sort((a, b) => dataDePostagem(a, states[a.i]).getTime() - dataDePostagem(b, states[b.i]).getTime())
     return m
-  }, [filtrados, states])
+  }, [filtrados, states, visao])
+  // Carga da fila por dia (todos os clientes) — para comparar com a capacidade.
+  const carga = useMemo(() => cargaPorDia(items, states), [items, states])
 
   // Dias da grade: mês inteiro (semanas completas, domingo a sábado) ou uma semana.
   const dias = useMemo(() => {
@@ -171,6 +215,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
       atrasados: doPeriodo.filter(it => isRealLate(it, states[it.i], now)).length,
     }
   }, [dias, porDia, states, now, modo, ref])
+
 
   const andar = (dir: -1 | 1) => setRef(r => modo === 'mes'
     ? new Date(r.getFullYear(), r.getMonth() + dir, 1)
@@ -202,38 +247,67 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
     : [], [podeRemarcar, items, states, cliente, tipo])
 
   // ── Padrão Editorial: o mês de referência é o da tela (vale na visão Semana também).
-  const anoRef = ref.getFullYear(), mesRef = ref.getMonth()
   const nomeMes = `${MESES[mesRef].toLowerCase()} de ${anoRef}`
   const itensDoMes = clienteSel ? doClienteNoMes(items, clienteSel, anoRef, mesRef) : []
   const faltam = TIPOS_PADRAO.map(t => ({ t, n: Math.max(0, meta[t] - itensDoMes.filter(i => tipoDoPadrao(i.tp) === t).length) }))
 
-  const criarPlanejados = (existentes: ContentItem[]): number => {
-    if (!clienteSel) return 0
-    const planejados = planejarDistribuicao({ ano: anoRef, mes: mesRef, padrao, meta, existentes, hoje: now })
-    for (const p of planejados) onAdicionar(clienteSel, TIPO_DO_CARD[p.tipo], tituloPlanejado(p.tipo), p.data)
-    return planejados.length
+  // Indicadores do cliente no mês: feitos × meta, programados, restantes e progresso.
+  const progresso = useMemo(() => {
+    const doTipo = (t: (typeof TIPOS_PADRAO)[number]) => itensDoMes.filter(i => tipoDoPadrao(i.tp) === t).length
+    const feitos = { Reel: doTipo('Reel'), Post: doTipo('Post'), Feed: doTipo('Feed') }
+    const metaTotal = meta.Reel + meta.Post + meta.Feed
+    const total = Math.min(feitos.Reel, meta.Reel || feitos.Reel) + Math.min(feitos.Post, meta.Post || feitos.Post) + Math.min(feitos.Feed, meta.Feed || feitos.Feed)
+    return {
+      feitos,
+      programados: itensDoMes.filter(i => (states[i.i]?.status ?? i.s) === 9).length,
+      restantes: faltam.reduce((a, f) => a + f.n, 0),
+      pct: metaTotal > 0 ? Math.min(100, Math.round((total / metaTotal) * 100)) : null,
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itensDoMes.length, states, meta.Reel, meta.Post, meta.Feed, clienteSel, anoRef, mesRef])
+
+  // "Criar o mês": a primeira distribuição copia o padrão para as preferências do mês.
+  const fixarMes = () => {
+    if (!clienteSel) return
+    const novo = garantirMes(prefs, padroes, clienteSel, anoRef, mesRef)
+    if (novo !== prefs) { setPrefs(novo); salvarPrefMes(novo) }
   }
-  const distribuir = () => {
-    const n = criarPlanejados(itensDoMes)
-    setAviso(n ? `${n} conteúdo${n !== 1 ? 's' : ''} distribuído${n !== 1 ? 's' : ''} em ${nomeMes} pelo padrão de ${clienteSel}.`
-      : `${clienteSel} já tem a meta de ${nomeMes} completa — nada a distribuir.`)
+  const distribuirLista = (lista: { tipo: (typeof TIPOS_PADRAO)[number]; data: Date; titulo: string }[]) => {
+    if (!clienteSel) return
+    fixarMes()
+    onAdicionarVarios(lista.map(x => ({ cliente: clienteSel, tipo: TIPO_DO_CARD[x.tipo], titulo: x.titulo, data: x.data })))
+    setDistribuirAberto(false)
+    setAviso(`${lista.length} conteúdo${lista.length !== 1 ? 's' : ''} distribuído${lista.length !== 1 ? 's' : ''} em ${nomeMes} para ${clienteSel}. Entregas marcadas 12 dias antes.`)
   }
-  // Restaurar desfaz as DATAS escolhidas à mão, sem apagar pauta (ver lib).
+  // Restaurar: o padrão ATUAL sobrescreve as preferências do mês e desfaz as DATAS
+  // escolhidas à mão — sem apagar pauta (ver lib).
   const restauracao = clienteSel && confirmarRestaurar
-    ? planejarRestauracao({ ano: anoRef, mes: mesRef, padrao, meta, itensDoMes, states, hoje: now })
+    ? planejarRestauracao({ ano: anoRef, mes: mesRef, padrao: padraoBase, meta: metaDoMes(padraoBase, plano), itensDoMes, states, hoje: now })
     : { mover: [], criar: [] }
   const restaurar = () => {
     if (!clienteSel) return
+    const novo = comPreferencias(prefs, clienteSel, anoRef, mesRef, padraoBase)
+    setPrefs(novo); salvarPrefMes(novo)
     for (const m of restauracao.mover) onReschedule(m.id, m.data)
-    for (const p of restauracao.criar) onAdicionar(clienteSel, TIPO_DO_CARD[p.tipo], tituloPlanejado(p.tipo), p.data)
+    if (restauracao.criar.length) onAdicionarVarios(restauracao.criar.map(p => ({ cliente: clienteSel, tipo: TIPO_DO_CARD[p.tipo], titulo: tituloPlanejado(p.tipo), data: p.data })))
     setConfirmarRestaurar(false)
     const nm = restauracao.mover.length, nc = restauracao.criar.length
     setAviso(`${nomeMes[0].toUpperCase()}${nomeMes.slice(1)} de ${clienteSel} reconstruído pelo padrão: ${nm} voltaram para os dias do padrão, ${nc} criado${nc !== 1 ? 's' : ''}.`)
   }
-  const resumoPadrao = TIPOS_PADRAO
-    .filter(t => padrao.dias[t].length)
-    .map(t => `${ROTULO_TIPO[t]}: ${padrao.dias[t].map(d => DIA_SEMANA[d]).join(', ')}`)
+  const resumoDe = (pp: typeof padrao) => TIPOS_PADRAO
+    .filter(t => pp.dias[t].length)
+    .map(t => `${ROTULO_TIPO[t]}: ${pp.dias[t].map(d => DIA_SEMANA[d]).join(', ')}${pp.plano === '6+6' && pp.diasFraca?.[t]?.length ? ` (fraca: ${pp.diasFraca[t]!.map(d => DIA_SEMANA[d]).join(', ')})` : ''}`)
     .join(' · ')
+  const resumoPadrao = resumoDe(padraoBase)
+  const resumoMes = resumoDe(padrao)
+
+  const reordenar = () => {
+    const cap = Math.max(1, Math.floor(Number(capacidadeTxt)) || capacidade)
+    if (cap !== capacidade) { setCapacidade(cap); salvarCapacidade(cap) }
+    const n = onReordenar('completo', cap)
+    setReordenarAberto(false)
+    setAviso(n ? `Fila reordenada: ${n} entrega${n !== 1 ? 's mudaram' : ' mudou'} de data (até ${cap} por dia).` : `A fila já respeita ${cap} por dia — nada mudou.`)
+  }
 
   return (
     <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, maxWidth: { xl: 1800 }, mx: 'auto' }}>
@@ -249,13 +323,15 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
         {podeRemarcar && (
           <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap' }}>
             {([
-              ['Padrão editorial', () => setPadraoAberto(true)],
-              ['Distribuir mês', distribuir],
-              ['Restaurar padrão', () => setConfirmarRestaurar(true)],
-            ] as const).map(([rotulo, acao]) => (
-              <Tooltip key={rotulo} title={clienteSel ? '' : 'Escolha um cliente no filtro para usar o Padrão Editorial'}>
+              ['Padrão editorial', () => setPadraoAberto('padrao'), !clienteSel, 'Escolha um cliente no filtro'],
+              ['Preferências do mês', () => setPadraoAberto('mes'), !clienteSel || freelancer, freelancer ? 'Freelancer não tem preferências mensais' : 'Escolha um cliente no filtro'],
+              ['Distribuir conteúdos', () => setDistribuirAberto(true), !clienteSel || freelancer, freelancer ? 'Freelancer não recebe distribuição automática' : 'Escolha um cliente no filtro'],
+              ['Restaurar padrão', () => setConfirmarRestaurar(true), !clienteSel || freelancer, freelancer ? 'Freelancer não tem padrão para restaurar' : 'Escolha um cliente no filtro'],
+              ['Reordenar datas', () => { setCapacidadeTxt(String(capacidade)); setReordenarAberto(true) }, false, ''],
+            ] as const).map(([rotulo, acao, bloqueado, porque]) => (
+              <Tooltip key={rotulo} title={bloqueado ? porque : ''}>
                 <span>
-                  <Button size="small" onClick={acao} disabled={!clienteSel} sx={{
+                  <Button size="small" onClick={acao} disabled={bloqueado} sx={{
                     height: 36, px: 1.6, borderRadius: '9px', fontSize: '0.76rem', fontWeight: 700, textTransform: 'none',
                     border: `1px solid ${DS.border}`, bgcolor: DS.surface, color: DS.t1,
                     '&:hover': { borderColor: DS.borderHov, color: DS.accent, bgcolor: DS.surface },
@@ -268,6 +344,19 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
             ))}
           </Box>
         )}
+        <Box sx={{ display: 'flex', p: 0.4, borderRadius: '10px', border: `1px solid ${DS.border}`, bgcolor: DS.surface }}>
+          {(['postagem', 'entregas'] as const).map(v => (
+            <Tooltip key={v} title={v === 'entregas' ? 'Pela data de ENTREGA da produção (publicação − 12 dias), com a carga de cada dia' : 'Pela data de publicação'}>
+              <Box {...clickable(() => setVisao(v))} aria-pressed={visao === v} sx={{
+                px: 1.6, py: 0.7, borderRadius: '8px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700,
+                bgcolor: visao === v ? `${DS.accent}1f` : 'transparent', color: visao === v ? DS.accent : DS.t2,
+                transition: 'all 0.18s ease',
+              }}>
+                {v === 'postagem' ? 'Postagem' : 'Entregas'}
+              </Box>
+            </Tooltip>
+          ))}
+        </Box>
         <Box sx={{ display: 'flex', p: 0.4, borderRadius: '10px', border: `1px solid ${DS.border}`, bgcolor: DS.surface }}>
           {(['mes', 'semana'] as const).map(m => (
             <Box key={m} {...clickable(() => trocarModo(m))} sx={{
@@ -285,7 +374,12 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
       <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1.2, flexWrap: 'wrap', mb: 1.5 }}>
         <Filtro rotulo="Cliente" value={cliente} onChange={setCliente} largura={200}>
           <MenuItem value="todos" sx={{ fontSize: '0.75rem' }}>Todos os clientes</MenuItem>
-          {clients.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.75rem' }}>{c}</MenuItem>)}
+          {/* Carteira do mês; o escolhido continua na lista mesmo fora dela, para não sumir da tela. */}
+          {[...new Set([...clientesDoMes, ...(clienteSel ? [clienteSel] : [])])].sort((a, b) => a.localeCompare(b)).map(c => (
+            <MenuItem key={c} value={c} sx={{ fontSize: '0.75rem' }}>
+              {c}{naCarteira(carteira, c).tipo === 'freelancer' ? ' · freelancer' : ''}{!clientesDoMes.includes(c) ? ' · fora da carteira' : ''}
+            </MenuItem>
+          ))}
         </Filtro>
         <Filtro rotulo="Tipo" value={tipo} onChange={v => setTipo(v as 'todos' | ContentType)} largura={140}>
           <MenuItem value="todos" sx={{ fontSize: '0.75rem' }}>Todos</MenuItem>
@@ -294,18 +388,43 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
         <Filtro rotulo="Status" value={etapa} onChange={v => setEtapa(v as Etapa)} largura={170}>
           {ETAPAS.map(e => <MenuItem key={e.key} value={e.key} sx={{ fontSize: '0.75rem' }}>{e.label}</MenuItem>)}
         </Filtro>
+        {etiquetas.length > 0 && (
+          <Filtro rotulo="Etiqueta" value={etiqueta} onChange={setEtiqueta} largura={150}>
+            <MenuItem value="todas" sx={{ fontSize: '0.75rem' }}>Todas</MenuItem>
+            {etiquetas.map(e => <MenuItem key={e} value={e} sx={{ fontSize: '0.75rem' }}>{e}</MenuItem>)}
+          </Filtro>
+        )}
         <Box>
           <Typography sx={{ fontSize: '0.68rem', fontWeight: 600, color: DS.t2, mb: 0.5 }}>Buscar</Typography>
           <TextField size="small" value={busca} onChange={e => setBusca(e.target.value)} placeholder="Título ou cliente…"
             sx={{ width: { xs: 160, md: 200 }, ...CAMPO_SX }} />
         </Box>
-        {(cliente !== 'todos' || tipo !== 'todos' || etapa !== 'todas' || busca) && (
-          <Button size="small" onClick={() => { setCliente('todos'); setTipo('todos'); setEtapa('todas'); setBusca('') }}
+        {(cliente !== 'todos' || tipo !== 'todos' || etapa !== 'todas' || busca || etiqueta !== 'todas') && (
+          <Button size="small" onClick={() => { setCliente('todos'); setTipo('todos'); setEtapa('todas'); setBusca(''); setEtiqueta('todas') }}
             sx={{ fontSize: '0.7rem', color: DS.t2, height: 34, '&:hover': { color: DS.t1, bgcolor: 'transparent' } }}>
             Limpar
           </Button>
         )}
         <Box sx={{ flex: 1 }} />
+        {clienteSel && !freelancer ? (
+          <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Contador n={`${progresso.feitos.Reel}/${meta.Reel}`} rotulo="reels" />
+            <Contador n={`${progresso.feitos.Post}/${meta.Post}`} rotulo="design" />
+            <Contador n={`${progresso.feitos.Feed}/${meta.Feed}`} rotulo="feed" />
+            <Contador n={progresso.programados} rotulo="programados" />
+            <Contador n={progresso.restantes} rotulo="restantes" cor={progresso.restantes > 0 ? DS.amber : DS.green} />
+            {progresso.pct !== null && (
+              <Tooltip title={`${progresso.pct}% da meta de ${MESES[mesRef].toLowerCase()} já no calendário`}>
+                <Box sx={{ width: 110, height: 34, px: 1.1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0.4, borderRadius: '9px', border: `1px solid ${DS.border}`, bgcolor: DS.surface }}>
+                  <Typography sx={{ fontSize: '0.62rem', color: DS.t2, lineHeight: 1 }}>meta <b style={{ color: DS.t1 }}>{progresso.pct}%</b></Typography>
+                  <Box sx={{ height: 4, borderRadius: 2, bgcolor: DS.field, overflow: 'hidden' }}>
+                    <Box sx={{ height: '100%', width: `${progresso.pct}%`, bgcolor: progresso.pct >= 100 ? DS.green : DS.accent, transition: 'width 0.4s ease' }} />
+                  </Box>
+                </Box>
+              </Tooltip>
+            )}
+          </Box>
+        ) : (
         <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap' }}>
           <Contador n={resumo.total} rotulo="no período" />
           <Contador n={resumo.reels} rotulo="reels/stories" />
@@ -315,6 +434,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
           <Contador n={resumo.publicados} rotulo="publicados" />
           {resumo.atrasados > 0 && <Contador n={resumo.atrasados} rotulo="atrasados" cor={DS.red} />}
         </Box>
+        )}
       </Box>
 
       {/* Legenda */}
@@ -331,11 +451,17 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
           borderRadius: '11px', border: `1px solid ${DS.border}`, bgcolor: DS.surface,
         }}>
           <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: DS.t3 }}>
-            Padrão editorial
+            {freelancer ? 'Freelancer' : prefDoMes.proprio ? `Preferências de ${MESES[mesRef].toLowerCase()}` : 'Padrão editorial'}
           </Typography>
-          <Typography sx={{ fontSize: '0.74rem', color: resumoPadrao ? DS.t1 : DS.t3 }}>
-            {resumoPadrao || 'sem dias definidos — a distribuição usa segunda a sexta'}
+          <Typography sx={{ fontSize: '0.74rem', color: resumoMes ? DS.t1 : DS.t3 }}>
+            {freelancer
+              ? 'demanda avulsa — sem padrão, meta ou distribuição automática'
+              : (resumoMes || 'sem dias definidos — a distribuição usa segunda a sexta')
+                + (padrao.plano && padrao.plano !== 'livre' ? ` · plano ${padrao.plano}` : '')}
           </Typography>
+          {!freelancer && prefDoMes.proprio && resumoMes !== resumoPadrao && (
+            <Typography sx={{ fontSize: '0.66rem', color: DS.t3 }}>(diferente do padrão — "Restaurar padrão" volta)</Typography>
+          )}
           <Box sx={{ flex: 1 }} />
           <Typography sx={{ fontSize: '0.72rem', color: DS.t2 }}>
             Meta de {MESES[mesRef].toLowerCase()}: {TIPOS_PADRAO.filter(t => meta[t] > 0).map(t => `${meta[t]} ${ROTULO_TIPO[t]}`).join(' + ') || 'nenhuma'}
@@ -383,9 +509,9 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
                 key={k}
                 {...clickable(() => setDiaAberto(dia))}
                 aria-label={`${dia.getDate()}/${dia.getMonth() + 1}: ${lista.length} conteúdo${lista.length !== 1 ? 's' : ''}`}
-                onDragOver={podeRemarcar ? e => { e.preventDefault(); if (alvo !== k) setAlvo(k) } : undefined}
-                onDragLeave={podeRemarcar ? () => setAlvo(a => (a === k ? null : a)) : undefined}
-                onDrop={podeRemarcar ? e => { e.preventDefault(); soltar(dia) } : undefined}
+                onDragOver={podeRemarcar && visao === 'postagem' ? e => { e.preventDefault(); if (alvo !== k) setAlvo(k) } : undefined}
+                onDragLeave={podeRemarcar && visao === 'postagem' ? () => setAlvo(a => (a === k ? null : a)) : undefined}
+                onDrop={podeRemarcar && visao === 'postagem' ? e => { e.preventDefault(); soltar(dia) } : undefined}
                 sx={{
                   minHeight: modo === 'mes' ? { xs: 84, md: 120, xl: 150 } : { xs: 220, md: 420 },
                   p: { xs: 0.5, md: 0.9 }, cursor: 'pointer', position: 'relative',
@@ -410,11 +536,19 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
                   {/* Dia do padrão: só uma dica discreta de qual tipo costuma sair aqui. */}
                   {clienteSel && !fora && (
                     <Typography noWrap sx={{ fontSize: '0.52rem', fontWeight: 700, color: DS.t4, textTransform: 'uppercase', letterSpacing: '0.04em', mx: 0.5, minWidth: 0 }}>
-                      {TIPOS_PADRAO.filter(t => padrao.dias[t].includes(dia.getDay())).map(t => ROTULO_TIPO[t]).join(' · ')}
+                      {visao === 'postagem' && !freelancer && TIPOS_PADRAO.filter(t => diasDaSemana(padrao, t, dia).includes(dia.getDay())).map(t => ROTULO_TIPO[t]).join(' · ')}
                     </Typography>
                   )}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, ml: 'auto' }}>
-                    {lista.length > 0 && (
+                    {visao === 'entregas' ? (() => {
+                      const n = carga.get(k) ?? 0
+                      if (!n) return null
+                      return (
+                        <Tooltip title={`${n} entrega${n !== 1 ? 's' : ''} da produção neste dia (todos os clientes) · capacidade ${capacidade}`}>
+                          <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: n > capacidade ? DS.red : DS.t2 }}>{n}/{capacidade}</Typography>
+                        </Tooltip>
+                      )
+                    })() : lista.length > 0 && (
                       <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: DS.t3 }}>{lista.length}</Typography>
                     )}
                     {podeRemarcar && (
@@ -430,12 +564,13 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                   {(modo === 'mes' ? lista.slice(0, POR_CELULA) : lista).map(it => (
-                    <MiniConteudo key={it.i} item={it} st={states[it.i]} arrastavel={podeRemarcar} ig={ig.porItem[it.i]}
+                    <MiniConteudo key={it.i} item={it} st={states[it.i]} arrastavel={podeRemarcar && visao === 'postagem'} ig={ig.porItem[it.i]}
+                      onAbrir={podeRemarcar ? () => setEditando(it.i) : undefined}
                       onDragStart={() => setArrastando(it.i)} onDragEnd={() => { setArrastando(null); setAlvo(null) }} />
                   ))}
                   {modo === 'mes' && lista.length > POR_CELULA && (
                     <Typography sx={{ fontSize: '0.66rem', fontWeight: 700, color: DS.t2, pl: 0.5 }}>
-                      + {lista.length - POR_CELULA} mais
+                      +{lista.length - POR_CELULA} conteúdo{lista.length - POR_CELULA !== 1 ? 's' : ''}
                     </Typography>
                   )}
                 </Box>
@@ -453,7 +588,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
               {diaAberto?.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
             </Typography>
             <Typography sx={{ fontSize: '0.72rem', color: DS.t2 }}>
-              {conteudosDoDia.length} conteúdo{conteudosDoDia.length !== 1 ? 's' : ''} para postar
+              {conteudosDoDia.length} conteúdo{conteudosDoDia.length !== 1 ? 's' : ''} {visao === 'entregas' ? 'para entregar' : 'para postar'}
             </Typography>
           </Box>
           <IconButton size="small" onClick={() => setDiaAberto(null)} aria-label="Fechar"><CloseIcon sx={{ fontSize: 18 }} /></IconButton>
@@ -509,6 +644,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
             const s = states[it.i]?.status ?? it.s
             return (
               <DetalheConteudo key={it.i} item={it} st={states[it.i]} podeRemarcar={podeRemarcar}
+                onEditar={podeRemarcar ? () => setEditando(it.i) : undefined}
                 ig={ig.porItem[it.i]} conta={contaDe(it.c)}
                 onProgramar={() => onProgramar(it.i)}
                 onMudarHora={h => onMudarHora(it.i, h)}
@@ -532,18 +668,74 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
 
       {clienteSel && (
         <PadraoDialog
-          open={padraoAberto}
+          open={padraoAberto !== null}
+          modo={padraoAberto ?? 'padrao'}
           cliente={clienteSel}
-          inicial={padrao}
+          nomeMes={nomeMes}
+          inicial={padraoAberto === 'mes' ? padrao : padraoBase}
           plano={plano}
-          onClose={() => setPadraoAberto(false)}
-          onSalvar={novo => {
-            const store = { ...padroes, [clienteSel]: novo }
-            setPadroes(store); salvarPadroes(store); setPadraoAberto(false)
-            setAviso(`Padrão editorial de ${clienteSel} salvo. Ele vale como base — nada no calendário muda até você distribuir ou restaurar.`)
+          carteira={naCarteira(carteira, clienteSel)}
+          onClose={() => setPadraoAberto(null)}
+          onSalvar={(novo, cart) => {
+            if (padraoAberto === 'mes') {
+              const store = comPreferencias(prefs, clienteSel, anoRef, mesRef, novo)
+              setPrefs(store); salvarPrefMes(store)
+              setAviso(`Preferências de ${nomeMes} salvas para ${clienteSel}. O padrão editorial continua como estava.`)
+            } else {
+              const store = { ...padroes, [clienteSel]: novo }
+              setPadroes(store); salvarPadroes(store)
+              if (cart) { const c = { ...carteira, [clienteSel]: cart }; setCarteira(c); salvarCarteira(c) }
+              setAviso(`Padrão editorial de ${clienteSel} salvo. Vale para os meses que ainda não foram criados — os já criados mudam só com "Restaurar padrão".`)
+            }
+            setPadraoAberto(null)
           }}
         />
       )}
+
+      {clienteSel && (
+        <DistribuirDialog
+          open={distribuirAberto}
+          cliente={clienteSel}
+          nomeMes={nomeMes}
+          ano={anoRef} mes={mesRef}
+          padrao={padrao}
+          meta={meta}
+          existentes={itensDoMes}
+          hoje={now}
+          onClose={() => setDistribuirAberto(false)}
+          onConfirmar={distribuirLista}
+        />
+      )}
+
+      <Dialog open={reordenarAberto} onClose={() => setReordenarAberto(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800, fontSize: '1rem' }}>Reordenar datas de entrega</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontSize: '0.82rem', color: DS.t2, lineHeight: 1.6, mb: 1.6 }}>
+            Cada conteúdo ainda em produção (A fazer, Produção, Ajuste) volta para a entrega ideal — 12 dias antes da
+            publicação — e, se o dia lotar, vai para o próximo dia útil com vaga. O que já foi entregue, aprovado,
+            programado ou publicado não entra na fila nem é mexido.
+          </Typography>
+          <TextField size="small" type="number" label="Capacidade por dia (todo o time)" value={capacidadeTxt}
+            onChange={e => setCapacidadeTxt(e.target.value)} slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: 1 } }} sx={{ width: 240 }} />
+          <Typography sx={{ fontSize: '0.72rem', color: DS.t3, mt: 1.2, lineHeight: 1.5 }}>
+            Conteúdo novo pelo calendário já entra na fila sozinho, empurrando só o necessário. Programar um conteúdo não puxa outro para o lugar dele.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setReordenarAberto(false)} sx={{ color: DS.t2 }}>Cancelar</Button>
+          <Button variant="contained" onClick={reordenar}>Reordenar</Button>
+        </DialogActions>
+      </Dialog>
+
+      <EditarConteudoPainel
+        item={editando !== null ? items.find(i => i.i === editando) ?? null : null}
+        st={editando !== null ? states[editando] : undefined}
+        clientes={clientesDoMes}
+        podeTrocarCliente={editando !== null && idsCriadosAMao.has(editando)}
+        etiquetasConhecidas={etiquetas}
+        onClose={() => setEditando(null)}
+        onSalvar={(id, e) => { onEditarConteudo(id, e); if (Object.keys(e).length) setAviso('Conteúdo atualizado — vale para o Calendário e para a Produção.') }}
+      />
 
       {/* Restaurar: sempre com confirmação — substitui as escolhas manuais do mês. */}
       <Dialog open={confirmarRestaurar && !!clienteSel} onClose={() => setConfirmarRestaurar(false)} maxWidth="xs" fullWidth>
@@ -571,82 +763,6 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
         <Alert severity="success" variant="filled" onClose={() => setAviso(null)} sx={{ fontSize: '0.8rem' }}>{aviso}</Alert>
       </Snackbar>
     </Box>
-  )
-}
-
-/** Editar o Padrão Editorial de um cliente: dias da semana por tipo + meta do mês. */
-function PadraoDialog({ open, cliente, inicial, plano, onClose, onSalvar }: {
-  open: boolean
-  cliente: string
-  inicial: PadraoCliente
-  plano: Client | undefined
-  onClose: () => void
-  onSalvar: (p: PadraoCliente) => void
-}) {
-  const [dias, setDias] = useState(inicial.dias)
-  const [meta, setMeta] = useState<Partial<Record<TipoPadrao, string>>>({})
-  useEffect(() => {
-    if (!open) return
-    setDias(inicial.dias)
-    setMeta(Object.fromEntries(TIPOS_PADRAO.map(t => [t, inicial.meta?.[t] !== undefined ? String(inicial.meta[t]) : ''])))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, cliente])
-  const doPlano: Record<TipoPadrao, number> = { Reel: plano?.reelsPerMonth ?? 0, Post: plano?.postsPerMonth ?? 0, Feed: 0 }
-  const alternar = (t: TipoPadrao, d: number) =>
-    setDias(prev => ({ ...prev, [t]: prev[t].includes(d) ? prev[t].filter(x => x !== d) : [...prev[t], d].sort() }))
-
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ pb: 0.5 }}>
-        <Typography sx={{ fontSize: '1rem', fontWeight: 800 }}>Padrão editorial — {cliente}</Typography>
-        <Typography sx={{ fontSize: '0.72rem', color: DS.t2, mt: 0.3 }}>
-          Dias preferidos de cada tipo e a meta do mês. É a base da distribuição — o calendário continua aceitando qualquer dia.
-        </Typography>
-      </DialogTitle>
-      <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '12px !important' }}>
-        {TIPOS_PADRAO.map(t => (
-          <Box key={t}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
-              <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: DS.t1, flex: 1 }}>{ROTULO_TIPO[t]}</Typography>
-              <TextField size="small" type="number" label="Meta no mês" value={meta[t] ?? ''}
-                onChange={e => setMeta(m => ({ ...m, [t]: e.target.value }))}
-                placeholder={String(doPlano[t])} slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: 0 } }}
-                helperText={t !== 'Feed' ? `vazio = plano (${doPlano[t]})` : 'vazio = 0'}
-                sx={{ width: 130, '& .MuiInputBase-root': { fontSize: '0.78rem', height: 32, bgcolor: DS.field } }} />
-            </Box>
-            <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap' }}>
-              {DIAS.map((rotulo, d) => {
-                const on = dias[t].includes(d)
-                return (
-                  <Tooltip key={d} title={DIA_SEMANA[d]}>
-                    <Box {...clickable(() => alternar(t, d))} aria-pressed={on} aria-label={`${ROTULO_TIPO[t]} às ${DIA_SEMANA[d]}s`} sx={{
-                      width: 36, height: 32, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      cursor: 'pointer', fontSize: '0.74rem', fontWeight: 800, transition: 'all 0.15s ease',
-                      bgcolor: on ? DS.accent : 'transparent', color: on ? DS.onAccent : DS.t2,
-                      border: `1px solid ${on ? DS.accent : DS.border}`,
-                      '&:hover': { borderColor: DS.accent },
-                    }}>
-                      {rotulo}
-                    </Box>
-                  </Tooltip>
-                )
-              })}
-            </Box>
-          </Box>
-        ))}
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} sx={{ color: DS.t2 }}>Cancelar</Button>
-        <Button variant="contained" onClick={() => onSalvar({
-          dias,
-          meta: Object.fromEntries(TIPOS_PADRAO
-            .filter(t => (meta[t] ?? '').trim() !== '' && Number.isFinite(Number(meta[t])))
-            .map(t => [t, Math.max(0, Math.round(Number(meta[t])))])) as Partial<Record<TipoPadrao, number>>,
-        })}>
-          Salvar padrão
-        </Button>
-      </DialogActions>
-    </Dialog>
   )
 }
 
@@ -684,7 +800,7 @@ function Filtro({ rotulo, value, onChange, largura, children }: {
   )
 }
 
-function Contador({ n, rotulo, cor }: { n: number; rotulo: string; cor?: string }) {
+function Contador({ n, rotulo, cor }: { n: number | string; rotulo: string; cor?: string }) {
   return (
     <Box sx={{ px: 1.2, height: 34, display: 'flex', alignItems: 'center', gap: 0.6, borderRadius: '9px', border: `1px solid ${DS.border}`, bgcolor: DS.surface }}>
       <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: cor ?? DS.t1, fontVariantNumeric: 'tabular-nums' }}>{n}</Typography>
@@ -703,9 +819,11 @@ function StatusPill({ s }: { s: Status }) {
   )
 }
 
-function MiniConteudo({ item, st, arrastavel, onDragStart, onDragEnd, ig }: {
+function MiniConteudo({ item, st, arrastavel, onDragStart, onDragEnd, ig, onAbrir }: {
   item: ContentItem; st: ItemState | undefined; arrastavel: boolean; onDragStart: () => void; onDragEnd: () => void
   ig?: AgendamentosDoCard
+  /** Abre o painel lateral de edição. */
+  onAbrir?: () => void
 }) {
   const p = postagemDoCard(item, st)
   const s = st?.status ?? item.s
@@ -717,6 +835,8 @@ function MiniConteudo({ item, st, arrastavel, onDragStart, onDragEnd, ig }: {
         draggable={arrastavel}
         onDragStart={e => { e.stopPropagation(); e.dataTransfer.effectAllowed = 'move'; onDragStart() }}
         onDragEnd={onDragEnd}
+        {...(onAbrir ? { onClick: (e: React.MouseEvent) => { e.stopPropagation(); onAbrir() }, role: 'button', tabIndex: 0,
+          onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onAbrir() } } } : {})}
         sx={{
           pl: 0.8, pr: 0.6, py: 0.6, borderRadius: '7px', bgcolor: DS.surfaceAlt,
           borderLeft: `2.5px solid ${cor}`, cursor: arrastavel ? 'grab' : 'pointer', minWidth: 0,
@@ -742,13 +862,25 @@ function MiniConteudo({ item, st, arrastavel, onDragStart, onDragEnd, ig }: {
           )}
           <MarcaIG agendamentos={ig} st={st} />
         </Box>
+        {!!st?.tags?.length && (
+          <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap', mt: 0.4 }}>
+            {st.tags.slice(0, 2).map(t => (
+              <Box key={t} sx={{ px: 0.6, py: '1px', borderRadius: '5px', bgcolor: DS.field, border: `1px solid ${DS.border}` }}>
+                <Typography noWrap sx={{ fontSize: '0.52rem', fontWeight: 700, color: DS.t2, maxWidth: 80 }}>{t}</Typography>
+              </Box>
+            ))}
+            {st.tags.length > 2 && <Typography sx={{ fontSize: '0.52rem', color: DS.t3 }}>+{st.tags.length - 2}</Typography>}
+          </Box>
+        )}
       </Box>
     </Tooltip>
   )
 }
 
-function DetalheConteudo({ item, st, podeRemarcar, onReschedule, onMudarTipo, onExcluir, ig, conta, onProgramar, onMudarHora, onReprogramar }: {
+function DetalheConteudo({ item, st, podeRemarcar, onReschedule, onMudarTipo, onExcluir, ig, conta, onProgramar, onMudarHora, onReprogramar, onEditar }: {
   item: ContentItem; st: ItemState | undefined; podeRemarcar: boolean; onReschedule: (d: Date) => void
+  /** Abre o painel lateral com todos os campos. */
+  onEditar?: () => void
   onMudarTipo: (tp: ContentType) => void
   ig?: AgendamentosDoCard
   conta?: IgConta
@@ -783,6 +915,9 @@ function DetalheConteudo({ item, st, podeRemarcar, onReschedule, onMudarTipo, on
         <Typography sx={{ fontSize: '0.7rem', color: DS.t2, fontWeight: 600 }}>{item.c}</Typography>
         <Box sx={{ flex: 1 }} />
         <StatusPill s={s} />
+        {onEditar && (
+          <Button size="small" onClick={onEditar} sx={{ minWidth: 0, px: 1, fontSize: '0.68rem', fontWeight: 700, color: DS.accent }}>Editar</Button>
+        )}
         {onExcluir && (
           <Tooltip title="Excluir do calendário">
             <IconButton size="small" onClick={onExcluir} aria-label={`Excluir ${st?.title || item.n}`}

@@ -195,7 +195,7 @@ export function ConexoesIG({ open, onClose, clientes, conectados, podeConectar }
               helperText="O “Instagram Business Account ID” (só números). Deixe vazio se for só Facebook." />
             <TextField size="small" label="ID da Página do Facebook" value={pageId} onChange={e => setPageId(e.target.value.replace(/\D/g, ''))}
               helperText="Só números. Deixe vazio se for só Instagram." />
-            <TextField size="small" label="Token de acesso" type="password" value={token} onChange={e => setToken(e.target.value)}
+            <TextField size="small" label="Token de acesso (opcional)" type="password" value={token} onChange={e => setToken(e.target.value)}
               autoComplete="off"
               helperText="Token do usuário do sistema no Gerenciador de Negócios, com instagram_content_publish e pages_manage_posts." />
             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -231,6 +231,7 @@ function ConectarEmLote({ clientes }: { clientes: string[] }) {
   const [erro, setErro] = useState<string | null>(null)
   const [contas, setContas] = useState<ContaMeta[] | null>(null)
   const [faltando, setFaltando] = useState<string[]>([])
+  const [usuario, setUsuario] = useState('')
   const [vinculo, setVinculo] = useState<Record<string, string>>({})
   const [resultado, setResultado] = useState<Record<string, Resultado>>({})
   const [conectando, setConectando] = useState(false)
@@ -242,6 +243,7 @@ function ConectarEmLote({ clientes }: { clientes: string[] }) {
     if (!r.ok || !r.contas) { setErro(r.error ?? 'Não deu para buscar as contas.'); return }
     setContas(r.contas)
     setFaltando(r.faltando ?? [])
+    setUsuario(r.usuario ?? '')
     setVinculo(sugerirVinculos(clientes, r.contas))
   }
 
@@ -263,16 +265,21 @@ function ConectarEmLote({ clientes }: { clientes: string[] }) {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.1, p: 1.4, borderRadius: '11px', border: `1px solid ${DS.border}`, bgcolor: DS.surfaceAlt }}>
       <Typography sx={ROTULO_SECAO}>Conectar todos de uma vez</Typography>
       <Typography sx={{ fontSize: '0.74rem', color: DS.t2 }}>
-        Cole o token do usuário do sistema. O painel busca as Páginas e os Instagrams a que ele tem acesso e sugere de qual cliente é cada um.
+        O painel busca as Páginas e os Instagrams a que o usuário do sistema tem acesso e sugere de qual cliente é cada um. Deixe o token em branco para usar o que já está salvo; cole um novo só se ele mudou.
       </Typography>
       <Box sx={{ display: 'flex', gap: 1 }}>
         <TextField size="small" fullWidth label="Token de acesso" type="password" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} />
-        <Button variant="contained" size="small" disabled={!token.trim() || buscando} onClick={buscar}
+        <Button variant="contained" size="small" disabled={buscando} onClick={buscar}
           startIcon={buscando ? <CircularProgress size={14} /> : undefined} sx={{ flexShrink: 0 }}>
           Buscar contas
         </Button>
       </Box>
       {erro && <Alert severity="error" sx={{ fontSize: '0.74rem' }}>{erro}</Alert>}
+      {contas && usuario && (
+        <Typography sx={{ fontSize: '0.74rem', color: DS.t1 }}>
+          Token do usuário do sistema <b>{usuario}</b> — é para ele que as Páginas novas precisam ser atribuídas no Meta Business.
+        </Typography>
+      )}
 
       {contas && faltando.length > 0 && (
         <Alert severity="warning" sx={{ fontSize: '0.74rem' }}>
@@ -302,7 +309,7 @@ function ConectarEmLote({ clientes }: { clientes: string[] }) {
           {/* A lista é TUDO que o token enxerga: Página que falta aqui não foi entregue
               ao usuário do sistema na Meta — nada no painel a esconde. */}
           <Typography sx={{ fontSize: '0.7rem', color: DS.t3 }}>
-            Não achou a Página de algum cliente? Ela ainda não foi dada ao usuário do sistema. No Meta Business
+            Não achou a Página de algum cliente? Ela ainda não foi dada ao usuário do sistema{usuario ? ` "${usuario}"` : ''}. No Meta Business
             (business.facebook.com) → Configurações → Usuários do sistema → escolha o usuário → Atribuir ativos →
             Páginas: marque a Página do cliente (e o Instagram dela, em Contas do Instagram) com controle total.
             Depois clique em "Buscar contas" de novo — o mesmo token já passa a enxergá-la. Se a Página nem aparece

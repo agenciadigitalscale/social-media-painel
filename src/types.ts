@@ -113,6 +113,8 @@ export interface ItemEditPatch {
   dt?: Date
   tp?: ContentType
   n?: string
+  /** Cliente — só card criado à mão (os semeados vêm do código). */
+  c?: string
 }
 
 export interface HistoryEntry {

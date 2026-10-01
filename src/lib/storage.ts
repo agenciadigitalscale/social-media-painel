@@ -154,6 +154,11 @@ export const SYNC_KEYS = [
   'sm_producao_excluir',
   'sm_designer_fechamento',
   'sm_padrao_editorial',
+  // Calendário (2026-10-01): preferências por mês, carteira mensal e capacidade da fila.
+  // Ramo próprio no applyRemoteSync do App (junto com o do padrão).
+  'sm_pref_mes',
+  'sm_carteira',
+  'sm_capacidade_entrega',
 ] as const
 
 export type SyncKey = (typeof SYNC_KEYS)[number]

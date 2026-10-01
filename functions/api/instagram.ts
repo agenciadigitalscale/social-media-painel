@@ -289,7 +289,7 @@ async function conectar(env: Env, body: Record<string, unknown>): Promise<Respon
   const clientName = txt(body.clientName)
   const igUserId = txt(body.igUserId)
   const fbPageId = txt(body.fbPageId)
-  const accessToken = txt(body.accessToken)
+  const accessToken = txt(body.accessToken) || await tokenSalvo(env)
   if (!clientName || !accessToken) return erro('Cliente e token são obrigatórios.')
   if (!igUserId && !fbPageId) return erro('Informe o ID do Instagram, o da Página do Facebook, ou os dois.')
   if (igUserId && !/^\d{5,25}$/.test(igUserId)) return erro('O ID do Instagram é só números (o "Instagram Business Account ID").')
@@ -328,8 +328,21 @@ const PERMISSOES_NECESSARIAS = [
 ]
 
 /** O que o token enxerga — para conectar vários clientes sem caçar ID na Meta. */
+/**
+ * O token já salvo (o mesmo usuário do sistema para todos os clientes): permite
+ * buscar e conectar contas novas sem colar o token de novo. Nunca volta para o
+ * navegador — só é usado aqui no servidor.
+ */
+async function tokenSalvo(env: Env): Promise<string> {
+  const row = await env.DB.prepare(
+    "SELECT access_token FROM ig_tokens WHERE access_token IS NOT NULL AND access_token <> '' ORDER BY updated DESC LIMIT 1",
+  ).first<{ access_token: string }>().catch(() => null)
+  return row?.access_token ?? ''
+}
+
 async function descobrir(env: Env, body: Record<string, unknown>): Promise<Response> {
-  const accessToken = typeof body.accessToken === 'string' ? body.accessToken.trim() : ''
+  const colado = typeof body.accessToken === 'string' ? body.accessToken.trim() : ''
+  const accessToken = colado || await tokenSalvo(env)
   if (!accessToken) return erro('Cole o token de acesso.')
   const g = graphDe(env, accessToken)
   const r = await contasDoToken(g)
@@ -339,7 +352,9 @@ async function descobrir(env: Env, body: Record<string, unknown>): Promise<Respo
   const perms = await chamar<{ data?: { permission: string; status: string }[] }>(g, 'GET', '/me/permissions', {})
   const concedidas = perms.ok ? new Set((perms.data.data ?? []).filter(p => p.status === 'granted').map(p => p.permission)) : null
   const faltando = concedidas ? PERMISSOES_NECESSARIAS.filter(p => !concedidas.has(p)) : []
-  return json({ ok: true, contas: r.contas, faltando })
+  // De quem é o token: é a ESSE usuário do sistema que as Páginas novas precisam ser dadas.
+  const me = await chamar<{ name?: string }>(g, 'GET', '/me', { fields: 'name' })
+  return json({ ok: true, contas: r.contas, faltando, usuario: me.ok ? (me.data.name ?? '') : '', tokenSalvo: !colado })
 }
 
 async function desconectar(env: Env, body: Record<string, unknown>): Promise<Response> {

@@ -1232,6 +1232,28 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > (`normalizarHora` em `lib/programacao.ts`: "1437", "14h30", "9:5") com atalhos. Os campos
 > nativos do navegador saíram porque seguiam o idioma dele ("09/30/2026", AM/PM) e pintavam azul.
 > Diálogos/menus/tooltips são grafite (`rgba(16,18,23,…)`), não mais o marinho `rgba(10,17,32,…)`.
+> **Calendário = planejamento do mês (2026-10-01).** Em cima do Padrão Editorial:
+> - **Planos** 4+4 / 6+6 / 8+8 / personalizado (`PLANOS`, `lib/padraoEditorial.ts`). No **6+6** o
+>   mês alterna semana FORTE (2 dias de cada) e FRACA (1 dia), pela semana da grade (`semanaDoMes`,
+>   `diasDaSemana`, `diasPreferidosNoMes`); a distribuição usa TODOS os dias preferidos do mês.
+> - **Preferências do mês** (`sm_pref_mes`, `lib/planejamentoMes.ts`): criar o mês (1ª distribuição
+>   ou editar "Preferências do mês") COPIA o padrão; depois são independentes — mudar o padrão não
+>   reescreve meses criados. "Restaurar padrão" é o único que sobrescreve (e refaz as datas como antes).
+> - **Carteira mensal** (`sm_carteira`): tipo mensal × freelancer, mês de entrada e de saída
+>   (`ativoNoMes`). Fora da carteira o cliente some do filtro naquele mês (conteúdo antigo fica).
+>   Freelancer: sem preferências, distribuição nem restauração.
+> - **Distribuir conteúdos** (`calendario/DistribuirDialog.tsx`): marca Reel/Feed/Post, informa
+>   nomes (um por linha; vazio = o que falta para a meta) e mostra a prévia dia a dia.
+> - **Entrega = publicação − 12 dias** (`lib/datasEntrega.ts`). Card novo nasce com `entregaInicial`
+>   (nunca no passado nem em fim de semana); mudar a data no calendário refaz a entrega. **Reordenar
+>   datas**: capacidade diária do time (`sm_capacidade_entrega`, padrão 10), só dias úteis, só
+>   A fazer/Produção/Ajuste de cards reais publicando de 30 dias atrás em diante. O automático (card
+>   novo/data mudada) só EMPURRA quem já tem entrega — programar não puxa outro, e card antigo sem
+>   entrega não ganha uma sozinho. Visão **Entregas** mostra a fila com a carga "n/10" por dia.
+> - Indicadores do cliente contra a meta, filtro de **etiquetas** (`state.tags`), "+N conteúdos" e
+>   **painel lateral** (`calendario/EditarConteudoPainel.tsx`) que edita o MESMO card (cliente só em
+>   card criado à mão — `ItemEditPatch.c`). As três chaves novas estão em `SYNC_KEYS` com ramo no
+>   `applyRemoteSync` (mesmo evento `ds:padraoEditorial`).
 > **Aba 25 "Entregas do time" (2026-10-01, era "Designers")** — `DesignersTab.tsx`: vídeos do
 > editor + artes dos designers, filtros de período, **Tipo** (Tudo/Vídeos/Artes), **Pessoa** e
 > **Cliente**; totais, ranking, cartão por pessoa, calendário diário, por cliente e auditoria.

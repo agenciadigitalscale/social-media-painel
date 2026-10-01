@@ -58,6 +58,9 @@ import { TextField } from '@mui/material'
 import { MANUAIS_KEY, EXCLUIR_KEY } from './lib/producaoEditor'
 import { AJUSTE_MANUAL_KEY } from './lib/designerProducao'
 import { PADRAO_KEY, EVENTO_PADRAO } from './lib/padraoEditorial'
+import { PREF_MES_KEY, CARTEIRA_KEY } from './lib/planejamentoMes'
+import { CAPACIDADE_KEY, STATUS_NA_FILA, carregarCapacidade, entregaInicial, reordenarEntregas } from './lib/datasEntrega'
+import type { EdicaoConteudo } from './components/calendario/EditarConteudoPainel'
 import { FECHAMENTO_KEY } from './lib/designerFechamento'
 import { PESQ_CONFIG_KEY, PESQ_PUBS_KEY } from './lib/pesq/publicacoes'
 import type { ContentItem, ContentType, HandoffNotif, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
@@ -625,6 +628,9 @@ export default function App() {
           // Padrão Editorial por cliente: mesmo motivo — ramo próprio, senão o
           // padrão definido num aparelho não chega no outro.
           case PADRAO_KEY:
+          case PREF_MES_KEY:
+          case CARTEIRA_KEY:
+          case CAPACIDADE_KEY:
             localStorage.setItem(key, value)
             window.dispatchEvent(new Event(EVENTO_PADRAO))
             break
@@ -2090,6 +2096,7 @@ export default function App() {
           ...next[idx],
           ...(patch.tp ? { tp: patch.tp } : {}),
           ...(patch.n !== undefined ? { n: patch.n } : {}),
+          ...(patch.c ? { c: patch.c } : {}),
           dt: patch.dt ?? next[idx].dt,
         }
         const serialized = next.map(serializeItem)
@@ -2569,6 +2576,36 @@ export default function App() {
   const rescheduleItem = useCallback((id: number, newDate: Date) => {
     editItem(id, { dt: newDate })
   }, [editItem])
+
+  /**
+   * Fila de entrega (Calendário): publicação − 12 dias, encaixada na capacidade
+   * diária. Só conteúdo de verdade (não os semeados nunca tocados) e só o que
+   * publica de 30 dias atrás em diante — card abandonado em "A fazer" há meses
+   * lotaria a fila de hoje.
+   */
+  const reordenarFila = useCallback((modo: 'completo' | 'empurrar', capacidade?: number): number => {
+    const st = statesRef.current
+    const limite = Date.now() - 30 * 86_400_000
+    const itens = allItemsRef.current.filter(it => isRealWork(it, st[it.i]) && it.dt.getTime() >= limite)
+    const lista = reordenarEntregas({ itens, states: st, capacidade: capacidade ?? carregarCapacidade(), hoje: new Date(), modo })
+    for (const x of lista) updateItem(x.id, { deliveryDate: x.entrega })
+    return lista.length
+  }, [updateItem])
+
+  /** Mudou a publicação: a entrega acompanha (−12 dias) enquanto o card está na produção. */
+  const entregaAcompanha = useCallback((id: number, dt: Date) => {
+    const s = (statesRef.current[id]?.status ?? allItemsRef.current.find(i => i.i === id)?.s ?? 0) as Status
+    if (!STATUS_NA_FILA.includes(s)) return
+    updateItem(id, { deliveryDate: entregaInicial(dt, new Date()) })
+    setTimeout(() => reordenarFila('empurrar'), 400)
+  }, [updateItem, reordenarFila])
+
+  /** Conteúdo novo pelo Calendário: nasce com entrega e a fila só EMPURRA o necessário. */
+  const adicionarNoCalendario = useCallback((lista: { cliente: string; tipo: ContentType; titulo: string; data: Date; hora?: string }[]) => {
+    for (const x of lista) addItem(x.cliente, x.titulo, x.tipo, x.data, 0, undefined, undefined, undefined, undefined, entregaInicial(x.data, new Date()), x.hora)
+    // Depois que o React aplicar os cards novos (os refs são atualizados no commit).
+    setTimeout(() => reordenarFila('empurrar'), 400)
+  }, [addItem, reordenarFila])
 
   /**
    * "Criar publicação": post que não veio da esteira. Nasce em "Cliente ok" (5)
@@ -3105,26 +3142,48 @@ export default function App() {
             onAbrirCalendario={() => setTab(32)}
           />
         )
-      case 32:
+      case 32: {
+        // Programado tem hora marcada: remarcar move a hora junto, senão o card
+        // continuaria no dia antigo (o calendário lê programadoPara). A entrega
+        // acompanha a publicação (−12 dias) enquanto o card está na produção.
+        const remarcarNoCalendario = (id: number, dt: Date) => {
+          const st = states[id]
+          if (st?.status === 9 && st.programadoPara) {
+            const h = new Date(st.programadoPara)
+            remarcar(id, new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), h.getHours(), h.getMinutes()).getTime())
+          }
+          rescheduleItem(id, dt)
+          entregaAcompanha(id, dt)
+        }
+        const editarConteudo = (id: number, e: EdicaoConteudo) => {
+          const patchItem: ItemEditPatch = {}
+          if (e.cliente) patchItem.c = e.cliente
+          if (e.tipo) patchItem.tp = e.tipo
+          if (e.nome) patchItem.n = e.nome
+          if (Object.keys(patchItem).length) editItem(id, patchItem)
+          const patch: Partial<ItemState> = {}
+          if (e.nome) patch.title = e.nome
+          if (e.notas !== undefined) patch.notes = e.notas
+          if (e.etiquetas) patch.tags = e.etiquetas
+          if (Object.keys(patch).length) updateItem(id, patch)
+          if (e.data) remarcarNoCalendario(id, e.data)
+          if (e.hora !== undefined) mudarHoraPostagem(id, e.hora)
+          if (e.status !== undefined) setStatus(id, e.status)
+        }
         return (
           <CalendarioPostagem
             items={allItems} states={states} now={now}
             clients={allClients.map(c => c.name).sort()}
             podeRemarcar={isSocio(currentUser) || cargoDe(currentUser) === 'social'}
-            onReschedule={(id, dt) => {
-              // Programado tem hora marcada: remarcar move a hora junto, senão o
-              // card continuaria no dia antigo (o calendário lê programadoPara).
-              const st = states[id]
-              if (st?.status === 9 && st.programadoPara) {
-                const h = new Date(st.programadoPara)
-                remarcar(id, new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), h.getHours(), h.getMinutes()).getTime())
-              }
-              rescheduleItem(id, dt)
-            }}
+            onReschedule={remarcarNoCalendario}
+            onEditarConteudo={editarConteudo}
+            onAdicionarVarios={adicionarNoCalendario}
+            onReordenar={reordenarFila}
+            idsCriadosAMao={new Set(customItems.map(i => i.i))}
             onAbrirProducao={() => setTab(4)}
             planos={allClients}
             podeExcluirTudo={isSocio(currentUser)}
-            onAdicionar={(cliente, tipo, titulo, data, hora) => addItem(cliente, titulo, tipo, data, 0, undefined, undefined, undefined, undefined, undefined, hora)}
+            onAdicionar={(cliente, tipo, titulo, data, hora) => adicionarNoCalendario([{ cliente, tipo, titulo, data, hora }])}
             onProgramar={id => setStatus(id, 9)}
             onMudarHora={mudarHoraPostagem}
             onReprogramar={id => setProgramarId(id)}
@@ -3133,6 +3192,7 @@ export default function App() {
             onExcluir={deleteItem}
           />
         )
+      }
       case 31: {
         const cargo = cargoDe(currentUser)
         const board = cargo === 'editor' ? 0 : cargo === 'design' ? 1 : cargo === 'copy' ? 4 : null

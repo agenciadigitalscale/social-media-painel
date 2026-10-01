@@ -25,11 +25,28 @@ export function tipoDoPadrao(tp: ContentType): TipoPadrao | null {
   return null
 }
 
+/** Planos de conteúdo da agência: quantos Reels + quantos Posts por mês. */
+export type PlanoEditorial = '4+4' | '6+6' | '8+8' | 'livre'
+
+/**
+ * O que cada plano pede. No 6+6 o mês alterna SEMANA FORTE (2 dias de cada) e
+ * SEMANA FRACA (1 dia de cada), começando pela forte — 2+1+2+1 = 6.
+ */
+export const PLANOS: Record<Exclude<PlanoEditorial, 'livre'>, { meta: number; forte: number; fraca: number }> = {
+  '4+4': { meta: 4, forte: 1, fraca: 1 },
+  '6+6': { meta: 6, forte: 2, fraca: 1 },
+  '8+8': { meta: 8, forte: 2, fraca: 2 },
+}
+
 export interface PadraoCliente {
-  /** Dias da semana preferidos por tipo (0 = domingo … 6 = sábado). */
+  /** Dias da semana preferidos por tipo (0 = domingo … 6 = sábado). No 6+6, os da semana FORTE. */
   dias: Record<TipoPadrao, number[]>
   /** Meta do mês por tipo. Ausente = vem do plano do cliente (Reel/Post) ou 0 (Feed). */
   meta?: Partial<Record<TipoPadrao, number>>
+  /** Plano do cliente. Só o 6+6 muda a distribuição (semanas forte/fraca). */
+  plano?: PlanoEditorial
+  /** 6+6: dias da semana FRACA, por tipo. Ausente = o primeiro dia da semana forte. */
+  diasFraca?: Partial<Record<TipoPadrao, number[]>>
 }
 export type PadroesStore = Record<string, PadraoCliente>
 
@@ -53,7 +70,7 @@ export function salvarPadroes(store: PadroesStore): void {
 
 export function padraoDo(store: PadroesStore, cliente: string): PadraoCliente {
   const p = store[cliente]
-  return p ? { dias: { ...PADRAO_VAZIO.dias, ...p.dias }, meta: p.meta } : PADRAO_VAZIO
+  return p ? { dias: { ...PADRAO_VAZIO.dias, ...p.dias }, meta: p.meta, plano: p.plano, diasFraca: p.diasFraca } : PADRAO_VAZIO
 }
 
 /** Meta do mês: o que o padrão fixar; senão o plano do cliente (ex.: 4+4). */
@@ -72,6 +89,31 @@ const inicioDoDia = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDa
 function diasDoMes(ano: number, mes: number): Date[] {
   const n = new Date(ano, mes + 1, 0).getDate()
   return Array.from({ length: n }, (_, i) => new Date(ano, mes, i + 1, 12))
+}
+
+/**
+ * Semana do mês de uma data, contando como a grade do calendário (domingo a
+ * sábado): a semana do dia 1 é a 0. No 6+6 as pares são fortes e as ímpares fracas.
+ */
+export function semanaDoMes(d: Date): number {
+  const primeiro = new Date(d.getFullYear(), d.getMonth(), 1).getDay()
+  return Math.floor((d.getDate() - 1 + primeiro) / 7)
+}
+
+/** Dias da semana que valem para um tipo numa data — forte ou fraca no 6+6. */
+export function diasDaSemana(padrao: PadraoCliente, tipo: TipoPadrao, d: Date): number[] {
+  const fortes = padrao.dias[tipo] ?? []
+  if (padrao.plano !== '6+6' || semanaDoMes(d) % 2 === 0) return fortes
+  const fracos = padrao.diasFraca?.[tipo]
+  return fracos?.length ? fracos : fortes.slice(0, 1)
+}
+
+/**
+ * TODOS os dias do mês em que o tipo pode sair pelo padrão — é a preferência que
+ * diz ONDE o tipo vai, e a distribuição olha o mês inteiro, não as primeiras datas.
+ */
+export function diasPreferidosNoMes(padrao: PadraoCliente, tipo: TipoPadrao, ano: number, mes: number): Date[] {
+  return diasDoMes(ano, mes).filter(d => diasDaSemana(padrao, tipo, d).includes(d.getDay()))
 }
 
 /** Os conteúdos de um cliente num mês. */
@@ -97,20 +139,26 @@ export function planejarDistribuicao(opts: {
   meta: Record<TipoPadrao, number>
   existentes: Pick<ContentItem, 'tp' | 'dt'>[]
   hoje: Date
+  /** Só estes tipos (a tela deixa marcar Reel / Feed / Post). Ausente = os três. */
+  tipos?: TipoPadrao[]
+  /** Quantos criar de cada tipo, ignorando a meta — quando a pessoa informa os conteúdos. */
+  quantidade?: Partial<Record<TipoPadrao, number>>
 }): Planejado[] {
-  const { ano, mes, padrao, meta, existentes, hoje } = opts
+  const { ano, mes, padrao, meta, existentes, hoje, tipos, quantidade } = opts
   const todos = diasDoMes(ano, mes)
   const hojeMs = inicioDoDia(hoje)
   const out: Planejado[] = []
 
   for (const tipo of TIPOS_PADRAO) {
+    if (tipos && !tipos.includes(tipo)) continue
     const ja = existentes.filter(e => tipoDoPadrao(e.tp) === tipo)
-    const falta = (meta[tipo] ?? 0) - ja.length
+    const falta = quantidade?.[tipo] ?? ((meta[tipo] ?? 0) - ja.length)
     if (falta <= 0) continue
 
-    const preferidos = padrao.dias[tipo]?.length ? padrao.dias[tipo] : [1, 2, 3, 4, 5]
     const ocupados = new Set(ja.map(e => chaveDia(e.dt)))
-    const doPadrao = todos.filter(d => preferidos.includes(d.getDay()))
+    const doPadrao = padrao.dias[tipo]?.length
+      ? diasPreferidosNoMes(padrao, tipo, ano, mes)
+      : todos.filter(d => d.getDay() >= 1 && d.getDay() <= 5)
     const livres = doPadrao.filter(d => !ocupados.has(chaveDia(d)))
     const aFrente = livres.filter(d => d.getTime() >= hojeMs)
     const base = aFrente.length >= falta ? aFrente : livres
