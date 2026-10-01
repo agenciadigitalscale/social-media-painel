@@ -58,7 +58,7 @@ import { TextField } from '@mui/material'
 import { MANUAIS_KEY, EXCLUIR_KEY } from './lib/producaoEditor'
 import { AJUSTE_MANUAL_KEY } from './lib/designerProducao'
 import { PADRAO_KEY, EVENTO_PADRAO } from './lib/padraoEditorial'
-import { PREF_MES_KEY, CARTEIRA_KEY } from './lib/planejamentoMes'
+import { PREF_MES_KEY, CARTEIRA_KEY, ORDEM_KEY } from './lib/planejamentoMes'
 import { CAPACIDADE_KEY, STATUS_NA_FILA, carregarCapacidade, entregaInicial, reordenarEntregas } from './lib/datasEntrega'
 import type { EdicaoConteudo } from './components/calendario/EditarConteudoPainel'
 import { FECHAMENTO_KEY } from './lib/designerFechamento'
@@ -631,6 +631,7 @@ export default function App() {
           case PREF_MES_KEY:
           case CARTEIRA_KEY:
           case CAPACIDADE_KEY:
+          case ORDEM_KEY:
             localStorage.setItem(key, value)
             window.dispatchEvent(new Event(EVENTO_PADRAO))
             break

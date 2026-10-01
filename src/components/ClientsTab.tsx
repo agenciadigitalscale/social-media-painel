@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import {
   Box, Typography, Card, CardContent, LinearProgress,
   IconButton, Tooltip, Chip, Paper, Divider, Badge, Button,
@@ -37,6 +37,13 @@ import { countRealLate } from '../lib/todaySignals'
 import { normalizeGroupLink } from '../lib/whatsapp'
 import ApprovalGallery from './ApprovalGallery'
 import { CLIENT_PALETTE } from '../lib/brandColors'
+import {
+  carregarCarteira, salvarCarteira, carregarOrdem, salvarOrdem, naCarteira, situacaoNoMes, migrarCarteiraLegada,
+  ordenarClientes, moverNaOrdem, chaveMes, rotuloMes, type CarteiraStore, type ClienteNaCarteira,
+} from '../lib/planejamentoMes'
+import { EVENTO_PADRAO, carregarPadroes, salvarPadroes, padraoDo, type PadroesStore } from '../lib/padraoEditorial'
+import PadraoDialog from './calendario/PadraoDialog'
+import { InicialCliente, NovoClienteDialog, EditarClienteDialog, RemoverClienteDialog, type NovoCliente } from './clientes/CadastroCliente'
 
 const ClientContextModal = lazy(() => import('./ClientContextModal'))
 
@@ -81,14 +88,42 @@ interface Props {
 }
 
 export default function ClientsTab({
-  items, states, roteiros, clientFolders, clientColors, allClients,
+  items, states, roteiros, clientFolders, clientColors, allClients: clientesDoCadastro,
   onAddRoteiro, onAddManyRoteiros, onBulkCreate, onDistributeAll, onStartNewMonth, onAddClient, onDeleteClient,
-  onRemoveRoteiro, onRedistribute, onClearDistribution, onSetClientFolder, onSetClientColor, onClientFocus,
+  onRemoveRoteiro, onRedistribute, onClearDistribution, onSetClientFolder, onClientFocus,
   onStatusChange, onBulkSendToClient,
   clientPhones, onSetClientPhone,
   clientGroups = {}, onSetClientGroup,
   publishFolders, onSetPublishFolder,
 }: Props) {
+  // ── Cadastro (2026-10-01): carteira mensal, ordem manual e padrão — sincronizados.
+  const [carteira, setCarteira] = useState<CarteiraStore>(() => carregarCarteira())
+  const [ordem, setOrdem] = useState<string[]>(() => carregarOrdem())
+  const [padroes, setPadroes] = useState<PadroesStore>(() => carregarPadroes())
+  const [ordenacao, setOrdenacao] = useState<'manual' | 'az' | 'za'>(() => {
+    try { const v = localStorage.getItem('sm_clientes_ordenacao'); return v === 'az' || v === 'za' ? v : 'manual' } catch { return 'manual' }
+  })
+  useEffect(() => {
+    const reler = () => { setCarteira(carregarCarteira()); setOrdem(carregarOrdem()); setPadroes(carregarPadroes()) }
+    window.addEventListener(EVENTO_PADRAO, reler)
+    return () => window.removeEventListener(EVENTO_PADRAO, reler)
+  }, [])
+  const [novoAberto, setNovoAberto] = useState(false)
+  const [editandoCliente, setEditandoCliente] = useState<string | null>(null)
+  const [removendoCliente, setRemovendoCliente] = useState<string | null>(null)
+  const [padraoCliente, setPadraoCliente] = useState<string | null>(null)
+  const salvarNaCarteira = (nome: string, c: ClienteNaCarteira) => {
+    const next = { ...carteira, [nome]: c }
+    setCarteira(next); salvarCarteira(next)
+  }
+  // Nicho e segmento editados no cadastro valem em toda a aba (filtros, cartões).
+  const allClients = useMemo(() => clientesDoCadastro.map(c => ({
+    ...c,
+    nicho: carteira[c.name]?.nicho ?? c.nicho,
+    subnicho: carteira[c.name]?.segmento ?? c.subnicho,
+  })), [clientesDoCadastro, carteira])
+  const tipoDe = (n: string) => naCarteira(carteira, n).tipo
+
   const [roteiroClient, setRoteiroClient] = useState<string | null>(null)
   const [showDistributeAll, setShowDistributeAll] = useState(false)
   const [showNewMonth, setShowNewMonth] = useState(false)
@@ -138,6 +173,10 @@ export default function ClientsTab({
   })
 
   function toggleClientType(name: string) {
+    const atual = naCarteira(carteira, name)
+    salvarNaCarteira(name, { ...atual, tipo: atual.tipo === 'mensal' ? 'freelancer' : 'mensal' })
+  }
+  function toggleClientTypeLegado(name: string) {
     const currentType = clientTypes[name] ?? 'mensal'
     const newType = currentType === 'mensal' ? 'freelancer' as const : 'mensal' as const
     const next = { ...clientTypes, [name]: newType }
@@ -204,6 +243,14 @@ export default function ClientsTab({
     setDeleteFromConfirm(null)
   }
 
+  // Traz para a carteira sincronizada o que a aba antiga guardava só neste navegador.
+  useEffect(() => {
+    const base = carregarCarteira()
+    const m = migrarCarteiraLegada(base, { tipos: clientTypes, removidoDesde: clientDeletedFrom, mesesFreelancer: freelancerMonths, nomes: clientDisplayNames })
+    if (JSON.stringify(m) !== JSON.stringify(base)) { setCarteira(m); salvarCarteira(m) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const [reportClient, setReportClient] = useState<string | null>(null)
   const [portalClient, setPortalClient]   = useState<string | null>(null)
   const [portalLink, setPortalLink]       = useState('')
@@ -226,21 +273,14 @@ export default function ClientsTab({
   const visibleClients = useMemo(() => {
     return allClients.filter(c => {
       if (!showHidden && hiddenThisMonth.includes(c.name)) return false
-      const deletedFrom = clientDeletedFrom[c.name]
-      if (deletedFrom) {
-        const [dy, dm] = deletedFrom.split('-').map(Number)
-        if (viewYear > dy || (viewYear === dy && viewMonth >= dm)) return false
-      }
-      const type = clientTypes[c.name] ?? 'mensal'
-      if (type === 'freelancer') {
-        if (!(freelancerMonths[c.name] ?? []).includes(monthKey)) return false
-      }
+      // Carteira mensal: entrou depois / saiu antes deste mês → fora (o histórico fica).
+      if (!showHidden && situacaoNoMes(carteira, c.name, viewYear, viewMonth) !== 'ativo') return false
       return true
     })
-  }, [allClients, showHidden, hiddenThisMonth, clientDeletedFrom, clientTypes, freelancerMonths, monthKey, viewYear, viewMonth])
+  }, [allClients, showHidden, hiddenThisMonth, carteira, viewYear, viewMonth])
 
   const clientStats = useMemo(() => {
-    return visibleClients.map(client => {
+    const stats = visibleClients.map(client => {
       const clientItems    = items.filter(i =>
         i.c === client.name &&
         i.dt.getFullYear() === viewYear &&
@@ -302,8 +342,9 @@ export default function ClientsTab({
         lateCount, blockedCount, rejectedCount, awaitingCount, hasFolder, healthScore, statusCounts,
         riskLevel, nextAction,
       }
-    }).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base', numeric: true }))
-  }, [visibleClients, items, states, roteiros, clientFolders, viewYear, viewMonth])
+    })
+    return ordenarClientes(stats, ordem, ordenacao)
+  }, [visibleClients, items, states, roteiros, clientFolders, viewYear, viewMonth, ordem, ordenacao])
 
   const globalStats = useMemo(() => {
     const total = clientStats.reduce((s: number, c) => s + c.total, 0)
@@ -448,7 +489,7 @@ export default function ClientsTab({
         <Button
           size="small" variant="outlined" color="primary"
           startIcon={<PersonAddIcon />}
-          onClick={() => setShowAddClient(true)}
+          onClick={() => setNovoAberto(true)}
           sx={{ fontWeight: 700, fontSize: '0.65rem', whiteSpace: 'nowrap' }}
         >
           Novo cliente
@@ -496,8 +537,8 @@ export default function ClientsTab({
 
       {/* ── Tipo de cliente: Mensal / Freelancer ──────── */}
       {(() => {
-        const mensalCount     = visibleClients.filter(c => (clientTypes[c.name] ?? 'mensal') === 'mensal').length
-        const freelancerCount = visibleClients.filter(c => clientTypes[c.name] === 'freelancer').length
+        const mensalCount     = visibleClients.filter(c => tipoDe(c.name) === 'mensal').length
+        const freelancerCount = visibleClients.filter(c => tipoDe(c.name) === 'freelancer').length
         const tabs = [
           { key: 'all',        label: 'Todos',      count: visibleClients.length, color: DS.accent,  icon: '👥' },
           { key: 'mensal',     label: 'Mensais',    count: mensalCount,           color: DS.accent,  icon: '📅' },
@@ -602,6 +643,13 @@ export default function ClientsTab({
             </Box>
           )}
         </Box>
+        <TextField select size="small" value={ordenacao} aria-label="Ordenar clientes"
+          onChange={e => { const v = e.target.value as 'manual' | 'az' | 'za'; setOrdenacao(v); try { localStorage.setItem('sm_clientes_ordenacao', v) } catch { /* sem armazenamento */ } }}
+          sx={{ width: { xs: 120, md: 150 }, flexShrink: 0, '& .MuiInputBase-root': { fontSize: '0.72rem', height: 32 } }}>
+          <MenuItem value="manual" sx={{ fontSize: '0.75rem' }}>Ordem manual</MenuItem>
+          <MenuItem value="az" sx={{ fontSize: '0.75rem' }}>A → Z</MenuItem>
+          <MenuItem value="za" sx={{ fontSize: '0.75rem' }}>Z → A</MenuItem>
+        </TextField>
         {/* Layout toggle */}
         <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(247,247,245,0.08)', flexShrink: 0 }}>
           {([
@@ -626,7 +674,7 @@ export default function ClientsTab({
       {/* ── TABELA de clientes ────────────────────────── */}
       {layoutView === 'table' && (() => {
         const filtered = clientStats.filter(client =>
-          (clientTypeFilter === 'all' || (clientTypes[client.name] ?? 'mensal') === clientTypeFilter) &&
+          (clientTypeFilter === 'all' || tipoDe(client.name) === clientTypeFilter) &&
           (nichoFilter === 'all' || client.nicho === nichoFilter) &&
           (!searchQuery || client.name.toLowerCase().includes(searchQuery.toLowerCase()))
         )
@@ -666,11 +714,11 @@ export default function ClientsTab({
                 >
                   {/* Cliente */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-                    <ClientAvatar name={client.name} size={26} />
+                    <InicialCliente nome={carteira[client.name]?.nome ?? client.name} tamanho={26} />
                     <Box sx={{ minWidth: 0 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, minWidth: 0 }}>
                         <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(247,247,245,0.88)' }} noWrap>
-                          {clientDisplayNames[client.name] || client.name}
+                          {(carteira[client.name]?.nome ?? clientDisplayNames[client.name] ?? client.name)}
                         </Typography>
                         {client.blockedCount > 0 && (
                           <Box
@@ -737,7 +785,7 @@ export default function ClientsTab({
       {/* ── Grid de clientes ─────────────────────────── */}
       {layoutView === 'cards' && <Box sx={{ display: 'grid', gridTemplateColumns: { md: '1fr', lg: 'repeat(2, 1fr)', xl: 'repeat(3, 1fr)' }, gap: { md: 1.5, lg: 2, xl: 2 } }}>
         {clientStats.filter(client =>
-          (clientTypeFilter === 'all' || (clientTypes[client.name] ?? 'mensal') === clientTypeFilter) &&
+          (clientTypeFilter === 'all' || tipoDe(client.name) === clientTypeFilter) &&
           (nichoFilter === 'all' || client.nicho === nichoFilter) &&
           (!searchQuery || client.name.toLowerCase().includes(searchQuery.toLowerCase()))
         ).map(client => {
@@ -791,14 +839,14 @@ export default function ClientsTab({
 
                 {/* ── Header: avatar + nome + score + ações ──── */}
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 1.2 }}>
-                  <ClientAvatar name={client.name} size={40} />
+                  <InicialCliente nome={carteira[client.name]?.nome ?? client.name} tamanho={40} />
 
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3 }}>
                       <Typography fontWeight={800} sx={{ fontSize: { md: '0.9rem', xl: '1rem' }, lineHeight: 1.15, color: 'rgba(247,247,245,0.95)' }} noWrap>
-                        {clientDisplayNames[client.name] ?? client.name}
+                        {(carteira[client.name]?.nome ?? clientDisplayNames[client.name] ?? client.name)}
                       </Typography>
-                      {(clientTypes[client.name] ?? 'mensal') === 'freelancer' && (
+                      {tipoDe(client.name) === 'freelancer' && (
                         <Box sx={{ px: 0.7, py: 0.2, borderRadius: '5px', fontSize: '0.5rem', fontWeight: 800, bgcolor: 'rgba(200,206,216,0.12)', border: '1px solid rgba(200,206,216,0.3)', color: DS.purple, lineHeight: 1, letterSpacing: '0.05em', flexShrink: 0 }}>
                           FREELANCER
                         </Box>
@@ -817,22 +865,27 @@ export default function ClientsTab({
                         </Box>
                       )}
                     </Box>
-                    {client.subnicho && (
-                      <Typography sx={{ fontSize: { md: '0.62rem', xl: '0.68rem' }, color: client.nicho === 'gastronomico' ? DS.red : DS.orangeDim, fontWeight: 600, lineHeight: 1 }}>
-                        {client.nicho === 'gastronomico' ? '🍽' : '🎯'} {client.subnicho}
-                      </Typography>
-                    )}
-
-                    {/* Paleta de cores — discreta, expande no hover */}
-                    <Box sx={{ display: 'flex', gap: 0.4, mt: 0.6, flexWrap: 'wrap', opacity: 0.4, '&:hover': { opacity: 1 }, transition: 'opacity 0.2s' }}>
-                      {PALETTE.map(c => (
-                        <Box key={c} onClick={() => onSetClientColor(client.name, c)} sx={{
-                          width: 10, height: 10, borderRadius: '50%', bgcolor: c, cursor: 'pointer',
-                          border: clientColors[client.name] === c ? '2px solid #fff' : '2px solid transparent',
-                          transition: 'transform 0.15s', '&:hover': { transform: 'scale(1.3)' },
-                        }} />
-                      ))}
-                    </Box>
+                    {(() => {
+                      const cad = carteira[client.name]
+                      const pad = padraoDo(padroes, client.name)
+                      const sit = situacaoNoMes(carteira, client.name, viewYear, viewMonth)
+                      const info = [
+                        client.nicho === 'gastronomico' ? 'Gastronômico' : client.nicho === 'variados' ? 'Variados' : '',
+                        client.subnicho, cad?.cidade,
+                        tipoDe(client.name) === 'mensal' ? (pad.plano && pad.plano !== 'livre' ? `plano ${pad.plano}` : `${client.reelsPerMonth}+${client.postsPerMonth}`) : '',
+                      ].filter(Boolean).join(' · ')
+                      return (
+                        <>
+                          {info && <Typography noWrap sx={{ fontSize: { md: '0.64rem', xl: '0.7rem' }, color: DS.t2, fontWeight: 600, lineHeight: 1.3 }}>{info}</Typography>}
+                          <Typography sx={{ fontSize: { md: '0.6rem', xl: '0.66rem' }, color: sit === 'ativo' ? DS.t3 : DS.amber, fontWeight: 700, mt: 0.3 }}>
+                            {sit === 'futuro' ? `Entra em ${rotuloMes(cad!.entrada!)}`
+                              : sit === 'saiu' ? `Fora da carteira desde ${rotuloMes(cad!.saida!)}`
+                              : cad?.saida ? `Ativo · sai em ${rotuloMes(cad.saida)}`
+                              : cad?.entrada ? `Ativo desde ${rotuloMes(cad.entrada)}` : 'Ativo'}
+                          </Typography>
+                        </>
+                      )
+                    })()}
                   </Box>
 
                   {/* KPIs right: % + health */}
@@ -1025,17 +1078,46 @@ export default function ClientsTab({
         {clientOptionsName && [
           <Box key="header" sx={{ px: 1.8, py: 0.8, borderBottom: '1px solid rgba(247,247,245,0.06)' }}>
             <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.3)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700 }}>
-              {clientDisplayNames[clientOptionsName] ?? clientOptionsName}
+              {(carteira[clientOptionsName]?.nome ?? clientDisplayNames[clientOptionsName] ?? clientOptionsName)}
             </Typography>
           </Box>,
-          <MenuItem key="rename" onClick={() => {
-            setRenamingClient(clientOptionsName)
-            setRenameClientInput(clientDisplayNames[clientOptionsName] ?? clientOptionsName)
+          <MenuItem key="editar" onClick={() => {
+            setEditandoCliente(clientOptionsName)
             setClientOptionsAnchor(null); setClientOptionsName(null)
           }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 0.9 }}>
             <DriveFileRenameOutlineIcon sx={{ fontSize: 15, color: 'rgba(247,247,245,0.45)' }} />
-            <Typography sx={{ fontSize: '0.72rem' }}>Renomear exibição</Typography>
+            <Box>
+              <Typography sx={{ fontSize: '0.72rem' }}>Editar cliente</Typography>
+              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.3)' }}>Nome, nicho, cidade, tipo, carteira e histórico</Typography>
+            </Box>
           </MenuItem>,
+          tipoDe(clientOptionsName) === 'mensal' && (
+            <MenuItem key="padrao" onClick={() => {
+              setPadraoCliente(clientOptionsName)
+              setClientOptionsAnchor(null); setClientOptionsName(null)
+            }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 0.9 }}>
+              <CalendarMonthIcon sx={{ fontSize: 15, color: 'rgba(247,247,245,0.45)' }} />
+              <Typography sx={{ fontSize: '0.72rem' }}>Padrão editorial e preferências</Typography>
+            </MenuItem>
+          ),
+          ordenacao === 'manual' && (
+            <MenuItem key="subir" onClick={() => {
+              const nova = moverNaOrdem(clientStats.map(c => c.name), clientOptionsName, -1)
+              setOrdem(nova); salvarOrdem(nova)
+            }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 0.9 }}>
+              <Box sx={{ width: 15, textAlign: 'center', color: 'rgba(247,247,245,0.45)' }}>↑</Box>
+              <Typography sx={{ fontSize: '0.72rem' }}>Mover para cima</Typography>
+            </MenuItem>
+          ),
+          ordenacao === 'manual' && (
+            <MenuItem key="descer" onClick={() => {
+              const nova = moverNaOrdem(clientStats.map(c => c.name), clientOptionsName, 1)
+              setOrdem(nova); salvarOrdem(nova)
+            }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 0.9 }}>
+              <Box sx={{ width: 15, textAlign: 'center', color: 'rgba(247,247,245,0.45)' }}>↓</Box>
+              <Typography sx={{ fontSize: '0.72rem' }}>Mover para baixo</Typography>
+            </MenuItem>
+          ),
           <MenuItem key="publish-folder" onClick={() => {
             setPublishFolderClient(clientOptionsName)
             setPublishFolderInput(publishFolders[clientOptionsName] ?? '')
@@ -1056,14 +1138,14 @@ export default function ClientsTab({
             setClientOptionsAnchor(null); setClientOptionsName(null)
           }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 0.9 }}>
             <Box sx={{ width: 15, height: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Typography sx={{ fontSize: '0.75rem' }}>{(clientTypes[clientOptionsName] ?? 'mensal') === 'mensal' ? '🔄' : '📅'}</Typography>
+              <Typography sx={{ fontSize: '0.75rem' }}>{tipoDe(clientOptionsName) === 'mensal' ? '🔄' : '📅'}</Typography>
             </Box>
             <Box>
               <Typography sx={{ fontSize: '0.72rem' }}>
-                Tipo: <strong>{(clientTypes[clientOptionsName] ?? 'mensal') === 'mensal' ? 'Mensal' : 'Freelancer'}</strong>
+                Tipo: <strong>{tipoDe(clientOptionsName) === 'mensal' ? 'Mensal' : 'Freelancer'}</strong>
               </Typography>
               <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.3)' }}>
-                {(clientTypes[clientOptionsName] ?? 'mensal') === 'mensal' ? 'Mudar para Freelancer' : 'Mudar para Mensal'}
+                {tipoDe(clientOptionsName) === 'mensal' ? 'Mudar para Freelancer' : 'Mudar para Mensal'}
               </Typography>
             </Box>
           </MenuItem>,
@@ -1083,22 +1165,6 @@ export default function ClientsTab({
               </Typography>
             </Box>
           </MenuItem>,
-          (clientTypes[clientOptionsName] ?? 'mensal') === 'freelancer' && (
-            <MenuItem key="toggle-month" onClick={() => {
-              toggleFreelancerMonth(clientOptionsName, monthKey)
-              setClientOptionsAnchor(null); setClientOptionsName(null)
-            }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 0.9 }}>
-              <Box sx={{ width: 15, height: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Typography sx={{ fontSize: '0.75rem' }}>
-                  {(freelancerMonths[clientOptionsName] ?? []).includes(monthKey) ? '✅' : '⬜'}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography sx={{ fontSize: '0.72rem' }}>Ativo em {MONTH_NAMES[viewMonth]}/{String(viewYear).slice(2)}</Typography>
-                <Typography sx={{ fontSize: '0.58rem', color: 'rgba(247,247,245,0.3)' }}>Clique para alternar</Typography>
-              </Box>
-            </MenuItem>
-          ),
           <MenuItem key="hide" onClick={() => {
             hideForMonth(clientOptionsName)
             setClientOptionsAnchor(null); setClientOptionsName(null)
@@ -1107,13 +1173,13 @@ export default function ClientsTab({
             <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.65)' }}>Ocultar neste mês</Typography>
           </MenuItem>,
           <MenuItem key="delete-from" onClick={() => {
-            setDeleteFromConfirm(clientOptionsName)
+            setRemovendoCliente(clientOptionsName)
             setClientOptionsAnchor(null); setClientOptionsName(null)
           }} sx={{ gap: 1.2, fontSize: '0.72rem', py: 0.9 }}>
             <DeleteOutlineIcon sx={{ fontSize: 15, color: DS.red }} />
             <Box>
-              <Typography sx={{ fontSize: '0.72rem', color: DS.red }}>Remover a partir deste mês</Typography>
-              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(239,68,68,0.5)' }}>Permanece visível em meses anteriores</Typography>
+              <Typography sx={{ fontSize: '0.72rem', color: DS.red }}>Remover cliente</Typography>
+              <Typography sx={{ fontSize: '0.58rem', color: 'rgba(239,68,68,0.5)' }}>Escolhe o mês · o histórico fica</Typography>
             </Box>
           </MenuItem>,
         ]}
@@ -1652,99 +1718,72 @@ export default function ClientsTab({
         </DialogActions>
       </Dialog>
 
-      {/* ── Dialog: Novo cliente ──────────────────────── */}
-      <Dialog open={showAddClient} onClose={() => setShowAddClient(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ pb: 0.5 }}>
-          <Typography variant="subtitle1" fontWeight={700}>Novo cliente</Typography>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          <TextField
-            label="Nome do cliente" size="small" fullWidth autoFocus
-            value={newClientName}
-            onChange={e => setNewClientName(e.target.value)}
-          />
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <TextField
-              label="Posts/mês" type="number" size="small" fullWidth
-              value={newClientPosts}
-              onChange={e => setNewClientPosts(Math.max(0, Number(e.target.value)))}
-              slotProps={{ htmlInput: { min: 0, max: 30 } }}
-            />
-            <TextField
-              label="Reels/mês" type="number" size="small" fullWidth
-              value={newClientReels}
-              onChange={e => setNewClientReels(Math.max(0, Number(e.target.value)))}
-              slotProps={{ htmlInput: { min: 0, max: 30 } }}
-            />
-          </Box>
-          {/* Tipo de contrato */}
-          <Box>
-            <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary', mb: 0.6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Tipo de contrato</Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              {(['mensal', 'freelancer'] as const).map(t => (
-                <Box key={t} onClick={() => setNewClientType(t)} sx={{
-                  flex: 1, py: 0.8, borderRadius: '8px', cursor: 'pointer', textAlign: 'center',
-                  border: `1.5px solid ${newClientType === t ? (t === 'mensal' ? DS.accent : DS.purple) : 'rgba(247,247,245,0.1)'}`,
-                  bgcolor: newClientType === t ? (t === 'mensal' ? 'rgba(255,122,0,0.1)' : 'rgba(200,206,216,0.1)') : 'transparent',
-                  transition: 'all 0.15s ease',
-                }}>
-                  <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: newClientType === t ? (t === 'mensal' ? DS.accent : DS.purple) : 'rgba(247,247,245,0.35)' }}>
-                    {t === 'mensal' ? '📅 Mensal' : '⚡ Freelancer'}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          </Box>
-          {/* Social media */}
-          <Box>
-            <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary', mb: 0.6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>Social Media</Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              {[{ v: true, label: '📱 Com Social Media', color: DS.green }, { v: false, label: '🚫 Sem Social Media', color: DS.red }].map(({ v, label, color }) => (
-                <Box key={String(v)} onClick={() => setNewClientSocial(v)} sx={{
-                  flex: 1, py: 0.8, borderRadius: '8px', cursor: 'pointer', textAlign: 'center',
-                  border: `1.5px solid ${newClientSocial === v ? color : 'rgba(247,247,245,0.1)'}`,
-                  bgcolor: newClientSocial === v ? `${color}18` : 'transparent',
-                  transition: 'all 0.15s ease',
-                }}>
-                  <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: newClientSocial === v ? color : 'rgba(247,247,245,0.35)' }}>
-                    {label}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ px: 2, pb: 1.5 }}>
-          <Button size="small" onClick={() => setShowAddClient(false)}>Cancelar</Button>
-          <Button
-            size="small" variant="contained"
-            disabled={!newClientName.trim()}
-            onClick={() => {
-              const name = newClientName.trim()
-              onAddClient({ name, postsPerMonth: newClientPosts, reelsPerMonth: newClientReels })
-              // Save type
-              const nextTypes = { ...clientTypes, [name]: newClientType }
-              setClientTypes(nextTypes)
-              localStorage.setItem('sm_client_types', JSON.stringify(nextTypes))
-              // Save social media flag
-              if (!newClientSocial) {
-                const nextSocial = { ...clientSocial, [name]: false }
-                setClientSocial(nextSocial)
-                localStorage.setItem('sm_client_social', JSON.stringify(nextSocial))
-              }
-              setNewClientName('')
-              setNewClientPosts(8)
-              setNewClientReels(4)
-              setNewClientType('mensal')
-              setNewClientSocial(true)
-              setShowAddClient(false)
-            }}
-            sx={{ fontWeight: 700 }}
-          >
-            Adicionar cliente
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <NovoClienteDialog
+        open={novoAberto}
+        mesAtual={chaveMes(viewYear, viewMonth)}
+        nomesExistentes={clientesDoCadastro.map(c => c.name)}
+        onClose={() => setNovoAberto(false)}
+        onCriar={(n: NovoCliente) => {
+          onAddClient({ name: n.nome, postsPerMonth: n.posts, reelsPerMonth: n.reels, nicho: n.nicho, ...(n.segmento ? { subnicho: n.segmento } : {}) })
+          salvarNaCarteira(n.nome, { tipo: n.tipo, entrada: n.entrada, nicho: n.nicho, ...(n.segmento ? { segmento: n.segmento } : {}), ...(n.cidade ? { cidade: n.cidade } : {}) })
+          if (n.tipo === 'mensal') {
+            const store = { ...padroes, [n.nome]: { dias: { Reel: [], Post: [], Feed: [] }, plano: n.plano, meta: { Reel: n.reels, Post: n.posts } } }
+            setPadroes(store); salvarPadroes(store)
+          }
+          if (!n.social) {
+            const nextSocial = { ...clientSocial, [n.nome]: false }
+            setClientSocial(nextSocial)
+            localStorage.setItem('sm_client_social', JSON.stringify(nextSocial))
+          }
+          setNovoAberto(false)
+          // Mensal: segue direto para escolher os dias da semana do padrão.
+          if (n.tipo === 'mensal') setPadraoCliente(n.nome)
+        }}
+      />
+
+      {editandoCliente && (
+        <EditarClienteDialog
+          open={!!editandoCliente}
+          cliente={editandoCliente}
+          nichoOriginal={clientesDoCadastro.find(c => c.name === editandoCliente)?.nicho}
+          segmentoOriginal={clientesDoCadastro.find(c => c.name === editandoCliente)?.subnicho}
+          carteira={carteira}
+          onClose={() => setEditandoCliente(null)}
+          onSalvar={c => { salvarNaCarteira(editandoCliente, c); setEditandoCliente(null) }}
+          onAbrirPadrao={() => { setPadraoCliente(editandoCliente); setEditandoCliente(null) }}
+        />
+      )}
+
+      {removendoCliente && (
+        <RemoverClienteDialog
+          open={!!removendoCliente}
+          cliente={removendoCliente}
+          nomeExibido={carteira[removendoCliente]?.nome ?? removendoCliente}
+          mesAtual={chaveMes(viewYear, viewMonth)}
+          onClose={() => setRemovendoCliente(null)}
+          onConfirmar={ym => { salvarNaCarteira(removendoCliente, { ...naCarteira(carteira, removendoCliente), saida: ym }); setRemovendoCliente(null) }}
+        />
+      )}
+
+      {padraoCliente && (
+        <PadraoDialog
+          open={!!padraoCliente}
+          modo="padrao"
+          cliente={padraoCliente}
+          nomeMes=""
+          inicial={padraoDo(padroes, padraoCliente)}
+          plano={clientesDoCadastro.find(c => c.name === padraoCliente)}
+          carteira={naCarteira(carteira, padraoCliente)}
+          onClose={() => setPadraoCliente(null)}
+          onSalvar={(novo, cart) => {
+            const store = { ...padroes, [padraoCliente]: novo }
+            setPadroes(store); salvarPadroes(store)
+            if (cart) salvarNaCarteira(padraoCliente, { ...naCarteira(carteira, padraoCliente), ...cart })
+            setPadraoCliente(null)
+          }}
+        />
+      )}
+
       {aiContextClient && (
         <Suspense fallback={null}>
           <ClientContextModal

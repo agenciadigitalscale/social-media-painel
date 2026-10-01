@@ -80,6 +80,13 @@ export interface ClienteNaCarteira {
   entrada?: string
   /** Primeiro mês em que JÁ NÃO está ativo ("AAAA-MM"). Ausente = continua. */
   saida?: string
+  /** Nome de EXIBIÇÃO. O nome original continua sendo a chave dos conteúdos — trocá-lo quebraria o vínculo. */
+  nome?: string
+  /** Nicho (sobrescreve o do cadastro original). */
+  nicho?: 'gastronomico' | 'variados'
+  /** Segmento livre: "Restaurante", "Pet shop"… */
+  segmento?: string
+  cidade?: string
 }
 export type CarteiraStore = Record<string, ClienteNaCarteira>
 
@@ -95,6 +102,95 @@ export function ativoNoMes(carteira: CarteiraStore, cliente: string, ano: number
   if (c.entrada && ym < c.entrada) return false
   if (c.saida && ym >= c.saida) return false
   return true
+}
+
+const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+export const rotuloMes = (ym: string) => { const [a, m] = ym.split('-').map(Number); return `${MESES_CURTOS[m - 1]}/${a}` }
+
+/** Situação do cliente no mês: ativo, ainda vai entrar, ou já saiu. */
+export function situacaoNoMes(carteira: CarteiraStore, cliente: string, ano: number, mes: number): 'ativo' | 'futuro' | 'saiu' {
+  const c = naCarteira(carteira, cliente)
+  const ym = chaveMes(ano, mes)
+  if (c.entrada && ym < c.entrada) return 'futuro'
+  if (c.saida && ym >= c.saida) return 'saiu'
+  return 'ativo'
+}
+
+/** Histórico mês a mês (mais recente primeiro): quem estava na carteira em cada mês. Nada é apagado. */
+export function historicoDoCliente(carteira: CarteiraStore, cliente: string, ate: Date, meses = 12): { ym: string; rotulo: string; ativo: boolean }[] {
+  return Array.from({ length: meses }, (_, i) => {
+    const d = new Date(ate.getFullYear(), ate.getMonth() - i, 1)
+    const ym = chaveMes(d.getFullYear(), d.getMonth())
+    return { ym, rotulo: rotuloMes(ym), ativo: ativoNoMes(carteira, cliente, d.getFullYear(), d.getMonth()) }
+  })
+}
+
+/**
+ * Traz para a carteira (sincronizada) o que a aba Clientes antiga guardava SÓ no
+ * navegador: tipo, "removido a partir do mês" (mês 0-based, "2026-9" = outubro),
+ * meses de freelancer (o primeiro vira a entrada) e nome de exibição. Só preenche
+ * o que a carteira ainda não tem — o que já foi decidido nela vale mais.
+ */
+export function migrarCarteiraLegada(carteira: CarteiraStore, legado: {
+  tipos?: Record<string, TipoCliente>
+  removidoDesde?: Record<string, string>
+  mesesFreelancer?: Record<string, string[]>
+  nomes?: Record<string, string>
+}): CarteiraStore {
+  const out: CarteiraStore = { ...carteira }
+  const ymDoLegado = (k: string) => { const [a, m] = k.split('-').map(Number); return Number.isFinite(a) && Number.isFinite(m) ? chaveMes(a, m) : undefined }
+  const nomes = new Set([
+    ...Object.keys(legado.tipos ?? {}), ...Object.keys(legado.removidoDesde ?? {}),
+    ...Object.keys(legado.mesesFreelancer ?? {}), ...Object.keys(legado.nomes ?? {}),
+  ])
+  for (const n of nomes) {
+    const atual: ClienteNaCarteira = { ...(out[n] ?? { tipo: 'mensal' }) }
+    const antes = JSON.stringify(out[n] ?? null)
+    if (!out[n] && legado.tipos?.[n]) atual.tipo = legado.tipos[n]
+    if (!atual.saida && legado.removidoDesde?.[n]) atual.saida = ymDoLegado(legado.removidoDesde[n])
+    const fl = (legado.mesesFreelancer?.[n] ?? []).map(ymDoLegado).filter((x): x is string => !!x).sort()
+    if (!atual.entrada && fl.length && atual.tipo === 'freelancer') atual.entrada = fl[0]
+    if (!atual.nome && legado.nomes?.[n] && legado.nomes[n] !== n) atual.nome = legado.nomes[n]
+    for (const k of Object.keys(atual) as (keyof ClienteNaCarteira)[]) if (atual[k] === undefined) delete atual[k]
+    if (JSON.stringify(atual) !== antes && !(antes === 'null' && JSON.stringify(atual) === JSON.stringify({ tipo: 'mensal' }))) out[n] = atual
+  }
+  return out
+}
+
+// ── Ordem manual da lista de clientes ───────────────────────────────────
+
+export const ORDEM_KEY = 'sm_ordem_clientes'
+
+/** Ordena pela ordem manual; quem não está nela vai para o fim, em ordem alfabética. */
+export function ordenarClientes<T extends { name: string }>(lista: T[], ordem: string[], modo: 'manual' | 'az' | 'za'): T[] {
+  const az = (a: T, b: T) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base', numeric: true })
+  if (modo === 'az') return [...lista].sort(az)
+  if (modo === 'za') return [...lista].sort((a, b) => az(b, a))
+  const pos = new Map(ordem.map((n, i) => [n, i]))
+  return [...lista].sort((a, b) => (pos.get(a.name) ?? 1e9) - (pos.get(b.name) ?? 1e9) || az(a, b))
+}
+
+/** Sobe ou desce um cliente na ordem manual (a partir da lista como está na tela). */
+export function moverNaOrdem(visiveis: string[], cliente: string, dir: -1 | 1): string[] {
+  const i = visiveis.indexOf(cliente)
+  const j = i + dir
+  if (i < 0 || j < 0 || j >= visiveis.length) return visiveis
+  const out = [...visiveis]
+  ;[out[i], out[j]] = [out[j], out[i]]
+  return out
+}
+
+export function carregarOrdem(): string[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem(ORDEM_KEY) ?? '[]')
+    return Array.isArray(raw) ? raw.filter((x): x is string => typeof x === 'string') : []
+  } catch { return [] }
+}
+
+export function salvarOrdem(ordem: string[]): void {
+  try { localStorage.setItem(ORDEM_KEY, JSON.stringify(ordem)) } catch { /* sem armazenamento */ }
+  syncToCloud(ORDEM_KEY, ordem)
+  window.dispatchEvent(new Event(EVENTO_PADRAO))
 }
 
 export function carregarCarteira(): CarteiraStore {

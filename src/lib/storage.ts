@@ -159,6 +159,7 @@ export const SYNC_KEYS = [
   'sm_pref_mes',
   'sm_carteira',
   'sm_capacidade_entrega',
+  'sm_ordem_clientes',
 ] as const
 
 export type SyncKey = (typeof SYNC_KEYS)[number]

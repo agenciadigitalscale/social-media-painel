@@ -1254,6 +1254,19 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 >   **painel lateral** (`calendario/EditarConteudoPainel.tsx`) que edita o MESMO card (cliente só em
 >   card criado à mão — `ItemEditPatch.c`). As três chaves novas estão em `SYNC_KEYS` com ramo no
 >   `applyRemoteSync` (mesmo evento `ds:padraoEditorial`).
+> **Cadastro de clientes (2026-10-01)** — aba Clientes em cima da MESMA carteira (`sm_carteira`):
+> `components/clientes/CadastroCliente.tsx` (inicial num quadrado neutro — a paleta de cor por
+> cliente saiu da lista; só o relatório ainda usa a cor), **Novo cliente** (nome, nicho, segmento,
+> cidade, tipo, mês de entrada, plano 4+4/6+6/8+8; mensal segue para escolher os dias),
+> **Editar** (nome de EXIBIÇÃO — o nome original segue sendo a chave dos conteúdos —, nicho,
+> cidade, tipo, entrada/saída e histórico mês a mês), **Remover cliente** = escolhe o mês de saída,
+> nunca apaga. **Ordem**: manual (↑↓ no menu, `sm_ordem_clientes`, sincronizada) / A→Z / Z→A.
+> Quem aparece no mês é a carteira (`situacaoNoMes`); "mostrar ocultos" revela os de fora.
+> ⚠️ A aba antiga guardava tipo, "removido a partir de", meses de freelancer e nome de exibição
+> SÓ no navegador (`sm_client_types`, `sm_client_deleted_from`, `sm_freelancer_months`,
+> `sm_client_display_names`) — `migrarCarteiraLegada` traz isso para a carteira na 1ª abertura,
+> sem sobrescrever o que a carteira já tem. **Gravações**: o formulário escolhe Mensal/Freelancer e
+> só lista clientes desse tipo ativos no mês da gravação.
 > **Aba 25 "Entregas do time" (2026-10-01, era "Designers")** — `DesignersTab.tsx`: vídeos do
 > editor + artes dos designers, filtros de período, **Tipo** (Tudo/Vídeos/Artes), **Pessoa** e
 > **Cliente**; totais, ranking, cartão por pessoa, calendário diário, por cliente e auditoria.

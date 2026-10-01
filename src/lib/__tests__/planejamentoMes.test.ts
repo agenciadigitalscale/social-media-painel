@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   preferenciasDoMes, comPreferencias, garantirMes, ativoNoMes, naCarteira, chaveMes,
+  situacaoNoMes, historicoDoCliente, migrarCarteiraLegada, ordenarClientes, moverNaOrdem,
   type PrefMesStore, type CarteiraStore,
 } from '../planejamentoMes'
 import { diasPreferidosNoMes, semanaDoMes, planejarDistribuicao, type PadraoCliente, type PadroesStore } from '../padraoEditorial'
@@ -54,6 +55,43 @@ describe('Carteira mensal', () => {
     expect(ativoNoMes(carteira, 'Qualquer', ANO, OUT)).toBe(true)
     expect(naCarteira(carteira, 'Avulso').tipo).toBe('freelancer')
     expect(chaveMes(ANO, OUT)).toBe('2026-10')
+  })
+})
+
+describe('Cadastro de clientes', () => {
+  const carteira: CarteiraStore = { Lareiras: { tipo: 'mensal', entrada: '2026-10' }, ABC: { tipo: 'mensal', saida: '2026-10' } }
+
+  it('situação no mês: vai entrar, ativo, saiu', () => {
+    expect(situacaoNoMes(carteira, 'Lareiras', ANO, 8)).toBe('futuro')
+    expect(situacaoNoMes(carteira, 'Lareiras', ANO, OUT)).toBe('ativo')
+    expect(situacaoNoMes(carteira, 'ABC', ANO, OUT)).toBe('saiu')
+  })
+
+  it('histórico mês a mês preserva os meses em que estava na carteira', () => {
+    const h = historicoDoCliente(carteira, 'ABC', new Date(ANO, OUT, 15), 3)
+    expect(h.map(x => [x.rotulo, x.ativo])).toEqual([['out/2026', false], ['set/2026', true], ['ago/2026', true]])
+  })
+
+  it('migra o que só existia no navegador sem sobrescrever a carteira', () => {
+    const m = migrarCarteiraLegada({ ABC: { tipo: 'mensal', saida: '2026-11' } }, {
+      tipos: { Avulso: 'freelancer', Mensal: 'mensal' },
+      removidoDesde: { Velho: '2026-9', ABC: '2026-8' },
+      mesesFreelancer: { Avulso: ['2026-10', '2026-8'] },
+      nomes: { Velho: 'Velho Ltda', Mensal: 'Mensal' },
+    })
+    expect(m.ABC.saida).toBe('2026-11')             // carteira manda
+    expect(m.Velho).toEqual({ tipo: 'mensal', saida: '2026-10', nome: 'Velho Ltda' })
+    expect(m.Avulso).toEqual({ tipo: 'freelancer', entrada: '2026-09' })
+    expect(m.Mensal).toBeUndefined()                // nada novo a dizer
+  })
+
+  it('ordem manual, A→Z e Z→A; quem não está na ordem vai para o fim', () => {
+    const lista = [{ name: 'Beta' }, { name: 'alfa' }, { name: 'Gama' }]
+    expect(ordenarClientes(lista, ['Gama'], 'manual').map(c => c.name)).toEqual(['Gama', 'alfa', 'Beta'])
+    expect(ordenarClientes(lista, [], 'az').map(c => c.name)).toEqual(['alfa', 'Beta', 'Gama'])
+    expect(ordenarClientes(lista, [], 'za').map(c => c.name)).toEqual(['Gama', 'Beta', 'alfa'])
+    expect(moverNaOrdem(['A', 'B', 'C'], 'C', -1)).toEqual(['A', 'C', 'B'])
+    expect(moverNaOrdem(['A', 'B'], 'A', -1)).toEqual(['A', 'B'])
   })
 })
 
