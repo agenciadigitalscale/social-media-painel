@@ -261,7 +261,7 @@ function Linha({ item, st, conta, agendamentos, vista, onProgramar, onRevisar, o
     <Box sx={{
       display: 'flex', alignItems: 'center', gap: { xs: 1.2, md: 2 }, px: 2, py: 1.3, flexWrap: { xs: 'wrap', md: 'nowrap' },
       borderBottom: `1px solid ${DS.border}`, '&:last-of-type': { borderBottom: 'none' },
-      transition: 'background-color 0.18s ease', '&:hover': { bgcolor: 'rgba(148,163,184,0.04)' },
+      transition: 'background-color 0.18s ease', '&:hover': { bgcolor: 'rgba(146,152,165,0.04)' },
     }}>
       <Box sx={{ width: { xs: 48, xl: 60 }, height: { xs: 60, xl: 75 }, flexShrink: 0, borderRadius: '8px', overflow: 'hidden', bgcolor: DS.surfaceAlt, border: `1px solid ${DS.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {st?.anexos?.length

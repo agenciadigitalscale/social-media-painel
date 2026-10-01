@@ -1167,7 +1167,7 @@ Retorne APENAS o texto da mensagem, sem explicações.`
                     startIcon={<AutoAwesomeIcon sx={{ fontSize: 13 }} />}
                     disabled={apifySelected.size === 0 || batchLoading}
                     onClick={handleBatchPitch}
-                    sx={{ fontWeight: 800, fontSize: '0.65rem', background: `linear-gradient(135deg,${DS.purple},#7c3aed)`, color: '#fff', px: 1.5 }}>
+                    sx={{ fontWeight: 800, fontSize: '0.65rem', background: `linear-gradient(135deg,${DS.purple},#9298A5)`, color: '#fff', px: 1.5 }}>
                     Gerar pitches {apifySelected.size > 0 ? `(${apifySelected.size})` : ''}
                   </Button>
                 </Paper>

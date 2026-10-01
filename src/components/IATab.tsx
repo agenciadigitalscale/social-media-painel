@@ -130,7 +130,7 @@ const CARDS: AICard[] = [
     icon: '📊',
     title: 'Relatório com IA',
     description: 'Gera relatório mensal com análise inteligente',
-    color: '#26C6DA',
+    color: '#C8CED8',
     fields: [
       { key: 'cliente', label: 'Cliente', type: 'text' },
       { key: 'posts_publicados', label: 'Posts publicados', type: 'text' },

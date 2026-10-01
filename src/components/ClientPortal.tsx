@@ -531,7 +531,7 @@ export default function ClientPortal({ token }: { token: string }) {
                                       <Typography sx={{ fontSize: '0.58rem', color: 'rgba(255,122,0,0.6)', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 700, mb: 0.2 }}>
                                         Seu comentário:
                                       </Typography>
-                                      <Typography sx={{ fontSize: '0.72rem', color: '#7FB3FF', fontStyle: 'italic', lineHeight: 1.4 }}>
+                                      <Typography sx={{ fontSize: '0.72rem', color: DS.t2, fontStyle: 'italic', lineHeight: 1.4 }}>
                                         "{fb.text}"
                                       </Typography>
                                     </Box>

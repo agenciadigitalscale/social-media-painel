@@ -65,7 +65,7 @@ export default function TranscribeDialog({ open, onClose, footageLink, onUseAsCa
           <Button fullWidth startIcon={<MicIcon />} onClick={transcribe} disabled={!fileId}
             sx={{
               py: 1.2, borderRadius: 2.5, fontWeight: 800, color: '#fff',
-              background: `linear-gradient(135deg, ${BLUE}, #6C5CE7)`,
+              background: `linear-gradient(135deg, ${BLUE}, #9298A5)`,
               '&:hover': { filter: 'brightness(1.08)' },
               '&.Mui-disabled': { opacity: 0.4, color: 'rgba(247,247,245,0.4)' },
             }}>

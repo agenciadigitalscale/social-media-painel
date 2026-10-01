@@ -395,7 +395,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
                   outline: hoje ? `1.5px solid ${DS.accent}` : 'none', outlineOffset: -1.5,
                   opacity: fora ? 0.45 : 1,
                   transition: 'background-color 0.18s ease',
-                  '&:hover': { bgcolor: sobre ? `${DS.accent}14` : 'rgba(148,163,184,0.04)' },
+                  '&:hover': { bgcolor: sobre ? `${DS.accent}14` : 'rgba(146,152,165,0.04)' },
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.7 }}>

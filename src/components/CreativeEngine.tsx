@@ -229,7 +229,7 @@ export default function CreativeEngine({ open, onClose, currentUser, contexto, m
                 <ActionBtn label="⊕ Menos genérico"      color={DS.purpleSoft}   onClick={() => run({ especifico: true })} />
                 <ActionBtn label="🎯 Virar anúncio"      color={DS.accent}   onClick={() => run({ anuncio: true })} />
                 <ActionBtn label="✂ Direção de edição"  color={DS.green}   onClick={() => run({ edicaoDetalhada: true, seed: (genOpts.seed ?? 0) + 1 })} />
-                <ActionBtn label="🎬 Gerar legenda"      color="#00d9ff"   onClick={() => window.open(legendaProUrl({ cliente: brief.cliente, roteiro: legendaFromOutput(output) }), '_blank', 'noopener')} />
+                <ActionBtn label="🎬 Gerar legenda"      color="#C8CED8"   onClick={() => window.open(legendaProUrl({ cliente: brief.cliente, roteiro: legendaFromOutput(output) }), '_blank', 'noopener')} />
                 <ActionBtn label={waFlash ? '✓ Copiado!' : '💬 WhatsApp'} color={waFlash ? DS.green : BRAND.whatsapp}
                   onClick={() => { navigator.clipboard?.writeText(creativeToWhatsApp(brief, output)).then(() => { setWaFlash(true); setTimeout(() => setWaFlash(false), 1600) }).catch(() => {}) }} />
                 <ActionBtn label="📋 Copiar tudo"        color="rgba(247,247,245,0.55)" onClick={() => navigator.clipboard?.writeText(creativeToText(brief, output)).catch(() => {})} />

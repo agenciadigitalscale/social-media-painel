@@ -799,7 +799,7 @@ export default function ClientsTab({
                         {clientDisplayNames[client.name] ?? client.name}
                       </Typography>
                       {(clientTypes[client.name] ?? 'mensal') === 'freelancer' && (
-                        <Box sx={{ px: 0.7, py: 0.2, borderRadius: '5px', fontSize: '0.5rem', fontWeight: 800, bgcolor: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.3)', color: DS.purple, lineHeight: 1, letterSpacing: '0.05em', flexShrink: 0 }}>
+                        <Box sx={{ px: 0.7, py: 0.2, borderRadius: '5px', fontSize: '0.5rem', fontWeight: 800, bgcolor: 'rgba(200,206,216,0.12)', border: '1px solid rgba(200,206,216,0.3)', color: DS.purple, lineHeight: 1, letterSpacing: '0.05em', flexShrink: 0 }}>
                           FREELANCER
                         </Box>
                       )}
@@ -1372,7 +1372,7 @@ export default function ClientsTab({
                 size="small" variant="contained"
                 startIcon={portalCopied ? <CheckCircleIcon sx={{ fontSize: 13 }} /> : <ContentCopyIcon sx={{ fontSize: 13 }} />}
                 onClick={() => { navigator.clipboard.writeText(portalLink); setPortalCopied(true); setTimeout(() => setPortalCopied(false), 2500) }}
-                sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: DS.accent, '&:hover': { bgcolor: '#2a7aee' } }}
+                sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: DS.accent, '&:hover': { bgcolor: DS.accentStrong } }}
               >
                 {portalCopied ? 'Copiado!' : 'Copiar link'}
               </Button>
@@ -1383,7 +1383,7 @@ export default function ClientsTab({
 
       {/* ── Dialog: Briefing ─────────────────────────── */}
       <Dialog open={!!briefingClient} onClose={() => { setBriefingClient(null); setBriefingLink(''); setBriefingData(null); setViewBriefing(false) }} maxWidth="sm" fullWidth
-        PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(167,139,250,0.25)', borderRadius: 3 } }}>
+        PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(200,206,216,0.25)', borderRadius: 3 } }}>
         <DialogTitle sx={{ pb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography sx={{ fontSize: '1.1rem', lineHeight: 1 }}>📋</Typography>
@@ -1458,14 +1458,14 @@ export default function ClientsTab({
                   <Typography sx={{ fontSize: '0.72rem', color: DS.green, fontWeight: 700 }}>✅ Briefing preenchido — clique para ver respostas →</Typography>
                 </Box>
               )}
-              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(167,139,250,0.06)', border: '1px solid rgba(167,139,250,0.2)', wordBreak: 'break-all' }}>
+              <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(200,206,216,0.06)', border: '1px solid rgba(200,206,216,0.2)', wordBreak: 'break-all' }}>
                 <Typography sx={{ fontSize: '0.68rem', color: DS.purple, fontFamily: 'monospace' }}>{briefingLink}</Typography>
               </Box>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, py: 1 }}>
                 <Box component="img"
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(briefingLink)}&color=b45aff&bgcolor=0e0e0e&margin=8`}
                   alt="QR Code do briefing"
-                  sx={{ width: 150, height: 150, borderRadius: 2, border: '1px solid rgba(167,139,250,0.2)' }}
+                  sx={{ width: 150, height: 150, borderRadius: 2, border: '1px solid rgba(200,206,216,0.2)' }}
                 />
                 <Typography sx={{ fontSize: '0.58rem', color: 'text.disabled', textAlign: 'center' }}>
                   Envie o link ou mostre o QR code ao cliente
@@ -1503,7 +1503,7 @@ export default function ClientsTab({
             <Button size="small" variant="contained"
               startIcon={briefingCopied ? <CheckCircleIcon sx={{ fontSize: 13 }} /> : <ContentCopyIcon sx={{ fontSize: 13 }} />}
               onClick={() => { navigator.clipboard.writeText(briefingLink); setBriefingCopied(true); setTimeout(() => setBriefingCopied(false), 2500) }}
-              sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: DS.purple, '&:hover': { bgcolor: '#9b3fff' } }}>
+              sx={{ fontWeight: 700, fontSize: '0.65rem', bgcolor: DS.purple, '&:hover': { bgcolor: '#B4BAC4' } }}>
               {briefingCopied ? 'Copiado!' : 'Copiar link'}
             </Button>
           )}
@@ -1685,7 +1685,7 @@ export default function ClientsTab({
                 <Box key={t} onClick={() => setNewClientType(t)} sx={{
                   flex: 1, py: 0.8, borderRadius: '8px', cursor: 'pointer', textAlign: 'center',
                   border: `1.5px solid ${newClientType === t ? (t === 'mensal' ? DS.accent : DS.purple) : 'rgba(247,247,245,0.1)'}`,
-                  bgcolor: newClientType === t ? (t === 'mensal' ? 'rgba(255,122,0,0.1)' : 'rgba(167,139,250,0.1)') : 'transparent',
+                  bgcolor: newClientType === t ? (t === 'mensal' ? 'rgba(255,122,0,0.1)' : 'rgba(200,206,216,0.1)') : 'transparent',
                   transition: 'all 0.15s ease',
                 }}>
                   <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: newClientType === t ? (t === 'mensal' ? DS.accent : DS.purple) : 'rgba(247,247,245,0.35)' }}>

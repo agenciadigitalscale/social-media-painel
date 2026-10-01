@@ -299,6 +299,15 @@ function ConectarEmLote({ clientes }: { clientes: string[] }) {
           <Typography sx={{ fontSize: '0.72rem', color: DS.t2 }}>
             {contas.length} Página{contas.length !== 1 ? 's' : ''} encontrada{contas.length !== 1 ? 's' : ''}. Confira o cliente de cada uma — a sugestão é pelo nome e pode errar.
           </Typography>
+          {/* A lista é TUDO que o token enxerga: Página que falta aqui não foi entregue
+              ao usuário do sistema na Meta — nada no painel a esconde. */}
+          <Typography sx={{ fontSize: '0.7rem', color: DS.t3 }}>
+            Não achou a Página de algum cliente? Ela ainda não foi dada ao usuário do sistema. No Meta Business
+            (business.facebook.com) → Configurações → Usuários do sistema → escolha o usuário → Atribuir ativos →
+            Páginas: marque a Página do cliente (e o Instagram dela, em Contas do Instagram) com controle total.
+            Depois clique em "Buscar contas" de novo — o mesmo token já passa a enxergá-la. Se a Página nem aparece
+            para atribuir, ela ainda não está no seu Business: Contas → Páginas → Adicionar → Solicitar acesso.
+          </Typography>
           <Box sx={{ maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
             {contas.map(c => {
               const res = resultado[c.pageId]
