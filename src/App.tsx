@@ -112,6 +112,9 @@ import PresentationMode from './components/PresentationMode'
 import ScaleAI from './components/ScaleAI'
 import CalendarioPostagem from './components/CalendarioPostagem'
 import AgendamentoTab from './components/AgendamentoTab'
+import PainelTrafegoTab, { PropostaTab } from './components/PainelTrafegoTab'
+import RequestQuoteIcon from '@mui/icons-material/RequestQuote'
+import InsightsIcon from '@mui/icons-material/Insights'
 import { aguardandoSocial } from './lib/programacao'
 import AgradecimentoKaique from './components/AgradecimentoKaique'
 import GlobalSearch from './components/GlobalSearch'
@@ -2886,6 +2889,10 @@ export default function App() {
     // 33 — fila do que o CLIENTE já aprovou (2026-09-30): o Social revisa e
     // programa; programado, o card passa a viver no Calendário de postagem.
     { label: 'Agendamento', icon: <EventAvailableIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 33
+    // 34 — o Painel de Tráfego (painel-facebook) embutido (2026-10-02): sócios + gestor de tráfego.
+    { label: 'Painel de Tráfego', icon: <InsightsIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 34
+    // 35 — gerador de propostas comerciais embutido (2026-10-02): só sócios.
+    { label: 'Proposta', icon: <RequestQuoteIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 35
   ]
 
   // Mantém os atalhos de dígito (1–9) fora das abas ocultas e das restritas
@@ -2919,6 +2926,8 @@ export default function App() {
     { key: 'operacao',  label: 'Operação',     tabs: [31, 7, 0, 4, 33, 32, 9] },
     { key: 'clientes',  label: 'Clientes',     tabs: [6, 30, 21, 23] },
     { key: 'equipe',    label: 'Equipe',       tabs: [12, 25, 26, 27, 28, 29] },
+    { key: 'trafego',   label: 'Tráfego',      tabs: [34] },
+    { key: 'comercial', label: 'Comercial',    tabs: [35] },
   ]
 
   // Mobile: barra inferior com 4 abas fixas; o resto vai pro menu "Mais"
@@ -3013,6 +3022,10 @@ export default function App() {
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
             <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente a liderança fecha o mês da produção.</Typography>
           </Box>
+      case 34:
+        return <PainelTrafegoTab />
+      case 35:
+        return <PropostaTab />
       case 33:
         return (
           <AgendamentoTab

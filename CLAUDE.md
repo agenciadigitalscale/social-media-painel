@@ -1267,6 +1267,13 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > `sm_client_display_names`) — `migrarCarteiraLegada` traz isso para a carteira na 1ª abertura,
 > sem sobrescrever o que a carteira já tem. **Gravações**: o formulário escolhe Mensal/Freelancer e
 > só lista clientes desse tipo ativos no mês da gravação.
+> **Aba 34 "Painel de Tráfego" (2026-10-02)** — `PainelTrafegoTab.tsx` embute
+> `https://painel-facebook-nu.vercel.app/` (o site não proíbe moldura) + "Abrir em nova aba"
+> (o navegador pode isolar o login dentro da moldura). Grupo "Tráfego" na barra. Só sócios e o
+> gestor de tráfego: o Robson tem cargo Social, então a liberação é POR PESSOA
+> (`GESTORES_DE_TRAFEGO` em `roles.ts`, dentro do `getUserPerms`). **Aba 35 "Proposta"** (grupo
+> "Comercial", só sócios) embute `https://proposta-c1d.pages.dev/` com o mesmo `SiteEmbutido`.
+> `TODAS_AS_ABAS` = 36.
 > **Clientes = visão operacional (2026-10-02)** — tela padrão da aba: lista à esquerda (busca,
 > "Carteira em" mês, ordem, selo por cliente, "+ Novo cliente") e à direita o cliente escolhido
 > (`components/clientes/VisaoOperacional.tsx`): Meta de publicação (padrão/plano × publicados no

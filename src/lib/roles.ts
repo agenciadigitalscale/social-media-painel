@@ -28,10 +28,10 @@ export interface Permissions {
   hiddenTabs:         number[] // índices das abas escondidas para este cargo
 }
 
-/** Todas as abas do `navItems` do App (0–33). */
+/** Todas as abas do `navItems` do App (0–35). */
 // Ao criar aba nova no fim do navItems, aumente este número — senão ela fica
 // visível para todo cargo com lista (foi o que aconteceu com a 32).
-const TODAS_AS_ABAS = Array.from({ length: 34 }, (_, i) => i)
+const TODAS_AS_ABAS = Array.from({ length: 36 }, (_, i) => i)
 
 /**
  * Abas que cada cargo VÊ. O resto fica escondido — e bloqueado: a trava
@@ -88,8 +88,19 @@ export function getUserRole(username: string): Role {
   return cargoDe(username) ?? 'guest'
 }
 
+/**
+ * 34 Painel de Tráfego: sócios (têm tudo) e o gestor de tráfego. O Robson tem o
+ * cargo Social para o resto do painel, então a liberação é por pessoa, não por cargo.
+ */
+export const GESTORES_DE_TRAFEGO: readonly string[] = ['robson']
+export const ABA_PAINEL_TRAFEGO = 34
+
 export function getUserPerms(username: string): Permissions {
-  return permissoesDo(cargoDe(username))
+  const p = permissoesDo(cargoDe(username))
+  if (GESTORES_DE_TRAFEGO.includes((username ?? '').toLowerCase().trim())) {
+    return { ...p, hiddenTabs: p.hiddenTabs.filter(i => i !== ABA_PAINEL_TRAFEGO) }
+  }
+  return p
 }
 
 /** Liderança com visão global = só sócio (o Kaique virou editor isolado). */

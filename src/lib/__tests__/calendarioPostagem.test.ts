@@ -31,3 +31,26 @@ describe('Agendamento (aba 33)', () => {
     }
   })
 })
+
+// Aba 34 — Painel de Tráfego: sócios e o gestor de tráfego (liberação por pessoa).
+describe('Painel de Tráfego (aba 34)', () => {
+  it('sócios e o gestor de tráfego veem', () => {
+    for (const u of ['pradox', 'testa', 'robson', 'Robson ']) {
+      expect(getUserPerms(u).hiddenTabs).not.toContain(34)
+    }
+  })
+
+  it('Social, editor, designers e copy não veem', () => {
+    for (const u of ['arthur', 'kaique', 'jhones', 'julio', 'kerges', 'desconhecido']) {
+      expect(getUserPerms(u).hiddenTabs).toContain(34)
+    }
+  })
+})
+
+// Aba 35 — Proposta: só sócios.
+describe('Proposta (aba 35)', () => {
+  it('só sócios veem', () => {
+    for (const u of ['pradox', 'testa']) expect(getUserPerms(u).hiddenTabs).not.toContain(35)
+    for (const u of ['robson', 'arthur', 'kaique', 'jhones', 'julio', 'kerges']) expect(getUserPerms(u).hiddenTabs).toContain(35)
+  })
+})
