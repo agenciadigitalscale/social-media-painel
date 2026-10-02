@@ -43,6 +43,7 @@ import {
 } from '../lib/planejamentoMes'
 import { EVENTO_PADRAO, carregarPadroes, salvarPadroes, padraoDo, type PadroesStore } from '../lib/padraoEditorial'
 import PadraoDialog from './calendario/PadraoDialog'
+import VisaoOperacional from './clientes/VisaoOperacional'
 import { InicialCliente, NovoClienteDialog, EditarClienteDialog, RemoverClienteDialog, type NovoCliente } from './clientes/CadastroCliente'
 
 const ClientContextModal = lazy(() => import('./ClientContextModal'))
@@ -265,7 +266,8 @@ export default function ClientsTab({
   const [searchQuery, setSearchQuery] = useState('')
   const [aiContextClient, setAiContextClient] = useState<string | null>(null)
   const [galleryClient, setGalleryClient] = useState<string | null>(null)
-  const [layoutView, setLayoutView] = useState<'cards' | 'table'>('cards')
+  // Visão operacional (2026-10-02) é a tela padrão; cards e tabela seguem a um clique.
+  const [layoutView, setLayoutView] = useState<'visao' | 'cards' | 'table'>('visao')
 
   const hiddenThisMonth = monthHidden[monthKey] ?? []
   const hiddenClientList = allClients.filter(c => hiddenThisMonth.includes(c.name))
@@ -432,9 +434,54 @@ export default function ClientsTab({
     }
   }
 
+  const mudarOrdenacao = (v: 'manual' | 'az' | 'za') => {
+    setOrdenacao(v)
+    try { localStorage.setItem('sm_clientes_ordenacao', v) } catch { /* sem armazenamento */ }
+  }
+  const linkDiscreto = { fontSize: { xs: '0.7rem', xl: '0.76rem' }, color: DS.t2, fontWeight: 700, justifyContent: 'center', '&:hover': { color: DS.t1, bgcolor: DS.surfaceAlt } }
+
   return (
     <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 
+      {layoutView === 'visao' && (<>
+        <Box>
+          <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.72rem' }, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: DS.t2 }}>
+            {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+          </Typography>
+          <Typography sx={{ fontSize: { xs: '1.5rem', md: '1.75rem', xl: '2rem' }, fontWeight: 800, color: DS.t1, letterSpacing: '-0.03em' }}>Clientes</Typography>
+        </Box>
+        <VisaoOperacional
+          clientes={clientStats}
+          items={items} states={states} carteira={carteira} padroes={padroes}
+          ano={viewYear} mes={viewMonth}
+          mesesDisponiveis={monthOptions}
+          onMudarMes={(a, m) => { setViewYear(a); setViewMonth(m) }}
+          ordenacao={ordenacao} onOrdenacao={mudarOrdenacao}
+          onNovo={() => setNovoAberto(true)}
+          onEditar={setEditandoCliente}
+          onRemover={setRemovendoCliente}
+          onVerConteudos={onClientFocus}
+          acoes={nome => [
+            { rotulo: 'Ver conteúdos', onClick: () => onClientFocus(nome) },
+            { rotulo: 'Roteiros', onClick: () => setRoteiroClient(nome) },
+            { rotulo: 'WhatsApp', onClick: () => { setPhoneEditClient(nome); setPhoneInput(clientPhones[nome] ?? ''); setGroupInput(clientGroups[nome] ?? '') } },
+            { rotulo: 'Briefing', onClick: () => openBriefing(nome) },
+            { rotulo: 'Relatório', onClick: () => setReportClient(nome) },
+            { rotulo: 'Brand Kit', onClick: () => setAiContextClient(nome) },
+            { rotulo: 'Galeria', onClick: () => setGalleryClient(nome) },
+            { rotulo: 'Mais opções', onClick: el => { setClientOptionsAnchor(el); setClientOptionsName(nome) } },
+          ]}
+          rodape={
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <Button size="small" fullWidth onClick={() => setLayoutView('cards')} sx={linkDiscreto}>Cards</Button>
+              <Button size="small" fullWidth onClick={() => setLayoutView('table')} sx={linkDiscreto}>Tabela</Button>
+              <Button size="small" fullWidth onClick={() => setShowReport(true)} sx={linkDiscreto}>Relatório</Button>
+            </Box>
+          }
+        />
+      </>)}
+
+      {layoutView !== 'visao' && (<>
       {/* ── Header (PageHero) ── */}
       <PageHero
         compact
@@ -653,6 +700,7 @@ export default function ClientsTab({
         {/* Layout toggle */}
         <Box sx={{ display: 'flex', borderRadius: 1.5, overflow: 'hidden', border: '1px solid rgba(247,247,245,0.08)', flexShrink: 0 }}>
           {([
+            { key: 'visao', icon: <AssessmentIcon sx={{ fontSize: 14 }} />, label: 'Visão' },
             { key: 'cards', icon: <GridViewIcon sx={{ fontSize: 14 }} />, label: 'Cards' },
             { key: 'table', icon: <TableChartIcon sx={{ fontSize: 14 }} />, label: 'Tabela' },
           ] as const).map(v => (
@@ -1064,7 +1112,7 @@ export default function ClientsTab({
         })}
       </Box>}
 
-      <HintCard text="Dica da IA: diga 'Distribua 8 posts e 4 reels para o [Cliente]' — a IA cria e agenda tudo automaticamente." />
+      </>)}
 
       {/* ── Menu de opções do cliente ─────────────────── */}
       <Menu

@@ -1267,6 +1267,15 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > `sm_client_display_names`) — `migrarCarteiraLegada` traz isso para a carteira na 1ª abertura,
 > sem sobrescrever o que a carteira já tem. **Gravações**: o formulário escolhe Mensal/Freelancer e
 > só lista clientes desse tipo ativos no mês da gravação.
+> **Clientes = visão operacional (2026-10-02)** — tela padrão da aba: lista à esquerda (busca,
+> "Carteira em" mês, ordem, selo por cliente, "+ Novo cliente") e à direita o cliente escolhido
+> (`components/clientes/VisaoOperacional.tsx`): Meta de publicação (padrão/plano × publicados no
+> mês; Post = Design+Carrossel+Feed), Entregas totais, Estoque (3/4/5/9), Alertas, Cobertura
+> (até quando a pauta futura está pronta sem buraco), Pipeline, Principais alertas e Próximas datas
+> (publicação, gravação de `sm_recordings`, última movimentação do histórico). Regras puras em
+> `lib/visaoCliente.ts` (testadas): urgente = entrega vencida em produção ou publicação passada sem
+> ir ao ar; risco = vai ao ar em até 3 dias ainda em produção. Cards e Tabela antigos seguem nos
+> links do rodapé da lista; Portal/Briefing/WhatsApp/… nos botões do detalhe e em "Mais opções".
 > **Aba 25 "Entregas do time" (2026-10-01, era "Designers")** — `DesignersTab.tsx`: vídeos do
 > editor + artes dos designers, filtros de período, **Tipo** (Tudo/Vídeos/Artes), **Pessoa** e
 > **Cliente**; totais, ranking, cartão por pessoa, calendário diário, por cliente e auditoria.
@@ -1284,6 +1293,12 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > **"Copiar mensagem p/ cliente"** — antes disso, "Link do material salvo": a mensagem padrão (`generateApprovalMessage`) com
 > esse link, pronta para colar no WhatsApp (`producao/LinkMaterial.tsx` + `lib/linkMaterial.ts`).
 > Campo próprio e não o `link`, porque a esteira/Inbox reescreve o `link` ao vincular arquivo.
+> **"Enviar ao cliente" também usa o link do material (2026-10-01):** o link do portal
+> (`/c/token/id`) SAIU do envio — `sendToClientNow`, o envio em lote e o lembrete montam a
+> mensagem padrão com `linkMaterial`, copiam (`copiarTexto`) e abrem o WhatsApp/grupo quando
+> há contato. Card sem `linkMaterial` não envia (aviso ao editor); só Social/sócio envia. Sem
+> portal, a aprovação NÃO volta sozinha: o Social marca "Cliente ok" (5) no card. A conferência
+> de formato (`riskBeforeSending`), o `warmMirror` e o `warmCreativeSet` saíram desse caminho.
 > No **Agendamento** (linha e revisão) aparece o link do material (`calendario/LinkDoMaterial.tsx`,
 > reserva: o `link` do card) para o Social baixar e anexar. `/api/*` do planner lê a resposta com
 > `lib/respostaApi.ts`: quando o Worker cai e a Cloudflare devolve HTML, a tela mostra o título

@@ -50,7 +50,6 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import theme, { BRAND, DS } from './theme'
 import { PESQ_LOGO } from './lib/pesq/brand'
-import { classifyCreativeLink } from './lib/creativeLink'
 import { ATRIBUICOES_KEY, PAINEIS_KEY, EVENTO_ATRIBUICOES, atribuirAoMembro, carregarAtribuicoes, carregarPaineis, salvarAtribuicoes, type PainelArea } from './lib/paineis'
 import { cargoDe, donoDoCard, isIsolado, isSocio, podeVerCard } from './lib/access'
 import { motivoDoBloqueio, podeMover } from './lib/fluxo'
@@ -79,7 +78,6 @@ import {
 } from './lib/statusReconcile'
 import {
   syncManualLink, migrateLegacyMediaLinks, reloadMediaLinks, MEDIA_LINKS_KEY,
-  getMediaLinks, extractDriveId,
 } from './lib/mediaLinks'
 import { DRIVE_INBOX_KEY } from './lib/driveInbox'
 import { clearReadyState, READY_AUTOMATION_KEY, reloadReadyStates } from './lib/readyAutomation'
@@ -87,13 +85,13 @@ import { useDriveInbox, type DriveVideo } from './lib/useDriveInbox'
 import { useDriveAutoLink } from './lib/useDriveAutoLink'
 import { useReadyEsteira } from './lib/useReadyEsteira'
 import { markArrived } from './lib/cardPulse'
-import { riskBeforeSending, type SendRisk } from './lib/exportWeight'
 import { getWorkdays, buildDistribution } from './lib/distribution'
 import { agendarNoInstagram, cancelarNoInstagram, descreverTipo, remarcarNoInstagram } from './lib/instagram'
 import { horaDe, patchDaHora, textoDoMomento } from './lib/programacao'
 import ProgramarPostDialog, { type ConfirmacaoPost } from './components/calendario/ProgramarPostDialog'
 import type { NovaPublicacao } from './components/calendario/CriarPublicacaoDialog'
-import { generateApprovalUrl, generateApprovalMessage, openWhatsAppApproval, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, extractDriveFileId, checkDriveFilePublic, generateReviewUrl, generateReviewMessage, REVIEW_CLIENT, isReviewClientName, findReviewGroupLink } from './lib/whatsapp'
+import { copiarTexto } from './lib/linkMaterial'
+import { generateApprovalMessage, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, extractDriveFileId, checkDriveFilePublic, generateReviewUrl, generateReviewMessage, REVIEW_CLIENT, isReviewClientName, findReviewGroupLink } from './lib/whatsapp'
 import { logActivity } from './lib/activity'
 import { useUndoHistory } from './shared/useUndoHistory'
 import { haptic } from './mobile/system/haptics'
@@ -398,13 +396,6 @@ export default function App() {
   const [waAlert, setWaAlert] = useState<{ msg: string; waUrl: string; label: string; color: string } | null>(null)
   const [groupSendDialog, setGroupSendDialog] = useState<{ groupUrl: string; message: string; clientName: string } | null>(null)
   const [groupMsgCopied, setGroupMsgCopied] = useState(false)
-  /** Envio interrompido para conferência: formato/peso que o cliente não vai conseguir ver. */
-  const [sendRisk, setSendRisk] = useState<{
-    risk: SendRisk
-    clientName: string
-    contentTitle: string
-    proceed: () => void
-  } | null>(null)
   const [autoDetectedNotif, setAutoDetectedNotif] = useState<{ itemId: number; clientName: string; itemName: string; videoName: string; shareWarning?: boolean; driveUrl?: string } | null>(null)
   const [remindersDialogOpen, setRemindersDialogOpen] = useState(false)
   const lastNotifTs = useRef<number>(Date.now())
@@ -426,7 +417,6 @@ export default function App() {
   useEffect(() => { currentUserRef.current = currentUser }, [currentUser])
   const allItemsRef = useRef<ContentItem[]>([])
   /** Últimos arquivos vistos no Drive — para pesar o export na hora do envio. */
-  const driveVideosRef = useRef<DriveVideo[]>([])
 
   // Abas que os atalhos de dígito não podem alcançar (ocultas + restritas por cargo).
   // Preenchida abaixo, depois que navItems/perms existem.
@@ -1645,114 +1635,40 @@ export default function App() {
   // saía em duplicidade com a equipe logada. Quem publica é o servidor (cron →
   // /api/instagram 'run'); o painel só agenda e cancela (lib/instagram).
 
-  /**
-   * Manda o criativo para o espelho da Cloudflare ANTES de o cliente tocar nele.
-   *
-   * O `/api/stream` já espelha sozinho quando não acha o arquivo no R2, mas isso
-   * acontece na PRIMEIRA exibição — e é o primeiro cliente a abrir quem paga o
-   * caminho pelo Google, justamente o que reclama. Aqui a cópia começa no
-   * instante em que o link nasce, então o vídeo já está esperando na borda
-   * quando a mensagem do WhatsApp chega.
-   *
-   * Dispara e esquece: falhar aqui só significa cair no espelho preguiçoso, que
-   * é o comportamento de antes. Nunca segura o envio.
-   */
-  const warmMirror = useCallback((itemId: number) => {
-    const linked = getMediaLinks()[itemId]?.fileId
-    const raw = linked
-      ? linked.replace(/^drive:/, '')
-      : extractDriveId(states[itemId]?.link ?? '')
-    // Só arquivo do Drive: o espelho copia de lá, e o /api/mirror recusa o resto.
-    if (!raw || (linked && !linked.startsWith('drive:'))) return
-
-    fetch('/api/mirror', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fileId: raw }),
-    }).catch(() => { /* espelho preguiçoso assume */ })
-  }, [states])
-
-  /**
-   * Guarda o conteúdo da PASTA no instante do envio.
-   *
-   * A memória de pastas (`sm_creative_sets`) só era preenchida quando o cliente
-   * ABRIA o link — e isso é tarde demais no caso que de fato acontece: a equipe
-   * arquiva os arquivos depois de publicar, o cliente volta semanas depois e a
-   * pasta já está vazia. Não há o que lembrar de uma pasta que nunca foi vista
-   * com conteúdo. Foi exatamente assim que a MARINA FENIX ficou com dois links
-   * mortos: a pasta esvaziou antes de a memória existir.
-   *
-   * Enviar é o único momento em que se sabe que a pasta está montada. Mesma
-   * ideia do `warmMirror`: dispara e esquece, e falhar aqui só recai no
-   * comportamento anterior.
-   */
-  const warmCreativeSet = useCallback((itemId: number, token: string) => {
-    const link = statesRef.current[itemId]?.link ?? ''
-    if (!link.includes('/folders/')) return
-    fetch(`/api/creative-set?token=${encodeURIComponent(token)}&itemId=${itemId}`)
-      .catch(() => { /* a resolução na abertura assume */ })
-  }, [])
-
+  // Envio ao cliente = a MENSAGEM PADRÃO com o link do material que o editor colou
+  // no card (`linkMaterial`). O link do portal (/c/token/id) saiu deste caminho a
+  // pedido do dono: o Social copia a mensagem e manda; a aprovação do cliente volta
+  // pelo próprio Social, que marca "Cliente ok" no card.
   const sendToClientNow = useCallback(async (itemId: number, clientName: string, isTraffic?: boolean) => {
-    // Move o card imediatamente — não espera o fetch do token
-    const sentAt = Date.now()
-    updateItem(itemId, { status: 4, sentToClientAt: sentAt })
-    warmMirror(itemId)
-
     const itemState = states[itemId]
+    const material = itemState?.linkMaterial
+    if (!material) {
+      setSnack({ msg: 'Falta o link do material no card — o editor cola o link do vídeo/arte final antes.', severity: 'warning' })
+      return
+    }
+    updateItem(itemId, { status: 4, sentToClientAt: Date.now(), rejectionText: undefined, approvedByClientAt: undefined })
+
     const contentTitle = itemState?.title || allItems.find(i => i.i === itemId)?.n || `Item ${itemId}`
-    // Número individual tem prioridade sobre grupo — evita Ctrl+V
+    const message = generateApprovalMessage(clientName, contentTitle, material, isTraffic ?? itemState?.isTraffic)
+    const copiada = await copiarTexto(message)
+
     const rawContact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
-    // Se o único contato salvo é grupo, usa grupo; se tem número individual, usa ele
-    const phone   = rawContact && !isGroupLink(rawContact) ? rawContact : undefined
-    const group   = clientGroups[clientName] || (rawContact && isGroupLink(rawContact) ? rawContact : undefined)
+    const phone = rawContact && !isGroupLink(rawContact) ? rawContact : undefined
+    const group = clientGroups[clientName] || (rawContact && isGroupLink(rawContact) ? rawContact : undefined)
 
-    let token: string | undefined
-    try {
-      const res = await fetch('/api/portal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'generate', clientName }),
+    if (phone) {
+      window.open(buildWhatsAppUrl(phone, message), '_blank', 'noopener,noreferrer')
+      setSnack({ msg: `Mensagem copiada e WhatsApp aberto para ${clientName}.`, severity: 'success' })
+      if (group) setTimeout(() => setGroupSendDialog({ groupUrl: group, message, clientName }), 1500)
+    } else if (group) {
+      setGroupSendDialog({ groupUrl: group, message, clientName })
+    } else {
+      setSnack({
+        msg: copiada ? 'Mensagem copiada — cole no WhatsApp do cliente.' : 'Não deu para copiar a mensagem. Use "Copiar mensagem p/ cliente" no card.',
+        severity: copiada ? 'success' : 'warning',
       })
-      const data = await res.json() as { ok: boolean; token?: string }
-      if (data.ok && data.token) token = data.token
-    } catch {}
-
-    // Atualiza o token quando chegar (card já está em status 4). Reenvio de um
-    // criativo refeito é uma NOVA avaliação: limpa o veredito anterior do cliente
-    // — no card (rejeição/aprovação antigas) e no servidor (senão o viewer mostra
-    // "você já respondeu" e não deixa avaliar de novo).
-    if (token) {
-      updateItem(itemId, { approvalToken: token, rejectionText: undefined, approvedByClientAt: undefined })
-      // Precisa do token: o /api/creative-set é rota pública e a credencial é ele.
-      warmCreativeSet(itemId, token)
-      fetch('/api/portal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reset-feedback', token, itemId }),
-      }).catch(() => {})
     }
-
-    if (token) {
-      const approvalUrl = generateApprovalUrl(token, itemId)
-      const message = generateApprovalMessage(clientName, contentTitle, approvalUrl, isTraffic)
-
-      if (phone) {
-        // Número individual → wa.me pré-preenche, zero Ctrl+V
-        openWhatsAppApproval(phone, clientName, contentTitle, approvalUrl, isTraffic)
-        setSnack({ msg: `📤 WhatsApp aberto para ${clientName}! ${group ? '— Quer também enviar ao grupo?' : ''}`, severity: 'success' })
-        // Se também tem grupo configurado, abre o dialog de grupo após 1.5s
-        if (group) setTimeout(() => setGroupSendDialog({ groupUrl: group, message, clientName }), 1500)
-      } else if (group) {
-        // Apenas grupo configurado → dialog com cópia + abertura
-        setGroupSendDialog({ groupUrl: group, message, clientName })
-      } else {
-        // Sem contato: copia o link
-        try { await navigator.clipboard.writeText(approvalUrl) } catch {}
-        setSnack({ msg: '⚠ Configure o WhatsApp do cliente na aba Clientes. Link copiado!', severity: 'warning' })
-      }
-    }
-  }, [states, allItems, clientPhones, clientGroups, allClients, updateItem, warmMirror])
+  }, [states, allItems, clientPhones, clientGroups, allClients, updateItem])
 
   /**
    * O envio ao cliente, com uma conferência antes.
@@ -1770,34 +1686,13 @@ export default function App() {
    * O que não pode é mandar sem saber.
    */
   const requestSendToClient = useCallback((itemId: number, clientName: string, isTraffic?: boolean) => {
-    const link = getMediaLinks()[itemId]
-
-    // O link do próprio card é a segunda fonte, e na prática a PRIMEIRA: em
-    // produção o registro de vínculos (`sm_media_links`) está vazio, então a
-    // conferência lia `undefined` em tudo e nunca disparava — nem para os 24
-    // `.mov` que o Android recusa. Com o fileId do link dá para achar a linha
-    // em `drive_videos` e ter mime, nome e tamanho de verdade.
-    const cardLink = classifyCreativeLink(states[itemId]?.link)
-    const fileId   = link?.fileId ?? (cardLink.kind === 'file' ? cardLink.id : undefined)
-    const video    = fileId ? driveVideosRef.current.find(v => v.drive_file_id === fileId) : undefined
-
-    const risk = riskBeforeSending({
-      mimeType: link?.mimeType ?? video?.mime_type,
-      filename: link?.filename ?? video?.filename,
-      bytes:    video?.file_size_bytes,
-      // Pasta conta como criativo: é assim que carrossel é entregue.
-      semCriativo: cardLink.kind === 'none',
-    })
-
-    if (!risk) { void sendToClientNow(itemId, clientName, isTraffic); return }
-
-    setSendRisk({
-      risk,
-      clientName,
-      contentTitle: states[itemId]?.title || allItems.find(i => i.i === itemId)?.n || `Item ${itemId}`,
-      proceed: () => { setSendRisk(null); void sendToClientNow(itemId, clientName, isTraffic) },
-    })
-  }, [sendToClientNow, states, allItems])
+    const quem = currentUserRef.current
+    if (!isSocio(quem) && cargoDe(quem) !== 'social') {
+      setSnack({ msg: 'Só o Social envia ao cliente.', severity: 'warning' })
+      return
+    }
+    void sendToClientNow(itemId, clientName, isTraffic)
+  }, [sendToClientNow])
 
   // ── Revisão interna: card arrastado pra Revisão vai pro grupo da agência ────
   const handleSendToReview = useCallback(async (itemId: number, clientName: string) => {
@@ -1989,13 +1884,15 @@ export default function App() {
   // ── Lembrete ao cliente (card já em status 4) ────────────
   const handleRemindClient = useCallback((itemId: number, clientName: string) => {
     const itemState = states[itemId]
-    const token = itemState?.approvalToken
-    if (!token) return
+    const approvalUrl = itemState?.linkMaterial
+    if (!approvalUrl) {
+      setSnack({ msg: 'Este card não tem link do material para reforçar.', severity: 'warning' })
+      return
+    }
     const contentTitle = itemState?.title || allItems.find(i => i.i === itemId)?.n || `Item ${itemId}`
     const rawContact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
     const phone = rawContact && !isGroupLink(rawContact) ? rawContact : undefined
     const group = clientGroups[clientName] || (rawContact && isGroupLink(rawContact) ? rawContact : undefined)
-    const approvalUrl = generateApprovalUrl(token, itemId)
     const message = `Olá, ${clientName}! 😊 Passando para reforçar o link do criativo que está aguardando sua aprovação:\n\n*${contentTitle}*\n${approvalUrl}\n\nQualquer dúvida estou por aqui! 🙏`
     if (phone) {
       window.open(buildWhatsAppUrl(phone, message), '_blank', 'noopener,noreferrer')
@@ -2003,8 +1900,8 @@ export default function App() {
     } else if (group) {
       setGroupSendDialog({ groupUrl: group, message, clientName })
     } else {
-      navigator.clipboard.writeText(approvalUrl).catch(() => {})
-      setSnack({ msg: '⚠ Configure o WhatsApp do cliente. Link copiado!', severity: 'warning' })
+      void copiarTexto(message)
+      setSnack({ msg: 'Lembrete copiado — cole no WhatsApp do cliente.', severity: 'success' })
     }
   }, [states, allItems, clientPhones, clientGroups, allClients])
 
@@ -2016,55 +1913,43 @@ export default function App() {
   // ── Bulk send to client (WhatsApp em lote por cliente) ───
   const handleBulkSendToClient = useCallback(async (clientName: string, itemIds: number[]) => {
     if (!itemIds.length) return
+    const quem = currentUserRef.current
+    if (!isSocio(quem) && cargoDe(quem) !== 'social') {
+      setSnack({ msg: 'Só o Social envia ao cliente.', severity: 'warning' })
+      return
+    }
+    const comLink = itemIds.filter(id => states[id]?.linkMaterial)
+    const semLink = itemIds.length - comLink.length
+    if (!comLink.length) {
+      setSnack({ msg: 'Nenhum dos cards tem link do material — o editor cola o link antes.', severity: 'warning' })
+      return
+    }
 
-    // Move os cards imediatamente
     const now = Date.now()
-    itemIds.forEach(id => { updateItem(id, { status: 4, sentToClientAt: now }); warmMirror(id) })
+    comLink.forEach(id => updateItem(id, { status: 4, sentToClientAt: now, rejectionText: undefined, approvedByClientAt: undefined }))
 
-    let token: string | undefined
-    try {
-      const res = await fetch('/api/portal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'generate', clientName }),
-      })
-      const data = await res.json() as { ok: boolean; token?: string }
-      if (data.ok && data.token) token = data.token
-    } catch {}
-
-    // Atualiza o token em todos quando chegar
-    if (token) itemIds.forEach(id => updateItem(id, { approvalToken: token }))
+    const getTitle = (id: number) => states[id]?.title || allItems.find(i => i.i === id)?.n || `Item ${id}`
+    const message = comLink.length === 1
+      ? generateApprovalMessage(clientName, getTitle(comLink[0]), states[comLink[0]].linkMaterial!, states[comLink[0]].isTraffic)
+      : `Olá, ${clientName}! 😊\n\n${comLink.length} criativos prontos para aprovação:\n\n${comLink.map(id => `• *${getTitle(id)}*\n  ${states[id].linkMaterial}`).join('\n\n')}\n\nDá uma olhada e nos diga o que achou. Aguardamos! 🙏`
+    const copiada = await copiarTexto(message)
 
     const rawContact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
     const phone = rawContact && !isGroupLink(rawContact) ? rawContact : undefined
     const group = clientGroups[clientName] || (rawContact && isGroupLink(rawContact) ? rawContact : undefined)
+    const aviso = semLink ? ` ${semLink} sem link do material ficaram de fora.` : ''
 
-    if (token) {
-      const getTitle = (id: number) =>
-        states[id]?.title || allItems.find(i => i.i === id)?.n || `Item ${id}`
-      const links = itemIds.map(id => {
-        const title = getTitle(id)
-        const url = generateApprovalUrl(token!, id)
-        return `• *${title}*\n  ${url}`
-      }).join('\n\n')
-      const message = itemIds.length === 1
-        ? generateApprovalMessage(clientName, getTitle(itemIds[0]), generateApprovalUrl(token, itemIds[0]))
-        : `Olá, ${clientName}! 😊\n\n${itemIds.length} criativos prontos para aprovação:\n\n${links}\n\nAcesse os links acima e nos dê seu feedback. Aguardamos! 🙏`
-
-      if (phone) {
-        window.open(buildWhatsAppUrl(phone, message), '_blank', 'noopener,noreferrer')
-        setSnack({ msg: `📤 WhatsApp aberto para ${clientName} (${itemIds.length} item${itemIds.length !== 1 ? 's' : ''})!`, severity: 'success' })
-        if (group) setTimeout(() => setGroupSendDialog({ groupUrl: group, message, clientName }), 1500)
-      } else if (group) {
-        setGroupSendDialog({ groupUrl: group, message, clientName })
-      } else {
-        try { await navigator.clipboard.writeText(message) } catch {}
-        setSnack({ msg: '⚠ Configure o WhatsApp do cliente na aba Clientes. Mensagem copiada!', severity: 'warning' })
-      }
+    if (phone) {
+      window.open(buildWhatsAppUrl(phone, message), '_blank', 'noopener,noreferrer')
+      setSnack({ msg: `Mensagem copiada e WhatsApp aberto para ${clientName}.${aviso}`, severity: semLink ? 'warning' : 'success' })
+      if (group) setTimeout(() => setGroupSendDialog({ groupUrl: group, message, clientName }), 1500)
+    } else if (group) {
+      setGroupSendDialog({ groupUrl: group, message, clientName })
+      if (semLink) setSnack({ msg: aviso.trim(), severity: 'warning' })
     } else {
-      setSnack({ msg: `⚠ Sem servidor — ${itemIds.length} item${itemIds.length !== 1 ? 's' : ''} marcado${itemIds.length !== 1 ? 's' : ''} como Enviado.`, severity: 'warning' })
+      setSnack({ msg: (copiada ? 'Mensagem copiada — cole no WhatsApp do cliente.' : 'Não deu para copiar a mensagem.') + aviso, severity: copiada && !semLink ? 'success' : 'warning' })
     }
-  }, [states, allItems, clientPhones, clientGroups, allClients, updateItem, warmMirror])
+  }, [states, allItems, clientPhones, clientGroups, allClients, updateItem])
 
   const deleteItem = useCallback((id: number) => {
     const item = allItems.find(i => i.i === id)
@@ -2813,7 +2698,6 @@ export default function App() {
   // O `requestSendToClient` é declarado bem antes daqui e precisa do tamanho do
   // arquivo para pesar o export. A ref evita reordenar meia tela de hooks só
   // por causa disso — mesmo padrão do `currentUserRef`.
-  useEffect(() => { driveVideosRef.current = driveInbox.videos }, [driveInbox.videos])
 
   const handleDriveAutoLinked = useCallback((info: {
     itemId: number
@@ -4765,47 +4649,6 @@ export default function App() {
         </Popover>
 
         {/* ── Dialog: envio para grupo WhatsApp ─────────────── */}
-        {/* ── Conferência antes de mandar ao cliente ────────────────────────
-            Não é bloqueio: é a informação que faltava no momento da decisão.
-            O `.mov` é o caso que motivou — no iPhone abre, no Android não, e
-            quem manda quase sempre está num iPhone. */}
-        <Dialog open={!!sendRisk} onClose={() => setSendRisk(null)} maxWidth="xs" fullWidth>
-          {sendRisk && (
-            <>
-              <DialogTitle sx={{ fontSize: '1rem', fontWeight: 800, pb: 1 }}>
-                {sendRisk.risk.level === 'blocking' ? '⚠ ' : '💡 '}{sendRisk.risk.title}
-              </DialogTitle>
-              <DialogContent sx={{ pb: 1 }}>
-                <Typography sx={{ fontSize: '0.78rem', color: DS.t2, mb: 1.5, lineHeight: 1.6 }}>
-                  <strong style={{ color: DS.t1 }}>{sendRisk.contentTitle}</strong> · {sendRisk.clientName}
-                </Typography>
-                <Box sx={{
-                  p: 1.4, borderRadius: 2, mb: 1.4,
-                  background: sendRisk.risk.level === 'blocking' ? 'rgba(239,68,68,0.08)' : 'rgba(255,181,46,0.08)',
-                  border: `1px solid ${sendRisk.risk.level === 'blocking' ? 'rgba(239,68,68,0.28)' : 'rgba(255,181,46,0.28)'}`,
-                }}>
-                  <Typography sx={{ fontSize: '0.78rem', color: DS.t1, lineHeight: 1.65 }}>
-                    {sendRisk.risk.consequence}
-                  </Typography>
-                </Box>
-                <Typography sx={{ fontSize: '0.75rem', color: DS.t2, lineHeight: 1.6 }}>
-                  {sendRisk.risk.remedy}
-                </Typography>
-              </DialogContent>
-              <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
-                <Button onClick={() => setSendRisk(null)} sx={{ color: DS.t2, fontWeight: 700 }}>
-                  Cancelar
-                </Button>
-                {/* Deliberadamente sem destaque: mandar assim mesmo é possível,
-                    mas não é o caminho que a tela sugere. */}
-                <Button onClick={sendRisk.proceed} sx={{ color: DS.t2, fontWeight: 600, fontSize: '0.75rem' }}>
-                  Enviar mesmo assim
-                </Button>
-              </DialogActions>
-            </>
-          )}
-        </Dialog>
-
         {groupSendDialog && (() => {
           const { groupUrl, message, clientName } = groupSendDialog
           return (

@@ -2636,9 +2636,15 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                   <Typography sx={{ fontSize: '0.85rem', fontWeight: 700 }}>{title}</Typography>
                   <Typography sx={{ fontSize: '0.7rem', color: DS.orangeDim, mt: 0.3 }}>{sendConfirmItem.clientName}</Typography>
                 </Box>
-                <Typography sx={{ fontSize: '0.75rem', color: 'rgba(247,247,245,0.55)', lineHeight: 1.5 }}>
-                  📤 Isso vai gerar o link do portal do cliente e registrar a data de envio.
-                </Typography>
+                {states[sendConfirmItem.id]?.linkMaterial ? (
+                  <Typography sx={{ fontSize: '0.75rem', color: 'rgba(247,247,245,0.55)', lineHeight: 1.5, wordBreak: 'break-all' }}>
+                    📤 Copia a mensagem padrão com o link do material ({states[sendConfirmItem.id]?.linkMaterial}) e marca como Enviado ao cliente. Cole no WhatsApp do cliente.
+                  </Typography>
+                ) : (
+                  <Typography sx={{ fontSize: '0.75rem', color: DS.redSoft, lineHeight: 1.5 }}>
+                    Falta o link do material neste card — o editor cola o link do vídeo/arte final antes do envio.
+                  </Typography>
+                )}
                 <Box onClick={() => setSendIsTraffic(v => !v)} sx={{
                   display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer',
                   p: 1.5, borderRadius: 2,
@@ -2665,10 +2671,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
           <Button size="small" onClick={() => setSendConfirmItem(null)}>Cancelar</Button>
-          <Button size="small" variant="contained" onClick={handleConfirmSendToClient}
+          <Button size="small" variant="contained" onClick={handleConfirmSendToClient} disabled={!sendConfirmItem || !states[sendConfirmItem.id]?.linkMaterial}
             startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
             sx={{ background: BRAND.whatsapp, color: '#fff', fontWeight: 800, '&:hover': { filter: 'brightness(1.1)' } }}>
-            Enviar pelo WhatsApp
+            Copiar mensagem e enviar
           </Button>
         </DialogActions>
       </Dialog>
