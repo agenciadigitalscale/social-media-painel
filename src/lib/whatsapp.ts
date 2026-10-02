@@ -11,19 +11,28 @@ export function formatPhoneForWhatsApp(phone: string): string {
   return cleaned.startsWith('55') ? cleaned : `55${cleaned}`
 }
 
-export function generateApprovalUrl(token: string, itemId: number): string {
-  return `${window.location.origin}/c/${token}/${itemId}`
+/** Aviso que vai no fim de toda mensagem de aprovação (2026-10-02). Só texto — não há timer. */
+export const AVISO_24H = '⚠️ Caso não haja retorno em até 24 horas, o conteúdo será considerado aprovado automaticamente e seguirá normalmente para a próxima etapa.'
+
+/**
+ * A mensagem de aprovação do cliente — a ÚNICA que monta esse texto. Um
+ * conteúdo ou vários (envio em lote), sempre com o link do material de cada um.
+ */
+export function mensagemDeAprovacao(clientName: string, itens: { titulo: string; link: string }[], isTraffic?: boolean): string {
+  const trafego = isTraffic ? '\n⚡ *Este criativo será utilizado em tráfego pago (anúncios).*\n' : ''
+  // A linha do download não é enfeite: o pedido "manda o vídeo aberto" chegava
+  // DEPOIS de o cliente já ter aberto o link. Dizer de antemão encerra a ida e volta.
+  const rodape = `No link você também pode baixar o arquivo em alta qualidade.\n\nAguardamos seu retorno! 🙏\n\n${AVISO_24H}`
+  if (itens.length === 1) {
+    const [x] = itens
+    return `Olá, ${clientName}! 😊\n\n*${x.titulo}* está pronto para aprovação.${trafego}\n\nVisualize e nos dê seu feedback pelo link:\n${x.link}\n\n${rodape}`
+  }
+  const lista = itens.map(x => `• *${x.titulo}*\n${x.link}`).join('\n\n')
+  return `Olá, ${clientName}! 😊\n\n${itens.length} conteúdos estão prontos para aprovação.${trafego}\n\nVisualize e nos dê seu feedback pelos links:\n\n${lista}\n\n${rodape}`
 }
 
 export function generateApprovalMessage(clientName: string, contentTitle: string, approvalUrl: string, isTraffic?: boolean): string {
-  const trafficLine = isTraffic
-    ? '\n⚡ *Este criativo será utilizado em tráfego pago (anúncios).*\n'
-    : ''
-  // A linha do download não é enfeite: o pedido "manda o vídeo aberto" chegava
-  // DEPOIS de o cliente já ter aberto o link, e alguém da equipe ia buscar o
-  // arquivo no Drive à mão. Dizer de antemão que dá para baixar ali mesmo
-  // encerra a ida e volta antes de ela começar.
-  return `Olá, ${clientName}! 😊\n\n*${contentTitle}* está pronto para aprovação.${trafficLine}\n\nVisualize e nos dê seu feedback pelo link:\n${approvalUrl}\n\n_No link você também pode baixar o arquivo em alta qualidade._\n\nAguardamos seu retorno! 🙏`
+  return mensagemDeAprovacao(clientName, [{ titulo: contentTitle, link: approvalUrl }], isTraffic)
 }
 
 /** Nome do cliente que guarda o link do grupo de revisão interna da agência */
@@ -87,13 +96,6 @@ export function checkDriveFilePublic(fileId: string): Promise<boolean> {
 export function buildWhatsAppUrl(phone: string, message: string): string {
   const formatted = formatPhoneForWhatsApp(phone)
   return `https://wa.me/${formatted}?text=${encodeURIComponent(message)}`
-}
-
-/** Abre WhatsApp individual com mensagem pré-preenchida */
-export function openWhatsAppApproval(phone: string, clientName: string, contentTitle: string, approvalUrl: string, isTraffic?: boolean): void {
-  const message = generateApprovalMessage(clientName, contentTitle, approvalUrl, isTraffic)
-  const url = buildWhatsAppUrl(phone, message)
-  window.open(url, '_blank', 'noopener,noreferrer')
 }
 
 /** Copia mensagem para clipboard e abre o grupo — retorna true se copiou */

@@ -55,7 +55,8 @@ export default function PageHero({ title, subtitle, icon, badge, actions, compac
       <Box sx={{ minWidth: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           <Typography sx={{
-            fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.05, color: DS.t1,
+            fontFamily: DS.fontDisplay, fontWeight: 400, textTransform: 'uppercase',
+            letterSpacing: '0.01em', lineHeight: 1.05, color: DS.t1,
             fontSize: compact
               ? { xs: '1.15rem', md: '1.4rem', xl: '1.7rem' }
               : { xs: '1.5rem', md: '1.9rem', xl: '2.3rem' },

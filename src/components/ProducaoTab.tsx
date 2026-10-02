@@ -39,6 +39,7 @@ import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Roteir
 import { STATUS_CONFIG, isOpenStatus, isPreClientStatus, statusRank, STATUS_ORDER } from '../types'
 import { clickable } from '../shared/a11y'
 import { BRAND, DS, typeColor, ctaGradient } from '../theme'
+import { linkDoMaterial } from '../lib/linkMaterial'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
 import { syncToCloud, forceSync, onSyncStatus } from '../lib/storage'
 import { NAME_MAP } from '../lib/users'
@@ -533,6 +534,16 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const handleOpenQuickEdit = useCallback((id: number) => {
     setQuickEditId(id)
   }, [])
+
+  // Pedido de envio ao cliente — a ÚNICA porta do quadro (botão do card, arrastar
+  // para "Enviado", card aberto e Inbox). Sem link do material, abre a edição do
+  // card (o campo "Link do criativo" que já existe) em vez de mandar mensagem
+  // quebrada; com link, abre a confirmação que chama a rotina central do App.
+  const [pedirLinkAviso, setPedirLinkAviso] = useState(false)
+  const pedirEnvio = useCallback((id: number, clientName: string) => {
+    if (!linkDoMaterial(states[id])) { setQuickEditId(id); setPedirLinkAviso(true); return }
+    setSendIsTraffic(false); setSendConfirmItem({ id, clientName })
+  }, [states])
 
   useEffect(() => { setBulkSelected(new Set()); setBulkMode(false) }, [subTab])
 
@@ -1858,7 +1869,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       boardKey={board.key}
                       editorDe={editorDe}
                       onTrocarEditor={areaAtual ? abrirTrocaEditor : undefined}
-                      onSendToClient={onSendToClient ? (id, cn) => { setSendIsTraffic(false); setSendConfirmItem({ id, clientName: cn }) } : undefined}
+                      onSendToClient={onSendToClient ? pedirEnvio : undefined}
                       onSendToReview={isSocio(currentUser) || cargoDe(currentUser) === 'social' ? onSendToReview : undefined}
                       onRemindClient={onRemindClient}
                       onReadyDrop={handleReadyDrop}
@@ -1868,7 +1879,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       onOpenReview={(itemId, fileId) => setReviewModal({ itemId, fileId })}
                       onImpedimento={onUpdateState ? (id, texto) => onUpdateState(id, { impedimento: texto ?? '' }) : undefined}
                       onLinkMaterial={onUpdateState ? (id, link) => onUpdateState(id, { linkMaterial: link }) : undefined}
-                      onMensagemCopiada={isSocio(currentUser) || cargoDe(currentUser) === 'social' ? (id) => onAppendHistory?.(id, 'Mensagem para o cliente copiada') : undefined}
+                      onEnviarCliente={onSendToClient && (isSocio(currentUser) || cargoDe(currentUser) === 'social') ? pedirEnvio : undefined}
                     />
                   ) : null
                 ))}
@@ -1897,7 +1908,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                   onIgnore={handleIgnoreVideo}
                   onIgnoreAll={handleIgnoreAll}
                   onRemindLater={handleRemindLater}
-                  onSendToClient={onSendToClient}
+                  onSendToClient={onSendToClient ? pedirEnvio : undefined}
                 />
               </Box>
             </Box>
@@ -2565,6 +2576,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               now={new Date()}
               onStatusChange={onStatusChange}
               onUpdate={onUpdateState ?? (() => {})}
+              onSendToClient={onSendToClient ? pedirEnvio : undefined}
               onDelete={id => { onDelete?.(id); setDrawerCardId(null) }}
               onEdit={onEdit}
               onDuplicate={onDuplicate}
@@ -2636,9 +2648,9 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                   <Typography sx={{ fontSize: '0.85rem', fontWeight: 700 }}>{title}</Typography>
                   <Typography sx={{ fontSize: '0.7rem', color: DS.orangeDim, mt: 0.3 }}>{sendConfirmItem.clientName}</Typography>
                 </Box>
-                {states[sendConfirmItem.id]?.linkMaterial ? (
+                {linkDoMaterial(states[sendConfirmItem.id]) ? (
                   <Typography sx={{ fontSize: '0.75rem', color: 'rgba(247,247,245,0.55)', lineHeight: 1.5, wordBreak: 'break-all' }}>
-                    📤 Copia a mensagem padrão com o link do material ({states[sendConfirmItem.id]?.linkMaterial}) e marca como Enviado ao cliente. Cole no WhatsApp do cliente.
+                    📤 Copia a mensagem padrão com o link do material ({linkDoMaterial(states[sendConfirmItem.id])}) e marca como Enviado ao cliente. Cole no WhatsApp do cliente.
                   </Typography>
                 ) : (
                   <Typography sx={{ fontSize: '0.75rem', color: DS.redSoft, lineHeight: 1.5 }}>
@@ -2671,7 +2683,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         </DialogContent>
         <DialogActions sx={{ px: 2, pb: 2, gap: 1 }}>
           <Button size="small" onClick={() => setSendConfirmItem(null)}>Cancelar</Button>
-          <Button size="small" variant="contained" onClick={handleConfirmSendToClient} disabled={!sendConfirmItem || !states[sendConfirmItem.id]?.linkMaterial}
+          <Button size="small" variant="contained" onClick={handleConfirmSendToClient} disabled={!sendConfirmItem || !linkDoMaterial(states[sendConfirmItem.id])}
             startIcon={<WhatsAppIcon sx={{ fontSize: 14 }} />}
             sx={{ background: BRAND.whatsapp, color: '#fff', fontWeight: 800, '&:hover': { filter: 'brightness(1.1)' } }}>
             Copiar mensagem e enviar
@@ -2802,6 +2814,13 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           />
         )
       })()}
+
+      <Snackbar open={pedirLinkAviso} autoHideDuration={6000} onClose={() => setPedirLinkAviso(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert severity="warning" variant="outlined" onClose={() => setPedirLinkAviso(false)}
+          sx={{ bgcolor: DS.surface, fontSize: '0.74rem' }}>
+          Falta o link do material. Cole em "Link do criativo", salve e clique em enviar de novo.
+        </Alert>
+      </Snackbar>
 
       <Snackbar
         open={!!inboxToast}

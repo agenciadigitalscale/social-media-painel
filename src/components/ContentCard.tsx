@@ -37,6 +37,7 @@ import StatusChip from './StatusChip'
 import PublishChecklist from './PublishChecklist'
 import EditItemDialog from './EditItemDialog'
 import theme, { BRAND, DS, typeColor } from '../theme'
+import { linkDoMaterial, normalizarLinkMaterial } from '../lib/linkMaterial'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import InstagramIcon from '@mui/icons-material/Instagram'
 import { ClientContextStore, buildClientPrompt } from '../lib/clientContext'
@@ -75,6 +76,8 @@ interface Props {
   now?: Date
   onStatusChange: (id: number, s: Status) => void
   onUpdate: (id: number, patch: Partial<ItemState>) => void
+  /** Pedido de envio ao cliente — a rotina central (só o quadro de Produções passa). */
+  onSendToClient?: (id: number, clientName: string) => void
   onDelete?: (id: number) => void
   onEdit?: (id: number, patch: ItemEditPatch) => void
   onDuplicate?: (id: number) => void
@@ -125,9 +128,13 @@ function AnchoredFeedback({ text, color = DS.redSoft }: { text: string; color?: 
   )
 }
 
-export default function ContentCard({ item, state, now = new Date(), onStatusChange, onUpdate, onDelete, onEdit, onDuplicate, clientColor, clientHashtags, onSaveHashtags, selected, onSelect, captionTemplates = [], onSaveTemplates, currentUser = 'Equipe', igStatus, igScheduledAt, onScheduleIG, staggerIndex = 0 }: Props) {
+export default function ContentCard({ item, state, now = new Date(), onStatusChange, onUpdate, onSendToClient, onDelete, onEdit, onDuplicate, clientColor, clientHashtags, onSaveHashtags, selected, onSelect, captionTemplates = [], onSaveTemplates, currentUser = 'Equipe', igStatus, igScheduledAt, onScheduleIG, staggerIndex = 0 }: Props) {
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
   const mediaLinks = useMediaLinks()
+  // "Link do criativo" = o link do material, a fonte única (lib/linkMaterial).
+  // O que se digita fica em `linkMaterial`; card antigo mostra o `link` legado.
+  const materialLink = linkDoMaterial(state)
+  const materialDigitado = state.linkMaterial ?? state.link ?? ''
   const [open, setOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [checklistOpen, setChecklistOpen] = useState(false)
@@ -139,10 +146,6 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   const [hashtagsCopied, setHashtagsCopied] = useState(false)
   const [linkDialogOpen, setLinkDialogOpen] = useState(false)
   const [linkInput, setLinkInput] = useState('')
-  const [shareOpen, setShareOpen]     = useState(false)
-  const [shareUrl, setShareUrl]       = useState('')
-  const [shareLoading, setShareLoading] = useState(false)
-  const [shareCopied, setShareCopied] = useState(false)
   const [commentText, setCommentText] = useState('')
   const [aiOpen, setAiOpen] = useState(false)
   const [aiCaptionLoading, setAiCaptionLoading] = useState(false)
@@ -301,32 +304,19 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
       `${item.tp} · ${item.c}`,
       `📅 ${item.dt.toLocaleDateString('pt-BR', { day:'2-digit', month:'long' })}`,
       `Status: ${STATUS_LABEL[state.status]}`,
-      state.link ? `🔗 ${state.link}` : '',
+      materialLink ? `🔗 ${materialLink}` : '',
       state.caption ? `\n_${state.caption.slice(0, 200)}${state.caption.length > 200 ? '...' : ''}_` : '',
     ].filter(Boolean).join('\n')
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener')
   }
 
-  const handleShare = async () => {
-    if (!state.link) {
-      setLinkInput(state.link ?? '')
+  const handleShare = () => {
+    if (!materialLink) {
+      setLinkInput(materialDigitado)
       setLinkDialogOpen(true)
       return
     }
-    setShareLoading(true)
-    try {
-      const res = await fetch('/api/portal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'generate', clientName: item.c }),
-      }).then(r => r.json())
-      if (res.ok) {
-        setShareUrl(`${window.location.origin}/c/${res.token}/${item.i}`)
-        setShareOpen(true)
-      }
-    } finally {
-      setShareLoading(false)
-    }
+    onSendToClient?.(item.i, item.c)
   }
 
   const isLate = statusBefore(state.status, 3) && item.dt < new Date()
@@ -456,8 +446,8 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
   }
 
   const copyLink = () => {
-    if (!state.link) return
-    navigator.clipboard.writeText(state.link)
+    if (!materialLink) return
+    navigator.clipboard.writeText(materialLink)
     setLinkCopied(true)
   }
 
@@ -615,7 +605,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                   />
                 )}
                 {item.custom && <Typography component="span" sx={{ color: 'info.main', fontSize: '0.65rem' }}>· roteiro</Typography>}
-                {state.link && <Typography component="span" sx={{ color: 'success.main', fontSize: '0.65rem' }}>🔗</Typography>}
+                {materialLink && <Typography component="span" sx={{ color: 'success.main', fontSize: '0.65rem' }}>🔗</Typography>}
                 {state.caption && <Typography component="span" sx={{ color: 'info.main', fontSize: '0.65rem' }}>✍</Typography>}
                 {tags.length > 0 && <Typography component="span" sx={{ color: 'rgba(255,122,0,0.6)', fontSize: '0.65rem' }}>#</Typography>}
               </Box>
@@ -631,46 +621,42 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
                 </Box>
               )}
             </Box>
-            <Tooltip title={state.link ? 'Trocar link do criativo' : 'Colar link do criativo (aparece no portal)'}>
+            <Tooltip title={materialLink ? 'Trocar link do criativo' : 'Colar link do criativo'}>
               <IconButton
                 size="small"
-                onClick={e => { e.stopPropagation(); setLinkInput(state.link ?? ''); setLinkDialogOpen(true) }}
+                onClick={e => { e.stopPropagation(); setLinkInput(materialDigitado); setLinkDialogOpen(true) }}
                 sx={{
                   flexShrink: 0, p: 0.4,
-                  bgcolor: state.link ? 'rgba(32,216,120,0.12)' : 'rgba(247,247,245,0.04)',
-                  '&:hover': { bgcolor: state.link ? 'rgba(32,216,120,0.2)' : 'rgba(247,247,245,0.08)' },
+                  bgcolor: materialLink ? 'rgba(32,216,120,0.12)' : 'rgba(247,247,245,0.04)',
+                  '&:hover': { bgcolor: materialLink ? 'rgba(32,216,120,0.2)' : 'rgba(247,247,245,0.08)' },
                 }}
               >
-                <LinkIcon sx={{ fontSize: 14, color: state.link ? 'success.main' : 'text.disabled' }} />
+                <LinkIcon sx={{ fontSize: 14, color: materialLink ? 'success.main' : 'text.disabled' }} />
               </IconButton>
             </Tooltip>
 
-            {/* Botão enviar link pro cliente — abre dialog com URL de aprovação */}
-            <Tooltip title={state.link ? 'Enviar link de aprovação pro cliente' : 'Adicione o criativo antes de compartilhar'}>
-              <span>
+            {/* Enviar ao cliente — a rotina central (só onde o quadro passa onSendToClient) */}
+            {onSendToClient && (
+              <Tooltip title={materialLink ? 'Enviar ao cliente (mensagem padrão com o link do material)' : 'Cole o link do criativo antes de enviar'}>
                 <IconButton
                   size="small"
-                  disabled={!state.link || shareLoading}
                   onClick={e => { e.stopPropagation(); handleShare() }}
                   sx={{
                     flexShrink: 0, p: 0.4,
-                    bgcolor: state.link ? 'rgba(255,122,0,0.12)' : 'rgba(247,247,245,0.04)',
-                    '&:hover': { bgcolor: state.link ? 'rgba(255,122,0,0.22)' : undefined },
+                    bgcolor: materialLink ? 'rgba(255,122,0,0.12)' : 'rgba(247,247,245,0.04)',
+                    '&:hover': { bgcolor: materialLink ? 'rgba(255,122,0,0.22)' : 'rgba(247,247,245,0.08)' },
                   }}
                 >
-                  {shareLoading
-                    ? <CircularProgress size={12} sx={{ color: 'info.main' }} />
-                    : <ShareIcon sx={{ fontSize: 14, color: state.link ? 'info.main' : 'text.disabled' }} />
-                  }
+                  <ShareIcon sx={{ fontSize: 14, color: materialLink ? 'info.main' : 'text.disabled' }} />
                 </IconButton>
-              </span>
-            </Tooltip>
+              </Tooltip>
+            )}
 
-            {state?.link && (
+            {materialLink && (
               <Tooltip title="Abrir link">
                 <IconButton
                   size="small"
-                  onClick={e => { e.stopPropagation(); window.open(state.link, '_blank', 'noopener') }}
+                  onClick={e => { e.stopPropagation(); window.open(materialLink, '_blank', 'noopener') }}
                   sx={{ color: 'rgba(247,247,245,0.3)', p: 0.3, flexShrink: 0, '&:hover': { color: DS.accent } }}
                 >
                   <OpenInNewIcon sx={{ fontSize: 14 }} />
@@ -825,20 +811,22 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             {/* Link Drive */}
             <Box>
               <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 0.4, display: 'block', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Link do criativo <Typography component="span" sx={{ fontSize: '0.52rem', color: 'rgba(255,122,0,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>· aparece no portal do cliente</Typography>
+                Link do criativo <Typography component="span" sx={{ fontSize: '0.52rem', color: 'rgba(255,122,0,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>· vai na mensagem do cliente</Typography>
               </Typography>
               <Box sx={{ display: 'flex', gap: 0.5 }}>
                 <TextField
                   size="small" fullWidth
                   placeholder="https://drive.google.com/..."
-                  value={state.link}
-                  onChange={e => onUpdate(item.i, { link: e.target.value })}
+                  error={!!materialDigitado.trim() && !materialLink}
+                  helperText={materialDigitado.trim() && !materialLink ? 'Isso não é um link — cole o endereço (https://…)' : undefined}
+                  value={materialDigitado}
+                  onChange={e => onUpdate(item.i, { linkMaterial: e.target.value.trim() })}
                   slotProps={{ input: { startAdornment: <LinkIcon sx={{ mr: 0.5, fontSize: 15, color: 'text.disabled', flexShrink: 0 }} /> } }}
                 />
-                {state.link && (
+                {materialLink && (
                   <>
                     <Tooltip title="Abrir no Drive">
-                      <IconButton size="small" component="a" href={state.link} target="_blank" rel="noopener noreferrer" sx={{ bgcolor: 'rgba(32,216,120,0.1)', flexShrink: 0 }}>
+                      <IconButton size="small" component="a" href={materialLink} target="_blank" rel="noopener noreferrer" sx={{ bgcolor: 'rgba(32,216,120,0.1)', flexShrink: 0 }}>
                         <OpenInNewIcon sx={{ fontSize: 14, color: 'success.main' }} />
                       </IconButton>
                     </Tooltip>
@@ -1140,19 +1128,21 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           {/* Link do criativo */}
           <Box>
             <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.6, display: 'block', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
-              Link do criativo <Typography component="span" sx={{ fontSize: '0.55rem', color: 'rgba(255,122,0,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>· aparece no portal do cliente</Typography>
+              Link do criativo <Typography component="span" sx={{ fontSize: '0.55rem', color: 'rgba(255,122,0,0.7)', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>· vai na mensagem do cliente</Typography>
             </Typography>
             <Box sx={{ display: 'flex', gap: 0.8 }}>
               <TextField fullWidth
                 placeholder="https://drive.google.com/..."
-                value={state.link}
-                onChange={e => onUpdate(item.i, { link: e.target.value })}
+                  error={!!materialDigitado.trim() && !materialLink}
+                  helperText={materialDigitado.trim() && !materialLink ? 'Isso não é um link — cole o endereço (https://…)' : undefined}
+                value={materialDigitado}
+                onChange={e => onUpdate(item.i, { linkMaterial: e.target.value.trim() })}
                 slotProps={{ input: { startAdornment: <LinkIcon sx={{ mr: 0.8, fontSize: 16, color: 'text.disabled', flexShrink: 0 }} /> } }}
               />
-              {state.link && (
+              {materialLink && (
                 <>
                   <Tooltip title="Abrir no Drive">
-                    <IconButton component="a" href={state.link} target="_blank" rel="noopener noreferrer" sx={{ bgcolor: 'rgba(32,216,120,0.1)', flexShrink: 0 }}>
+                    <IconButton component="a" href={materialLink} target="_blank" rel="noopener noreferrer" sx={{ bgcolor: 'rgba(32,216,120,0.1)', flexShrink: 0 }}>
                       <OpenInNewIcon sx={{ fontSize: 16, color: 'success.main' }} />
                     </IconButton>
                   </Tooltip>
@@ -1839,19 +1829,14 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               WhatsApp
             </Button>
           </Tooltip>
-          <Tooltip title={state.link ? 'Gerar link de aprovação do criativo para o cliente' : 'Adicione um link do criativo primeiro'}>
-            <span>
-              <Button
-                size="small"
-                startIcon={shareLoading ? <CircularProgress size={12} color="inherit" /> : <ShareIcon sx={{ fontSize: 15 }} />}
-                onClick={handleShare}
-                disabled={shareLoading}
-                sx={{ color: 'info.main', '&:hover': { bgcolor: 'rgba(255,122,0,0.08)' } }}
-              >
-                {state.link ? 'Compartilhar' : 'Sem criativo'}
+          {onSendToClient && (
+            <Tooltip title={materialLink ? 'Enviar ao cliente (mensagem padrão com o link do material)' : 'Cole o link do criativo antes de enviar'}>
+              <Button size="small" startIcon={<ShareIcon sx={{ fontSize: 15 }} />} onClick={handleShare}
+                sx={{ color: 'info.main', '&:hover': { bgcolor: 'rgba(255,122,0,0.08)' } }}>
+                {materialLink ? 'Enviar ao cliente' : 'Sem link do criativo'}
               </Button>
-            </span>
-          </Tooltip>
+            </Tooltip>
+          )}
           {onDelete && (
             <Button size="small" startIcon={<DeleteIcon />} onClick={handleDelete}
               color={confirmDelete ? 'error' : 'inherit'} sx={{ ml: 'auto' }}
@@ -1909,24 +1894,24 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               </Button>
             </Box>
           )}
-          {state.link && !linkInput && (
+          {materialLink && !linkInput && (
             <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled', mt: 0.8 }}>
-              Link atual: <span style={{ color: DS.green }}>{state.link.slice(0, 60)}...</span>
+              Link atual: <span style={{ color: DS.green }}>{materialLink.slice(0, 60)}...</span>
             </Typography>
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-          {state.link && (
-            <Button size="small" color="error" onClick={() => { onUpdate(item.i, { link: '' }); setLinkDialogOpen(false) }}
+          {materialLink && (
+            <Button size="small" color="error" onClick={() => { onUpdate(item.i, { linkMaterial: '' }); setLinkDialogOpen(false) }}
               sx={{ fontSize: '0.62rem', mr: 'auto' }}>
               Remover link
             </Button>
           )}
           <Button onClick={() => setLinkDialogOpen(false)} size="small" color="inherit">Cancelar</Button>
           <Button
-            onClick={() => { onUpdate(item.i, { link: linkInput.trim() }); setLinkDialogOpen(false) }}
+            onClick={() => { const ok = normalizarLinkMaterial(linkInput); if (!ok) return; onUpdate(item.i, { linkMaterial: ok }); setLinkDialogOpen(false) }}
             size="small" variant="contained" color="success"
-            disabled={!linkInput.trim()}
+            disabled={!normalizarLinkMaterial(linkInput)}
             startIcon={<LinkIcon sx={{ fontSize: 14 }} />}
             sx={{ fontWeight: 700, minWidth: 100 }}
           >
@@ -1944,68 +1929,6 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
       <Snackbar open={hashtagsCopied} autoHideDuration={2000} onClose={() => setHashtagsCopied(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert severity="success" variant="filled" sx={{ fontSize: '0.75rem' }}>Hashtags copiadas!</Alert>
       </Snackbar>
-      <Snackbar open={shareCopied} autoHideDuration={2500} onClose={() => setShareCopied(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-        <Alert severity="info" variant="filled" sx={{ fontSize: '0.75rem' }}>Link de aprovação copiado! Envie para o cliente.</Alert>
-      </Snackbar>
-
-      {/* ── Dialog: compartilhar link de aprovação ── */}
-      <Dialog
-        open={shareOpen}
-        onClose={() => setShareOpen(false)}
-        maxWidth="sm" fullWidth
-        onClick={e => e.stopPropagation()}
-        PaperProps={{ sx: { bgcolor: 'background.paper', border: '1px solid rgba(255,122,0,0.25)', borderRadius: 3 } }}
-      >
-        <DialogTitle sx={{ pb: 0.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ShareIcon sx={{ color: 'info.main', fontSize: 18 }} />
-            <Box>
-              <Typography fontWeight={700} sx={{ fontSize: '0.9rem' }}>Link de aprovação do criativo</Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                {state.title || item.n} · {item.c}
-              </Typography>
-            </Box>
-          </Box>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 1 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.2, fontSize: '0.68rem', lineHeight: 1.6 }}>
-            Envie este link para o cliente. Ele abrirá o criativo em alta resolução com botões para <strong>aprovar</strong> ou <strong>solicitar alteração</strong>. O status do card será atualizado automaticamente.
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center' }}>
-            <TextField
-              fullWidth size="small" value={shareUrl}
-              slotProps={{ input: { readOnly: true, sx: { fontSize: '0.72rem', fontFamily: 'monospace', color: 'info.main' } } }}
-              onClick={e => (e.target as HTMLInputElement).select()}
-            />
-            <Tooltip title={shareCopied ? 'Copiado!' : 'Copiar link'}>
-              <IconButton
-                onClick={() => { navigator.clipboard.writeText(shareUrl); setShareCopied(true) }}
-                sx={{ bgcolor: 'rgba(255,122,0,0.1)', flexShrink: 0, '&:hover': { bgcolor: 'rgba(255,122,0,0.2)' } }}
-              >
-                <ContentCopyIcon sx={{ fontSize: 16, color: 'info.main' }} />
-              </IconButton>
-            </Tooltip>
-          </Box>
-          <Button
-            size="small" component="a" href={shareUrl} target="_blank" rel="noopener"
-            startIcon={<OpenInNewIcon sx={{ fontSize: 12 }} />}
-            sx={{ mt: 1, fontSize: '0.6rem', color: 'text.secondary', py: 0.2, px: 0.8, minHeight: 0 }}
-          >
-            Testar link
-          </Button>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setShareOpen(false)} size="small" color="inherit">Fechar</Button>
-          <Button
-            variant="contained" size="small"
-            startIcon={<ContentCopyIcon sx={{ fontSize: 14 }} />}
-            onClick={() => { navigator.clipboard.writeText(shareUrl); setShareCopied(true); setShareOpen(false) }}
-            sx={{ fontWeight: 700 }}
-          >
-            Copiar e fechar
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   )
 }

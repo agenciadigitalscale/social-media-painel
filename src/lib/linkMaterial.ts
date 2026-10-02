@@ -1,5 +1,4 @@
-import type { ContentItem, ItemState } from '../types'
-import { generateApprovalMessage } from './whatsapp'
+import type { ItemState } from '../types'
 
 /** Link colado à mão: aceita sem protocolo ("drive.google.com/…") e recusa texto solto. */
 export function normalizarLinkMaterial(texto: string): string | null {
@@ -40,7 +39,19 @@ export async function copiarTexto(texto: string): Promise<boolean> {
   }
 }
 
-/** A mensagem padrão do cliente, com o link que o editor colou no card. */
-export function mensagemDoMaterial(item: ContentItem, state: ItemState, link: string): string {
-  return generateApprovalMessage(item.c, state.title || item.n, link, state.isTraffic)
+/**
+ * O link do material — a FONTE ÚNICA (2026-10-02). Card externo ("Colar link do
+ * material"), "Link do criativo" (card aberto e edição) e a mensagem do cliente
+ * leem daqui; toda escrita vai para `linkMaterial`.
+ *
+ * - `linkMaterial` definido (mesmo vazio) MANDA: vazio = alguém removeu o link.
+ * - Card antigo sem `linkMaterial` cai no `link` (o campo que o "Link do
+ *   criativo" gravava antes) — o link que já existia não some.
+ * - Só vale se for link de verdade: nome de arquivo colado no campo
+ *   ("Cliente - título [K5SY].mp4") nunca vira o link da mensagem.
+ */
+export function linkDoMaterial(state: Pick<ItemState, 'linkMaterial' | 'link'> | null | undefined): string {
+  if (!state) return ''
+  const bruto = state.linkMaterial !== undefined ? state.linkMaterial : state.link
+  return normalizarLinkMaterial(bruto ?? '') ?? ''
 }

@@ -444,12 +444,9 @@ export default function ClientsTab({
     <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 
       {layoutView === 'visao' && (<>
-        <Box>
-          <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.72rem' }, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: DS.t2 }}>
-            {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
-          </Typography>
-          <Typography sx={{ fontSize: { xs: '1.5rem', md: '1.75rem', xl: '2rem' }, fontWeight: 800, color: DS.t1, letterSpacing: '-0.03em' }}>Clientes</Typography>
-        </Box>
+        <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.72rem' }, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: DS.accent }}>
+          {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+        </Typography>
         <VisaoOperacional
           clientes={clientStats}
           items={items} states={states} carteira={carteira} padroes={padroes}

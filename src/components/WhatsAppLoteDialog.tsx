@@ -10,11 +10,15 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import SendIcon from '@mui/icons-material/Send'
 import type { Client, ContentItem, ItemState } from '../types'
 import { BRAND, DS } from '../theme'
+import { linkDoMaterial } from '../lib/linkMaterial'
+import { mensagemDeAprovacao } from '../lib/whatsapp'
 
 // ── Types ────────────────────────────────────────────────────
 export interface LoteItem {
   id: number
   title: string
+  /** Link do material (fonte única). Vazio = fica de fora do envio. */
+  link: string
 }
 
 export interface LoteClient {
@@ -31,24 +35,13 @@ interface Props {
 }
 
 // ── Helpers ──────────────────────────────────────────────────
+// A prévia é a MESMA mensagem que a rotina central do App vai copiar.
 function buildPreviewMessage(clientName: string, selectedItems: LoteItem[]): string {
-  if (selectedItems.length === 0) return ''
-  if (selectedItems.length === 1) {
-    return (
-      `Olá, ${clientName}! 😊\n\n` +
-      `*${selectedItems[0].title}* está pronto para aprovação.\n\n` +
-      `Visualize e nos dê seu feedback pelo link:\n` +
-      `[link do portal do cliente]\n\n` +
-      `Aguardamos seu retorno! 🙏`
-    )
-  }
-  const lines = selectedItems.map(it => `• *${it.title}*\n  [link do portal]`).join('\n\n')
-  return (
-    `Olá, ${clientName}! 😊\n\n` +
-    `${selectedItems.length} criativos prontos para aprovação:\n\n` +
-    `${lines}\n\n` +
-    `Acesse os links acima e nos dê seu feedback. Aguardamos! 🙏`
-  )
+  const comLink = selectedItems.filter(it => it.link)
+  if (comLink.length === 0) return selectedItems.length ? 'Nenhum conteúdo selecionado tem link do material — cole o link no card antes de enviar.' : ''
+  const msg = mensagemDeAprovacao(clientName, comLink.map(it => ({ titulo: it.title, link: it.link })))
+  const fora = selectedItems.length - comLink.length
+  return fora ? `${msg}\n\n(${fora} sem link do material ficam de fora)` : msg
 }
 
 // ── ClientRow ────────────────────────────────────────────────
@@ -395,7 +388,7 @@ export function buildLoteClients(
     const st = states[item.i]?.status ?? item.s
     if (!statusFilter.includes(st)) return
     if (!map[item.c]) map[item.c] = []
-    map[item.c].push({ id: item.i, title: states[item.i]?.title || item.n })
+    map[item.c].push({ id: item.i, title: states[item.i]?.title || item.n, link: linkDoMaterial(states[item.i]) })
   })
   return Object.entries(map).map(([name, its]) => ({
     name,

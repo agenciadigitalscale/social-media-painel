@@ -19,7 +19,7 @@ export function SiteEmbutido({ titulo, subtitulo, url }: { titulo: string; subti
     <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.2, height: '100%', minHeight: 'calc(100vh - 110px)' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
         <Box sx={{ flex: 1, minWidth: 200 }}>
-          <Typography sx={{ fontSize: { xs: '1.3rem', xl: '1.6rem' }, fontWeight: 800, color: DS.t1, letterSpacing: '-0.02em' }}>{titulo}</Typography>
+          <Typography sx={{ fontFamily: DS.fontDisplay, textTransform: 'uppercase', fontSize: { xs: '1.7rem', xl: '2.2rem' }, fontWeight: 400, color: DS.t1, letterSpacing: '0.01em', lineHeight: 1.05 }}>{titulo}</Typography>
           <Typography sx={{ fontSize: { xs: '0.78rem', xl: '0.86rem' }, color: DS.t2 }}>{subtitulo}</Typography>
         </Box>
         <Button variant="contained" startIcon={<OpenInNewIcon />} href={url} target="_blank" rel="noopener noreferrer" sx={{ fontWeight: 800 }}>

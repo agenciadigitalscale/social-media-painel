@@ -10,7 +10,7 @@ import type { ContentItem, ContentType, ItemEditPatch, ItemState, Status } from 
 import { STATUS_CONFIG } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { DS, ctaGradient } from '../theme'
-import { normalizarLinkMaterial } from '../lib/linkMaterial'
+import { linkDoMaterial, normalizarLinkMaterial } from '../lib/linkMaterial'
 
 const fieldSx = {
   '& .MuiInputBase-input': { fontSize: '0.8rem' },
@@ -49,9 +49,11 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
   const [deliveryStr, setDeliveryStr] = useState('')
   const [horaStr, setHoraStr]       = useState('')
   const [status, setStatus]         = useState<Status>(0)
-  const [link, setLink]             = useState('')
   const [footageLink, setFootageLink] = useState('')
+  // Um campo só para o link do material (fonte única: lib/linkMaterial).
   const [linkMaterial, setLinkMaterial] = useState('')
+  const [linkInicial, setLinkInicial] = useState('')
+  const [linkInvalido, setLinkInvalido] = useState(false)
   const [caption, setCaption]       = useState('')
   const [notes, setNotes]           = useState('')
   const [responsible, setResponsible] = useState('')
@@ -70,9 +72,8 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
       setDeliveryStr(state.deliveryDate ? new Date(state.deliveryDate).toISOString().slice(0, 10) : '')
       setHoraStr(state.horaPostagem || '')
       setStatus(state.status)
-      setLink(state.link || '')
       setFootageLink(state.footageLink || '')
-      setLinkMaterial(state.linkMaterial || '')
+      setLinkMaterial(linkDoMaterial(state)); setLinkInicial(linkDoMaterial(state)); setLinkInvalido(false)
       setCaption(state.caption || '')
       setNotes(state.notes || '')
       setResponsible(state.responsible || '')
@@ -83,7 +84,6 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
       setDeliveryStr('')
       setHoraStr('')
       setStatus(item.s)
-      setLink('')
       setFootageLink('')
       setLinkMaterial('')
       setCaption('')
@@ -101,6 +101,9 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
 
   const handleSave = () => {
     if (!item) return
+    // Nome de arquivo ou texto solto não é link — não salva para não ir na mensagem.
+    const linkNovo = linkMaterial.trim() ? normalizarLinkMaterial(linkMaterial) : ''
+    if (linkNovo === null) { setLinkInvalido(true); return }
 
     const itemPatch: ItemEditPatch = {}
     if (title !== item.n) itemPatch.n = title
@@ -110,13 +113,11 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
     if (Object.keys(itemPatch).length > 0) onSave(item.i, itemPatch)
 
     if (onSaveState) {
-      const statePatch: Partial<ItemState> = { status, link, caption, notes, isTraffic }
+      const statePatch: Partial<ItemState> = { status, caption, notes, isTraffic }
       statePatch.deliveryDate = deliveryStr ? new Date(deliveryStr + 'T12:00:00').getTime() : undefined
       if (!programado && !ocultarPostagem) statePatch.horaPostagem = horaStr || undefined
       if (footageLink) statePatch.footageLink = footageLink
-      if (linkMaterial.trim() !== (state?.linkMaterial || '')) {
-        statePatch.linkMaterial = normalizarLinkMaterial(linkMaterial) ?? linkMaterial.trim()
-      }
+      if (linkNovo !== linkInicial) statePatch.linkMaterial = linkNovo
       if (responsible) statePatch.responsible = responsible
       if (priority) statePatch.priority = priority
       const parsedTags = tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : []
@@ -278,23 +279,15 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
               <Label>Links</Label>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
                 <TextField
-                  label="Link do material final (vai para o cliente)"
-                  placeholder="Cole o link do vídeo/arte pronto"
-                  helperText="Entra na mensagem padrão do cliente e aparece no Agendamento para o Social"
+                  label="Link do criativo"
+                  placeholder="https://drive.google.com/... (vídeo/arte final)"
+                  helperText={linkInvalido ? 'Isso não é um link — cole o endereço (https://…), não o nome do arquivo' : 'O mesmo link do card: vai na mensagem do cliente e aparece no Agendamento'}
+                  error={linkInvalido}
                   size="small"
                   fullWidth
                   value={linkMaterial}
-                  onChange={e => setLinkMaterial(e.target.value)}
+                  onChange={e => { setLinkMaterial(e.target.value); setLinkInvalido(false) }}
                   sx={{ ...fieldSx, '& .MuiFormHelperText-root': { fontSize: '0.6rem', mx: 0 } }}
-                />
-                <TextField
-                  label="Link do criativo"
-                  placeholder="https://drive.google.com/..."
-                  size="small"
-                  fullWidth
-                  value={link}
-                  onChange={e => setLink(e.target.value)}
-                  sx={fieldSx}
                 />
                 <TextField
                   label="Link de footage (gravação bruta)"

@@ -136,7 +136,8 @@ interface MiniKanbanProps {
   /** Escrever (texto) ou resolver (null) o impedimento de um card. */
   onImpedimento?: (itemId: number, texto: string | null) => void
   onLinkMaterial?: (itemId: number, link: string) => void
-  onMensagemCopiada?: (itemId: number) => void
+  /** Botão "Copiar mensagem p/ cliente" — a mesma porta do arraste para Enviado. */
+  onEnviarCliente?: (itemId: number, clientName: string) => void
   /** Esteira única: movimento permitido para quem está olhando (lib/fluxo). */
   podeMover?: (de: Status, para: Status) => boolean
   /** Editor e designer trabalham pela entrega: a data de postagem não aparece. */
@@ -146,7 +147,7 @@ interface MiniKanbanProps {
 function MiniKanban({
   items, states, onStatusChange, onEdit, onView, columns, filterFn,
   filterClient, bulkMode, bulkSelected, onBulkToggle, boardKey, onSendToClient, onSendToReview, onRemindClient,
-  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview, onOpenReview, editorDe, onTrocarEditor, onImpedimento, onLinkMaterial, onMensagemCopiada, podeMover, ocultarPostagem,
+  onReadyDrop, onRetryReady, onManualLinkReady, onSendReadyToReview, onOpenReview, editorDe, onTrocarEditor, onImpedimento, onLinkMaterial, onEnviarCliente, podeMover, ocultarPostagem,
 }: MiniKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const readyStates = useReadyAutomation()
@@ -204,10 +205,6 @@ function MiniKanban({
   const [renameValue, setRenameValue] = useState('')
   const [renameDialogOpen, setRenameDialogOpen] = useState(false)
 
-  // ── Item 4: Confirm send to client ────────────────────
-  const [sendConfirmDrag, setSendConfirmDrag] = useState<{
-    activeItemId: number; activeStatus: Status; overCardId: number | null; clientName: string
-  } | null>(null)
 
   // ── Item 5: Published column limit ────────────────────
   const [showAllPublished, setShowAllPublished] = useState(false)
@@ -318,9 +315,10 @@ function MiniKanban({
     const activeItemObj = items.find(i => i.i === activeItemId)
     if (!activeItemObj) return
 
-    // Status 4 = enviar ao cliente: confirma antes (o mesmo diálogo do arraste).
+    // Status 4 = enviar ao cliente: a MESMA porta do botão do card (confirmação,
+    // link e mensagem). Quem move o card para Enviado é a rotina central.
     if (targetStatus === 4 && onSendToClient) {
-      setSendConfirmDrag({ activeItemId, activeStatus, overCardId, clientName: activeItemObj.c })
+      onSendToClient(activeItemId, activeItemObj.c)
       return
     }
 
@@ -409,19 +407,6 @@ function MiniKanban({
     setColMenuStatus(null)
   }, [byStatus, boardKey])
 
-  // ── Item 4: Confirm send handler ─────────────────────
-  const handleConfirmDragSend = useCallback((confirmed: boolean) => {
-    if (!sendConfirmDrag) return
-    const { activeItemId, activeStatus, overCardId, clientName } = sendConfirmDrag
-    const targetStatus = 4 as Status
-    if (confirmed) {
-      onStatusChange(activeItemId, targetStatus)
-      markSaving(activeItemId)
-      onSendToClient?.(activeItemId, clientName)
-      applyColumnMove(activeItemId, activeStatus, targetStatus, overCardId)
-    }
-    setSendConfirmDrag(null)
-  }, [sendConfirmDrag, onStatusChange, onSendToClient, markSaving, applyColumnMove])
 
   // ── Renomear coluna ───────────────────────────────────
   const applyRename = useCallback(() => {
@@ -556,7 +541,7 @@ function MiniKanban({
                           onSetImpedimento={onImpedimento ? (texto) => onImpedimento(item.i, texto) : undefined}
                           onResolveImpedimento={onImpedimento ? () => onImpedimento(item.i, null) : undefined}
                           onLinkMaterial={onLinkMaterial ? (link) => onLinkMaterial(item.i, link) : undefined}
-                          onMensagemCopiada={onMensagemCopiada ? () => onMensagemCopiada(item.i) : undefined}
+                          onEnviarCliente={onEnviarCliente ? () => onEnviarCliente(item.i, item.c) : undefined}
                         />
                       )
                       return bulkMode ? (
@@ -675,37 +660,6 @@ function MiniKanban({
           ]
         })()}
       </Menu>
-
-      {/* ── Item 4: Confirm send to client dialog ────────── */}
-      <Dialog
-        open={!!sendConfirmDrag}
-        onClose={() => setSendConfirmDrag(null)}
-        maxWidth="xs" fullWidth
-        PaperProps={{ sx: { bgcolor: 'rgba(11,11,11,0.97)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,154,54,0.2)', borderRadius: '20px' } }}
-      >
-        <DialogTitle sx={{ pb: 0.5 }}>
-          <Typography variant="subtitle1" fontWeight={700}>Confirmar envio ao cliente</Typography>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            O material de <strong style={{ color: DS.accent }}>{sendConfirmDrag?.clientName}</strong> foi enviado para aprovação?
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.8, display: 'block', fontSize: '0.62rem' }}>
-            Se sim, o card vai para "Enviado ao cliente" e o WhatsApp é aberto. Se não, o card permanece na coluna atual.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 2, pb: 1.5 }}>
-          <Button size="small" onClick={() => handleConfirmDragSend(false)} sx={{ color: 'text.secondary' }}>
-            Não — manter
-          </Button>
-          <Button
-            size="small" variant="contained" onClick={() => handleConfirmDragSend(true)}
-            sx={{ fontWeight: 700, background: ctaGradient(135), color: DS.onAccent }}
-          >
-            Sim — enviar
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* ── Item 6: Rename column dialog ─────────────────── */}
       <Dialog

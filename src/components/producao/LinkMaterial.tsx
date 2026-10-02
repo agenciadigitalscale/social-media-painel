@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Box, TextField, Tooltip, Typography } from '@mui/material'
-import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import EditIcon from '@mui/icons-material/Edit'
 import LinkIcon from '@mui/icons-material/Link'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
@@ -8,29 +7,28 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import type { ContentItem, ItemState } from '../../types'
 import { clickableStop } from '../../shared/a11y'
 import { DS } from '../../theme'
-import { copiarTexto, mensagemDoMaterial, normalizarLinkMaterial } from '../../lib/linkMaterial'
+import { linkDoMaterial, normalizarLinkMaterial } from '../../lib/linkMaterial'
+import SendIcon from '@mui/icons-material/Send'
 
 /**
  * O link do vídeo/arte FINAL, colado à mão por quem produziu, e a mensagem
  * padrão do cliente pronta para copiar com ele.
  *
- * Campo próprio (`linkMaterial`), não o `link`: o `link` é escrito pela esteira
- * e pela Inbox quando vinculam um arquivo, e o que o editor colou sumiria na
- * próxima varredura.
+ * É o MESMO link do "Link do criativo" do card aberto e da edição (fonte única:
+ * `linkDoMaterial`, gravado em `linkMaterial`). Não é o `link`: esse a esteira
+ * e a Inbox reescrevem ao vincular arquivo, e o que o editor colou sumiria.
  */
-export default function LinkMaterial({ item, state, onSalvar, onCopiada }: {
+export default function LinkMaterial({ state, onSalvar, onEnviar }: {
   item: ContentItem
   state: ItemState
   onSalvar: (link: string) => void
-  onCopiada?: () => void
+  /** Envio ao cliente pela rotina central (confirma, copia a mensagem, move p/ Enviado). */
+  onEnviar?: () => void
 }) {
-  const link = state.linkMaterial?.trim() || ''
+  const link = linkDoMaterial(state)
   const [editando, setEditando] = useState(false)
   const [rascunho, setRascunho] = useState('')
   const [erro, setErro] = useState(false)
-  const [copiado, setCopiado] = useState(false)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
 
   const abrir = () => { setRascunho(link); setErro(false); setEditando(true) }
   const salvar = () => {
@@ -38,15 +36,6 @@ export default function LinkMaterial({ item, state, onSalvar, onCopiada }: {
     if (!ok && rascunho.trim()) { setErro(true); return }
     onSalvar(ok ?? '')
     setEditando(false)
-  }
-  const copiar = () => {
-    copiarTexto(mensagemDoMaterial(item, state, link)).then(ok => {
-      if (!ok) return
-      setCopiado(true)
-      onCopiada?.()
-      if (timer.current) clearTimeout(timer.current)
-      timer.current = setTimeout(() => setCopiado(false), 2200)
-    })
   }
 
   const miniBtn = (titulo: string, icone: ReactNode, fn: () => void) => (
@@ -106,7 +95,7 @@ export default function LinkMaterial({ item, state, onSalvar, onCopiada }: {
   }
 
   // Antes de Aprovado (ou para quem não manda ao cliente): só o link, sem a mensagem.
-  if (!onCopiada) {
+  if (!onEnviar) {
     return (
       <Box sx={{ mt: 0.8, display: 'flex', gap: 0.4, alignItems: 'center' }}>
         <Box sx={{
@@ -126,18 +115,16 @@ export default function LinkMaterial({ item, state, onSalvar, onCopiada }: {
 
   return (
     <Box sx={{ mt: 0.8, display: 'flex', gap: 0.4, alignItems: 'center' }}>
-      <Tooltip title="Copia a mensagem padrão do cliente com este link — é só colar no WhatsApp" placement="top">
-        <Box {...clickableStop(copiar)} aria-label="Copiar mensagem para o cliente" sx={{
+      <Tooltip title="Copia a mensagem padrão com este link, abre o WhatsApp do cliente e move para Enviado" placement="top">
+        <Box {...clickableStop(onEnviar)} aria-label="Copiar mensagem para o cliente" sx={{
           flex: 1, minWidth: 0, py: 0.6, borderRadius: '8px', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5,
           fontSize: '0.62rem', fontWeight: 800,
-          color: copiado ? DS.green : DS.onAccent,
-          bgcolor: copiado ? `${DS.green}14` : DS.accent,
-          border: copiado ? `1px solid ${DS.green}3a` : '1px solid transparent',
+          color: DS.onAccent, bgcolor: DS.accent, border: '1px solid transparent',
           transition: 'all 0.15s', '&:hover': { filter: 'brightness(1.06)' },
         }}>
-          {copiado ? <CheckCircleIcon sx={{ fontSize: 13 }} /> : <ContentCopyIcon sx={{ fontSize: 12 }} />}
-          {copiado ? 'Mensagem copiada' : 'Copiar mensagem p/ cliente'}
+          <SendIcon sx={{ fontSize: 12 }} />
+          Copiar mensagem p/ cliente
         </Box>
       </Tooltip>
       {miniBtn('Abrir o material', <OpenInNewIcon sx={{ fontSize: 12 }} />, () => window.open(link, '_blank', 'noopener'))}

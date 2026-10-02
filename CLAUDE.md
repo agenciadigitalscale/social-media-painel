@@ -74,6 +74,15 @@ Painel operacional completo (**DS HUB**) para a equipe da Digital Scale gerencia
 >   força emoji colorido) foi tirado do texto de UI — **não** das mensagens de WhatsApp
 >   nem dos prompts da IA. Ao escrever emoji novo em tela, não usar `U+FE0F`.
 
+> ⚫ **ESTÉTICA DA PROPOSTA (2026-10-02) — vale sobre a nota laranja acima no que diverge.**
+> A pedido do dono, o painel copia o visual de `proposta-c1d.pages.dev`: fundo **preto puro**
+> (`DS.bg`/`bgSidebar` `#000000`), superfícies e bordas **quentes** (`surface #0E0C0A`,
+> `surfaceAlt #15120F`, `border #2A221C`), texto quente (`t1 #F4F1EC`, `t2 #A8A09A`).
+> **Títulos em Anton** (`DS.fontDisplay`, caixa alta, peso 400): título da aba no cabeçalho,
+> `PageHero`, Dashboard, nome do cliente, Bom dia. Corpo segue Inter. Laranja só em destaque
+> (kicker acima do título, ação, item ativo). O **foguete** da Proposta virou
+> `shared/ui/Foguete.tsx` (SVG, chama tremulando) ao lado do título da aba.
+
 ### Identidade Visual
 
 O DS HUB segue uma estética **"SaaS premium"**: fundo azul-quase-preto, acento principal
@@ -1300,6 +1309,23 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > **"Copiar mensagem p/ cliente"** — antes disso, "Link do material salvo": a mensagem padrão (`generateApprovalMessage`) com
 > esse link, pronta para colar no WhatsApp (`producao/LinkMaterial.tsx` + `lib/linkMaterial.ts`).
 > Campo próprio e não o `link`, porque a esteira/Inbox reescreve o `link` ao vincular arquivo.
+> **Link único + envio único (2026-10-02) — vale sobre as duas notas abaixo.**
+> - **Fonte única do link:** `linkDoMaterial(state)` (`lib/linkMaterial.ts`). Escrita SEMPRE em
+>   `state.linkMaterial`; `linkMaterial` definido (até vazio) manda; card antigo sem ele cai no
+>   `state.link` legado (link existente não some); só vale URL — nome de arquivo nunca vira link.
+>   Usam: "Colar link do material" (card externo), "Link do criativo" do card aberto (campos +
+>   diálogo) e da edição rápida (que tinha DOIS campos — virou um), Agendamento, lembrete e
+>   mensagem. O `state.link` segue sendo o campo da esteira/Inbox (prévia/revisão), não da mensagem.
+> - **Mensagem:** `mensagemDeAprovacao` (`lib/whatsapp.ts`) é a ÚNICA que monta o texto (um ou
+>   vários conteúdos) e termina com `AVISO_24H`. O aviso é SÓ texto — não existe timer.
+> - **Envio:** `enviarAoCliente` no `App.tsx` é a rotina única (cargo, link, mensagem, status 4,
+>   copiar, WhatsApp/grupo, trava de 5s contra disparo duplo). `sendToClientNow` e
+>   `handleBulkSendToClient` só delegam. No quadro, `pedirEnvio` (ProducaoTab) é a única porta:
+>   botão "Copiar mensagem p/ cliente", arrastar/seta para "Enviado", card aberto e Inbox. Sem link
+>   abre a edição do card ("Link do criativo") — o usuário salva e clica de novo. Saíram: a
+>   confirmação própria do arraste no MiniKanban (duplicava), o portal do card aberto
+>   (`/api/portal` + diálogo de link), `openWhatsAppApproval`, `generateApprovalUrl`,
+>   `mensagemDoMaterial` e o `requestSendToClient`.
 > **"Enviar ao cliente" também usa o link do material (2026-10-01):** o link do portal
 > (`/c/token/id`) SAIU do envio — `sendToClientNow`, o envio em lote e o lembrete montam a
 > mensagem padrão com `linkMaterial`, copiam (`copiarTexto`) e abrem o WhatsApp/grupo quando

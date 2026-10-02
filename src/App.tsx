@@ -90,8 +90,8 @@ import { agendarNoInstagram, cancelarNoInstagram, descreverTipo, remarcarNoInsta
 import { horaDe, patchDaHora, textoDoMomento } from './lib/programacao'
 import ProgramarPostDialog, { type ConfirmacaoPost } from './components/calendario/ProgramarPostDialog'
 import type { NovaPublicacao } from './components/calendario/CriarPublicacaoDialog'
-import { copiarTexto } from './lib/linkMaterial'
-import { generateApprovalMessage, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, extractDriveFileId, checkDriveFilePublic, generateReviewUrl, generateReviewMessage, REVIEW_CLIENT, isReviewClientName, findReviewGroupLink } from './lib/whatsapp'
+import { copiarTexto, linkDoMaterial } from './lib/linkMaterial'
+import { mensagemDeAprovacao, openWhatsAppGroup, isGroupLink, buildWhatsAppUrl, extractDriveFileId, checkDriveFilePublic, generateReviewUrl, generateReviewMessage, REVIEW_CLIENT, isReviewClientName, findReviewGroupLink } from './lib/whatsapp'
 import { logActivity } from './lib/activity'
 import { useUndoHistory } from './shared/useUndoHistory'
 import { haptic } from './mobile/system/haptics'
@@ -113,6 +113,7 @@ import ScaleAI from './components/ScaleAI'
 import CalendarioPostagem from './components/CalendarioPostagem'
 import AgendamentoTab from './components/AgendamentoTab'
 import PainelTrafegoTab, { PropostaTab } from './components/PainelTrafegoTab'
+import Foguete from './shared/ui/Foguete'
 import RequestQuoteIcon from '@mui/icons-material/RequestQuote'
 import InsightsIcon from '@mui/icons-material/Insights'
 import { aguardandoSocial } from './lib/programacao'
@@ -1638,64 +1639,63 @@ export default function App() {
   // saía em duplicidade com a equipe logada. Quem publica é o servidor (cron →
   // /api/instagram 'run'); o painel só agenda e cancela (lib/instagram).
 
-  // Envio ao cliente = a MENSAGEM PADRÃO com o link do material que o editor colou
-  // no card (`linkMaterial`). O link do portal (/c/token/id) saiu deste caminho a
-  // pedido do dono: o Social copia a mensagem e manda; a aprovação do cliente volta
-  // pelo próprio Social, que marca "Cliente ok" no card.
-  const sendToClientNow = useCallback(async (itemId: number, clientName: string, isTraffic?: boolean) => {
-    const itemState = states[itemId]
-    const material = itemState?.linkMaterial
-    if (!material) {
-      setSnack({ msg: 'Falta o link do material no card — o editor cola o link do vídeo/arte final antes.', severity: 'warning' })
-      return
-    }
-    updateItem(itemId, { status: 4, sentToClientAt: Date.now(), rejectionText: undefined, approvedByClientAt: undefined })
-
-    const contentTitle = itemState?.title || allItems.find(i => i.i === itemId)?.n || `Item ${itemId}`
-    const message = generateApprovalMessage(clientName, contentTitle, material, isTraffic ?? itemState?.isTraffic)
-    const copiada = await copiarTexto(message)
-
-    const rawContact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
-    const phone = rawContact && !isGroupLink(rawContact) ? rawContact : undefined
-    const group = clientGroups[clientName] || (rawContact && isGroupLink(rawContact) ? rawContact : undefined)
-
-    if (phone) {
-      window.open(buildWhatsAppUrl(phone, message), '_blank', 'noopener,noreferrer')
-      setSnack({ msg: `Mensagem copiada e WhatsApp aberto para ${clientName}.`, severity: 'success' })
-      if (group) setTimeout(() => setGroupSendDialog({ groupUrl: group, message, clientName }), 1500)
-    } else if (group) {
-      setGroupSendDialog({ groupUrl: group, message, clientName })
-    } else {
-      setSnack({
-        msg: copiada ? 'Mensagem copiada — cole no WhatsApp do cliente.' : 'Não deu para copiar a mensagem. Use "Copiar mensagem p/ cliente" no card.',
-        severity: copiada ? 'success' : 'warning',
-      })
-    }
-  }, [states, allItems, clientPhones, clientGroups, allClients, updateItem])
-
-  /**
-   * O envio ao cliente, com uma conferência antes.
-   *
-   * O `checkFormat` existia desde 2026-08-07 e era preciso, mas só aparecia na
-   * **Inbox** — no instante em que o arquivo chega. Nada olhava o formato no
-   * instante que decide, que é este. Entre um e outro passa um dia e costuma
-   * passar outra pessoa, e o aviso não viajava junto com o arquivo.
-   *
-   * O caso que isto pega é falha TOTAL, não lentidão: 24 dos 113 vídeos
-   * rastreados são `.mov`, que o Android recusa antes de decodificar. Quem
-   * confere no iPhone não vê nada de errado, porque o Safari toca.
-   *
-   * Avisa e deixa passar: quem insiste costuma saber algo que o painel não sabe.
-   * O que não pode é mandar sem saber.
-   */
-  const requestSendToClient = useCallback((itemId: number, clientName: string, isTraffic?: boolean) => {
+  // ── ENVIO AO CLIENTE — a rotina ÚNICA (2026-10-02) ───────────────────────
+  // Botão do card, arrastar para "Enviado", envio em lote e o diálogo de lote
+  // chegam todos aqui. Ela: confere quem envia, pega o link do material (fonte
+  // única: linkDoMaterial), recusa conteúdo sem link (nada de mensagem quebrada
+  // nem nome de arquivo no lugar), monta a mensagem padrão, move para Enviado (4),
+  // copia e abre o WhatsApp/grupo do cliente. Sem portal: a aprovação volta pelo
+  // Social, que marca "Cliente ok".
+  const envioRecenteRef = useRef(new Map<number, number>())
+  const enviarAoCliente = useCallback(async (clientName: string, itemIds: number[], isTraffic?: boolean) => {
     const quem = currentUserRef.current
     if (!isSocio(quem) && cargoDe(quem) !== 'social') {
       setSnack({ msg: 'Só o Social envia ao cliente.', severity: 'warning' })
       return
     }
-    void sendToClientNow(itemId, clientName, isTraffic)
-  }, [sendToClientNow])
+    // Um clique = uma execução: o mesmo card não dispara de novo em 5s.
+    const agora = Date.now()
+    const ids = itemIds.filter(id => agora - (envioRecenteRef.current.get(id) ?? 0) > 5000)
+    if (!ids.length) return
+
+    const comLink = ids.filter(id => linkDoMaterial(states[id]))
+    const semLink = ids.length - comLink.length
+    if (!comLink.length) {
+      setSnack({ msg: ids.length === 1 ? 'Falta o link do material — cole o link do vídeo/arte final no card antes de enviar.' : 'Nenhum dos cards tem link do material — cole o link antes de enviar.', severity: 'warning' })
+      return
+    }
+    comLink.forEach(id => envioRecenteRef.current.set(id, agora))
+
+    comLink.forEach(id => updateItem(id, { status: 4, sentToClientAt: agora, rejectionText: undefined, approvedByClientAt: undefined }))
+
+    const titulo = (id: number) => states[id]?.title || allItems.find(i => i.i === id)?.n || `Item ${id}`
+    const trafego = isTraffic ?? (comLink.length === 1 ? states[comLink[0]]?.isTraffic : undefined)
+    const message = mensagemDeAprovacao(clientName, comLink.map(id => ({ titulo: titulo(id), link: linkDoMaterial(states[id]) })), trafego)
+    const copiada = await copiarTexto(message)
+
+    const rawContact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
+    const phone = rawContact && !isGroupLink(rawContact) ? rawContact : undefined
+    const group = clientGroups[clientName] || (rawContact && isGroupLink(rawContact) ? rawContact : undefined)
+    const aviso = semLink ? ` ${semLink} sem link do material ficaram de fora.` : ''
+
+    if (phone) {
+      window.open(buildWhatsAppUrl(phone, message), '_blank', 'noopener,noreferrer')
+      setSnack({ msg: `Mensagem copiada e WhatsApp aberto para ${clientName}.${aviso}`, severity: semLink ? 'warning' : 'success' })
+      if (group) setTimeout(() => setGroupSendDialog({ groupUrl: group, message, clientName }), 1500)
+    } else if (group) {
+      setGroupSendDialog({ groupUrl: group, message, clientName })
+      if (semLink) setSnack({ msg: aviso.trim(), severity: 'warning' })
+    } else {
+      setSnack({
+        msg: (copiada ? 'Mensagem copiada — cole no WhatsApp do cliente.' : 'Não deu para copiar a mensagem. Use "Copiar mensagem p/ cliente" no card.') + aviso,
+        severity: copiada && !semLink ? 'success' : 'warning',
+      })
+    }
+  }, [states, allItems, clientPhones, clientGroups, allClients, updateItem])
+
+  const sendToClientNow = useCallback((itemId: number, clientName: string, isTraffic?: boolean) =>
+    enviarAoCliente(clientName, [itemId], isTraffic), [enviarAoCliente])
+
 
   // ── Revisão interna: card arrastado pra Revisão vai pro grupo da agência ────
   const handleSendToReview = useCallback(async (itemId: number, clientName: string) => {
@@ -1887,7 +1887,7 @@ export default function App() {
   // ── Lembrete ao cliente (card já em status 4) ────────────
   const handleRemindClient = useCallback((itemId: number, clientName: string) => {
     const itemState = states[itemId]
-    const approvalUrl = itemState?.linkMaterial
+    const approvalUrl = linkDoMaterial(itemState)
     if (!approvalUrl) {
       setSnack({ msg: 'Este card não tem link do material para reforçar.', severity: 'warning' })
       return
@@ -1914,45 +1914,8 @@ export default function App() {
   }, [handleRemindClient, updateItem])
 
   // ── Bulk send to client (WhatsApp em lote por cliente) ───
-  const handleBulkSendToClient = useCallback(async (clientName: string, itemIds: number[]) => {
-    if (!itemIds.length) return
-    const quem = currentUserRef.current
-    if (!isSocio(quem) && cargoDe(quem) !== 'social') {
-      setSnack({ msg: 'Só o Social envia ao cliente.', severity: 'warning' })
-      return
-    }
-    const comLink = itemIds.filter(id => states[id]?.linkMaterial)
-    const semLink = itemIds.length - comLink.length
-    if (!comLink.length) {
-      setSnack({ msg: 'Nenhum dos cards tem link do material — o editor cola o link antes.', severity: 'warning' })
-      return
-    }
-
-    const now = Date.now()
-    comLink.forEach(id => updateItem(id, { status: 4, sentToClientAt: now, rejectionText: undefined, approvedByClientAt: undefined }))
-
-    const getTitle = (id: number) => states[id]?.title || allItems.find(i => i.i === id)?.n || `Item ${id}`
-    const message = comLink.length === 1
-      ? generateApprovalMessage(clientName, getTitle(comLink[0]), states[comLink[0]].linkMaterial!, states[comLink[0]].isTraffic)
-      : `Olá, ${clientName}! 😊\n\n${comLink.length} criativos prontos para aprovação:\n\n${comLink.map(id => `• *${getTitle(id)}*\n  ${states[id].linkMaterial}`).join('\n\n')}\n\nDá uma olhada e nos diga o que achou. Aguardamos! 🙏`
-    const copiada = await copiarTexto(message)
-
-    const rawContact = clientPhones[clientName] || allClients.find(c => c.name === clientName)?.whatsapp
-    const phone = rawContact && !isGroupLink(rawContact) ? rawContact : undefined
-    const group = clientGroups[clientName] || (rawContact && isGroupLink(rawContact) ? rawContact : undefined)
-    const aviso = semLink ? ` ${semLink} sem link do material ficaram de fora.` : ''
-
-    if (phone) {
-      window.open(buildWhatsAppUrl(phone, message), '_blank', 'noopener,noreferrer')
-      setSnack({ msg: `Mensagem copiada e WhatsApp aberto para ${clientName}.${aviso}`, severity: semLink ? 'warning' : 'success' })
-      if (group) setTimeout(() => setGroupSendDialog({ groupUrl: group, message, clientName }), 1500)
-    } else if (group) {
-      setGroupSendDialog({ groupUrl: group, message, clientName })
-      if (semLink) setSnack({ msg: aviso.trim(), severity: 'warning' })
-    } else {
-      setSnack({ msg: (copiada ? 'Mensagem copiada — cole no WhatsApp do cliente.' : 'Não deu para copiar a mensagem.') + aviso, severity: copiada && !semLink ? 'success' : 'warning' })
-    }
-  }, [states, allItems, clientPhones, clientGroups, allClients, updateItem])
+  const handleBulkSendToClient = useCallback((clientName: string, itemIds: number[]) =>
+    enviarAoCliente(clientName, itemIds), [enviarAoCliente])
 
   const deleteItem = useCallback((id: number) => {
     const item = allItems.find(i => i.i === id)
@@ -2698,10 +2661,6 @@ export default function App() {
     enabled: esteiraLigada,
   })
 
-  // O `requestSendToClient` é declarado bem antes daqui e precisa do tamanho do
-  // arquivo para pesar o export. A ref evita reordenar meia tela de hooks só
-  // por causa disso — mesmo padrão do `currentUserRef`.
-
   const handleDriveAutoLinked = useCallback((info: {
     itemId: number
     clientName: string
@@ -2939,8 +2898,8 @@ export default function App() {
       case 0:  return <MeuDiaTab items={allItems} itensProducao={itensProducao} states={states} allClients={allClients} currentUser={currentUser} now={now} roteiros={roteiros} clientFolders={clientFolders} clientHashtags={clientHashtags} onStatusChange={setStatus} onUpdate={updateItem} onTabChange={setTab} onQuickAddClient={(name) => { const n = name.trim(); if (n && !allClients.some(c => c.name.toLowerCase() === n.toLowerCase())) addClient({ name: n, postsPerMonth: 0, reelsPerMonth: 0 }) }} />
       case 1:  return <TodayTab    {...sharedProps} now={now} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} />
       case 2:  return <AgendaTab   {...sharedProps} now={now} />
-      case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={requestSendToClient} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
-      case 4:  return <ProducaoTab semVisaoEquipe={!isSocio(currentUser)} items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={requestSendToClient} onSendToReview={handleSendToReview} onAutoDetected={handleAutoDetected} onReviewNotify={handleReviewNotify} onAppendHistory={appendHistory} boardRequest={producaoBoard} onBoardRequestDone={clearProducaoBoard} publishFolders={publishFolders} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
+      case 3:  return <KanbanTab   items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} allClients={allClients} onSendToClient={sendToClientNow} onBulkSendToClient={handleBulkSendToClient} clientColors={clientColors} clientPhones={clientPhones} />
+      case 4:  return <ProducaoTab semVisaoEquipe={!isSocio(currentUser)} items={allItems} states={states} onStatusChange={setStatus} onDelete={deleteItem} onEdit={editItem} onUpdateState={updateItem} onAddItem={addItem} onDuplicate={duplicateItem} allClients={allClients} onSendToClient={sendToClientNow} onSendToReview={handleSendToReview} onAutoDetected={handleAutoDetected} onReviewNotify={handleReviewNotify} onAppendHistory={appendHistory} boardRequest={producaoBoard} onBoardRequestDone={clearProducaoBoard} publishFolders={publishFolders} onBulkSendToClient={handleBulkSendToClient} onRemindClient={handleRemindClient} clientColors={clientColors} clientHashtags={clientHashtags} captionTemplates={captionTemplates} onSaveHashtags={setClientHashtags} onSaveTemplates={setCaptionTemplates} currentUser={currentUser} roteiros={roteiros} clientFolders={clientFolders} onUpdateRoteiro={updateRoteiro} onImportRoteiroBatch={importRoteiroBatch} onDeleteManyRoteiros={deleteManyRoteiros} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={(cn, list, y, m) => addManyRoteirosAndDistribute(cn, list, y, m)} />
       case 5:  return <CalendarTab items={filteredItems} states={states} now={now} onStatusChange={setStatus} onUpdate={updateItem} onDelete={deleteItem} onEdit={editItem} onDuplicate={duplicateItem} clientColors={clientColors} clientHashtags={clientHashtags} onSaveHashtags={setClientHashtags} onReschedule={rescheduleItem} onAddItem={addItem} allClients={allClients} />
       case 6:  return <ClientsTab  items={allItems} states={states} roteiros={roteiros} clientFolders={clientFolders} clientColors={clientColors} allClients={allClients} onAddRoteiro={addRoteiroAndDistribute} onAddManyRoteiros={addManyRoteirosAndDistribute} onBulkCreate={createAndDistributeMany} onDistributeAll={distributeAll} onStartNewMonth={startNewMonth} onAddClient={addClient} onDeleteClient={deleteClient} onRemoveRoteiro={removeRoteiroAndRedistribute} onRedistribute={redistributeClient} onClearDistribution={clearDistribution} onSetClientFolder={setClientFolder} onSetClientColor={setClientColor} onClientFocus={setFocusClient} onStatusChange={setStatus} onBulkSendToClient={handleBulkSendToClient} clientPhones={clientPhones} onSetClientPhone={setClientPhone} clientGroups={clientGroups} onSetClientGroup={setClientGroup} publishFolders={publishFolders} onSetPublishFolder={setPublishFolder} />
       case 7:
@@ -3214,7 +3173,7 @@ export default function App() {
             hiddenTabs={perms.hiddenTabs}
             onStatusChange={setStatus}
             onUpdate={updateItem}
-            onSendToClient={requestSendToClient}
+            onSendToClient={sendToClientNow}
             onBulkSendToClient={handleBulkSendToClient}
             onRemindClient={handleSendReminderFor}
             onAddItem={perms.canAddItems ? addItem : undefined}
@@ -3659,12 +3618,16 @@ export default function App() {
                   </Box>
                 </Box>
               ) : (
-                <Typography sx={{
-                  fontWeight: 800, fontSize: { md: '1.15rem', lg: '1.35rem', xl: '1.5rem' },
-                  color: DS.t1, letterSpacing: '-0.01em',
-                }}>
-                  {navItems[tab]?.label}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                  <Typography sx={{
+                    fontFamily: DS.fontDisplay, fontWeight: 400, textTransform: 'uppercase',
+                    fontSize: { md: '1.35rem', lg: '1.6rem', xl: '1.9rem' },
+                    color: DS.t1, letterSpacing: '0.01em', lineHeight: 1,
+                  }}>
+                    {navItems[tab]?.label}
+                  </Typography>
+                  <Foguete tamanho={34} />
+                </Box>
               )}
 
               {/* ── Frase do dia — só desktop ── */}

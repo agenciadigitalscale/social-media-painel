@@ -231,7 +231,7 @@ function Detalhe(props: {
       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flexWrap: 'wrap' }}>
         <Box sx={{ flex: 1, minWidth: 220 }}>
           <Rotulo>Visão operacional</Rotulo>
-          <Typography sx={{ fontSize: { xs: '1.5rem', md: '1.75rem', xl: '2rem' }, fontWeight: 800, color: DS.t1, letterSpacing: '-0.03em', lineHeight: 1.15, mt: 0.3 }}>{nome}</Typography>
+          <Typography sx={{ fontFamily: DS.fontDisplay, textTransform: 'uppercase', fontSize: { xs: '1.8rem', md: '2.2rem', xl: '2.7rem' }, fontWeight: 400, color: DS.t1, letterSpacing: '0.01em', lineHeight: 1.05, mt: 0.4 }}>{nome}</Typography>
           {subtitulo && <Typography sx={{ fontSize: { xs: '0.82rem', xl: '0.9rem' }, color: DS.t2, mt: 0.4 }}>{subtitulo}</Typography>}
         </Box>
         <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center', flexWrap: 'wrap' }}>

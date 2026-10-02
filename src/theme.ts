@@ -44,24 +44,31 @@ export const DS = {
   pink:      '#C8CED8',
 
   // === Superfícies ===
-  bg:        '#090A0D',          // fundo principal (grafite)
-  bgSidebar: '#0B0C10',          // fundo da sidebar
-  surface:   '#101217',          // cards / papers
-  surfaceAlt:'#15181F',          // superfície secundária (headers, hovers)
-  field:     '#0B0D11',          // fundo de campos (inputs)
+  // 2026-10-02: estética da Proposta — preto PURO no fundo e superfícies quentes
+  // (marrom quase preto), no lugar do grafite azulado.
+  bg:        '#000000',          // fundo principal (preto puro)
+  bgSidebar: '#000000',          // fundo da sidebar
+  surface:   '#0E0C0A',          // cards / papers
+  surfaceAlt:'#15120F',          // superfície secundária (headers, hovers)
+  field:     '#0A0908',          // fundo de campos (inputs)
 
   // === Bordas ===
-  border:    '#292D36',          // borda principal
-  borderSoft:'rgba(146,152,165,0.12)', // borda suave
+  border:    '#2A221C',          // borda principal (quente)
+  borderSoft:'rgba(168,160,154,0.12)', // borda suave
   borderHov: 'rgba(255,122,0,0.42)',   // borda hover (laranja)
   glow:      'rgba(255,122,0,0.14)',   // glow sutil laranja
   grid:      'rgba(255,255,255,0.025)', // grid de fundo
 
   // === Texto ===
-  t1: '#F7F7F5',                 // principal
-  t2: '#9298A5',                 // secundário (cinza neutro)
-  t3: '#6F7785',                 // discreto
-  t4: '#4A505C',                 // metadado / índice silencioso
+  t1: '#F4F1EC',                 // principal (branco quente)
+  t2: '#A8A09A',                 // secundário (cinza quente)
+  t3: '#7D756E',                 // discreto
+  t4: '#4E4741',                 // metadado / índice silencioso
+
+  // === Tipografia de título ===
+  // Anton condensada em CAIXA ALTA, peso único (400): títulos de página e de
+  // cliente. Corpo continua Inter — Anton em texto corrido fica ilegível.
+  fontDisplay: '"Anton", Impact, "Arial Narrow", sans-serif',
 
   // === Semânticas ===
   neutral: '#9298A5',            // estrutura, "a fazer", categórico neutro

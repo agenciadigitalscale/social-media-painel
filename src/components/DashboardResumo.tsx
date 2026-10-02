@@ -100,10 +100,10 @@ export default function DashboardResumo({ items, states, allClients, now, onTabC
       {/* Cabeçalho */}
       <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap', mb: 3 }}>
         <Box>
-          <Typography sx={{ fontSize: '0.7rem', fontWeight: 900, letterSpacing: '0.18em', color: DS.t3, mb: 0.6 }}>
+          <Typography sx={{ fontSize: '0.7rem', fontWeight: 900, letterSpacing: '0.18em', color: DS.accent, mb: 0.6 }}>
             RESUMO DO PAINEL
           </Typography>
-          <Typography component="h1" sx={{ fontSize: { xs: '1.6rem', md: '2rem' }, fontWeight: 800, letterSpacing: '-0.035em', lineHeight: 1.05, color: DS.t1 }}>
+          <Typography component="h1" sx={{ fontFamily: DS.fontDisplay, textTransform: 'uppercase', fontSize: { xs: '2.2rem', md: '3rem', xl: '3.6rem' }, fontWeight: 400, letterSpacing: '0.01em', lineHeight: 1, color: DS.t1 }}>
             Como está a operação
           </Typography>
           <Typography sx={{ fontSize: '0.85rem', color: DS.t2, mt: 0.6, textTransform: 'capitalize' }}>
