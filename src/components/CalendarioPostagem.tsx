@@ -1,23 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Snackbar, TextField, Tooltip, Typography } from '@mui/material'
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Snackbar, TextField, Tooltip, Typography } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import type { Client, ContentItem, ContentType, ItemState, Status } from '../types'
 import { STATUS_CONFIG } from '../types'
 import { DS } from '../theme'
 import { clickable } from '../shared/a11y'
 import { isRealLate } from '../lib/todaySignals'
-import { ALL_TYPES } from './producao/shared'
 import {
-  TIPOS_PADRAO, ROTULO_TIPO, TIPO_DO_CARD, EVENTO_PADRAO, PADRAO_VAZIO, COR_TIPO,
-  carregarPadroes, salvarPadroes, padraoDo, metaDoMes, tipoDoPadrao, corDoConteudo,
-  doClienteNoMes, tituloPlanejado, gerarVagas, vagasLivres,
-  type PadroesStore, type Vaga,
+  TIPOS_PADRAO, ROTULO_TIPO, TIPO_DO_CARD, EVENTO_PADRAO, PADRAO_VAZIO, COR_TIPO, TIPOS_CRIACAO,
+  carregarPadroes, salvarPadroes, padraoDo, metaEfetiva, tipoDoPadrao, corDoConteudo, rotuloDoTipo, segundoTipo,
+  doClienteNoMes, gerarVagas, vagasLivres,
+  type PadroesStore, type TipoPadrao, type Vaga,
 } from '../lib/padraoEditorial'
 import {
   carregarPrefMes, salvarPrefMes, preferenciasDoMes, comPreferencias, garantirMes, chaveMes,
-  vagasDoMes, comVagas, moverVaga, removerVaga, restaurarMes,
+  vagasDoMes, comVagas, moverVaga, removerVaga, restaurarMes, excecaoDeMeta,
   carregarCarteira, salvarCarteira, ativoNoMes, naCarteira,
   type PrefMesStore, type CarteiraStore,
 } from '../lib/planejamentoMes'
@@ -25,15 +23,17 @@ import { carregarCapacidade, salvarCapacidade, cargaPorDia, ROTULO_FRENTE, type 
 import PadraoDialog from './calendario/PadraoDialog'
 import DistribuirDialog from './calendario/DistribuirDialog'
 import EditarConteudoPainel, { type EdicaoConteudo } from './calendario/EditarConteudoPainel'
+import NovoConteudoDialog, { type NovoConteudo } from './calendario/NovoConteudoDialog'
+import EtiquetasDialog from './calendario/EtiquetasDialog'
+import ArquivadosDialog from './calendario/ArquivadosDialog'
+import { ETAPAS_CONTEUDO, nomeDe } from './calendario/equipe'
+import { adicionarEtiqueta, carregarEtiquetas, corDaEtiqueta, editarEtiqueta, etiquetasConhecidas, removerEtiqueta, renomearNoCard, salvarEtiquetas, type Etiqueta } from '../lib/etiquetas'
+import { donoDoCard } from '../lib/access'
+import { carregarAtribuicoes, carregarPaineis, EVENTO_ATRIBUICOES } from '../lib/paineis'
 import { aguardandoSocial, horaValida, postagemDoCard } from '../lib/programacao'
 import { useIgStatus, type AgendamentosDoCard, type IgConta } from '../lib/instagram'
 import { MarcaIG, SituacaoIG, destinosDa } from './calendario/ProgramacaoIG'
 
-/** Tipos que dá para criar direto no calendário (rótulo que a equipe usa). */
-const TIPOS_NOVO: { tp: ContentType; rotulo: string }[] = [
-  { tp: 'Reel', rotulo: 'Reel' }, { tp: 'Post', rotulo: 'Design' }, { tp: 'Feed', rotulo: 'Feed' },
-  { tp: 'Carrossel', rotulo: 'Carrossel' }, { tp: 'Story', rotulo: 'Story' },
-]
 const DIA_SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
 
 /**
@@ -54,9 +54,6 @@ const ETAPAS: { key: Etapa; label: string; status: Status[] }[] = [
   { key: 'publicado',  label: 'Publicado',       status: [7] },
 ]
 
-// Tipo com cor própria (2026-10-05, pedido do dono): Reel azul · Design amarelo ·
-// Feed roxo — a mesma cor no card, na vaga, no filtro e na distribuição (corDoConteudo).
-const rotuloDoTipo = (tp: ContentType) => TIPOS_NOVO.find(t => t.tp === tp)?.rotulo ?? tp
 
 const DIAS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
@@ -82,9 +79,16 @@ interface Props {
   planos: Client[]
   /** Sócio exclui qualquer conteúdo; o Social só o que ainda está em "A fazer". */
   podeExcluirTudo: boolean
-  onAdicionar: (cliente: string, tipo: ContentType, titulo: string, data: Date, hora?: string) => unknown
+  /** Novo conteúdo pela janela do dia (cliente, nome, tipo, postagem, entrega, responsável, etapa). */
+  onAdicionar: (n: NovoConteudo) => unknown
   onMudarTipo: (id: number, tipo: ContentType) => void
-  onExcluir: (id: number) => void
+  /** Arquivar: o conteúdo sai das telas de trabalho, mas continua salvo (Arquivados). */
+  onArquivar: (id: number) => void
+  /** Conteúdos arquivados (criados à mão) — a "lixeira". */
+  arquivados: ContentItem[]
+  onRestaurar: (id: number) => void
+  /** Exclusão definitiva (só sócio). */
+  onExcluirDefinitivo?: (id: number) => void
   /** "Aprovar e programar": leva o card a Programado no dia e hora dele. */
   onProgramar: (id: number) => void
   /** Hora de postagem do card ("HH:MM"). */
@@ -96,18 +100,18 @@ interface Props {
   /** Painel lateral: cliente, nome, tipo, data/hora, etapa, observação, etiquetas. */
   onEditarConteudo: (id: number, e: EdicaoConteudo) => void
   /** Distribuição: cria vários de uma vez (com entrega e encaixe na fila). */
-  onAdicionarVarios: (lista: { cliente: string; tipo: ContentType; titulo: string; data: Date; hora?: string }[]) => void
+  onAdicionarVarios: (lista: NovoConteudo[]) => void
   /** "Reordenar datas": refaz a fila de entrega na capacidade de cada frente. Devolve quantos mudaram. */
   onReordenar: (modo: 'completo' | 'empurrar', capacidade?: Capacidade) => number
   /** Cards criados à mão — só esses trocam de cliente. */
   idsCriadosAMao: Set<number>
 }
 
-export default function CalendarioPostagem({ items, states, now, clients, podeRemarcar, onReschedule, onAbrirProducao, planos, podeExcluirTudo, onAdicionar, onMudarTipo, onExcluir, onProgramar, onMudarHora, onReprogramar, onAbrirFila, onEditarConteudo, onAdicionarVarios, onReordenar, idsCriadosAMao }: Props) {
+export default function CalendarioPostagem({ items, states, now, clients, podeRemarcar, onReschedule, onAbrirProducao, planos, podeExcluirTudo, onAdicionar, onMudarTipo, onArquivar, arquivados, onRestaurar, onExcluirDefinitivo, onProgramar, onMudarHora, onReprogramar, onAbrirFila, onEditarConteudo, onAdicionarVarios, onReordenar, idsCriadosAMao }: Props) {
   const [ref, setRef] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1))
   const [modo, setModo] = useState<'mes' | 'semana'>('mes')
   const [cliente, setCliente] = useState('todos')
-  const [tipo, setTipo] = useState<'todos' | ContentType>('todos')
+  const [tipo, setTipo] = useState<'todos' | TipoPadrao>('todos')
   const [etapa, setEtapa] = useState<Etapa>('todas')
   const [busca, setBusca] = useState('')
   const [diaAberto, setDiaAberto] = useState<Date | null>(null)
@@ -122,13 +126,21 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
   const [prefs, setPrefs] = useState<PrefMesStore>(() => carregarPrefMes())
   const [carteira, setCarteira] = useState<CarteiraStore>(() => carregarCarteira())
   const [capacidade, setCapacidade] = useState(() => carregarCapacidade())
+  const [baseEtiquetas, setBaseEtiquetas] = useState<Etiqueta[]>(() => carregarEtiquetas())
+  // Dono do card (responsável) — a mesma regra da Produção: gaveta → editor → responsável.
+  const [atrib, setAtrib] = useState(() => carregarAtribuicoes())
+  const [paineis, setPaineis] = useState(() => carregarPaineis())
   useEffect(() => {
     const reler = () => {
       setPadroes(carregarPadroes()); setPrefs(carregarPrefMes()); setCarteira(carregarCarteira()); setCapacidade(carregarCapacidade())
+      setBaseEtiquetas(carregarEtiquetas())
     }
+    const relerDono = () => { setAtrib(carregarAtribuicoes()); setPaineis(carregarPaineis()) }
     window.addEventListener(EVENTO_PADRAO, reler)
-    return () => window.removeEventListener(EVENTO_PADRAO, reler)
+    window.addEventListener(EVENTO_ATRIBUICOES, relerDono)
+    return () => { window.removeEventListener(EVENTO_PADRAO, reler); window.removeEventListener(EVENTO_ATRIBUICOES, relerDono) }
   }, [])
+  const responsavelDe = (id: number) => donoDoCard(id, states[id], atrib, paineis)
   const [padraoAberto, setPadraoAberto] = useState<'padrao' | 'mes' | null>(null)
   const [distribuirAberto, setDistribuirAberto] = useState(false)
   const [reordenarAberto, setReordenarAberto] = useState(false)
@@ -137,12 +149,12 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
   // Postagem = pela data de publicação · Entregas = pela data de entrega (fila de produção)
   const [visao, setVisao] = useState<'postagem' | 'entregas'>('postagem')
   const [etiqueta, setEtiqueta] = useState('todas')
-  // Adicionar conteúdo num dia qualquer (exceção ao padrão é normal).
-  const [novoAberto, setNovoAberto] = useState(false)
-  const [novoCliente, setNovoCliente] = useState('')
-  const [novoTipo, setNovoTipo] = useState<ContentType>('Reel')
-  const [novoTitulo, setNovoTitulo] = useState('')
-  const [novoHora, setNovoHora] = useState('')
+  // Adicionar conteúdo num dia qualquer (exceção ao padrão é normal) — janela própria.
+  const [novoDia, setNovoDia] = useState<Date | null>(null)
+  const [etiquetasAberto, setEtiquetasAberto] = useState(false)
+  const [arquivadosAberto, setArquivadosAberto] = useState(false)
+  // Status rápido na lista do dia: o menu com as etapas reais da esteira.
+  const [menuStatus, setMenuStatus] = useState<{ id: number; el: HTMLElement } | null>(null)
   // Instagram: quem programa acompanha o que vai sair sozinho.
   const ig = useIgStatus(podeRemarcar)
   const contaDe = (c: string) => ig.conectados.find(x => x.clientName === c)
@@ -155,11 +167,53 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
   const padrao = prefDoMes.padrao
   const padraoBase = clienteSel ? padraoDo(padroes, clienteSel) : PADRAO_VAZIO
   const plano = clienteSel ? planos.find(p => p.name === clienteSel) : undefined
-  const meta = metaDoMes(padrao, plano)
+  // Meta: a exceção deste mês (se alguém fixou) e, no resto, a meta permanente do cliente.
+  const meta = metaEfetiva(clienteSel ? excecaoDeMeta(prefs, clienteSel, anoRef, mesRef) : undefined, padraoBase, plano)
+  const segundo = segundoTipo(padraoBase)
+  const outro: TipoPadrao = segundo === 'Post' ? 'Feed' : 'Post'
   const freelancer = clienteSel ? naCarteira(carteira, clienteSel).tipo === 'freelancer' : false
   // Carteira mensal: só quem está ativo no mês aparece na escolha de cliente.
   const clientesDoMes = useMemo(() => clients.filter(c => ativoNoMes(carteira, c, anoRef, mesRef)), [clients, carteira, anoRef, mesRef])
-  const etiquetas = useMemo(() => [...new Set(items.flatMap(it => states[it.i]?.tags ?? []))].sort((a, b) => a.localeCompare(b)), [items, states])
+  const etiquetasBase = useMemo(() => etiquetasConhecidas(baseEtiquetas, items.flatMap(it => states[it.i]?.tags ?? [])), [baseEtiquetas, items, states])
+  const usoEtiquetas = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const it of items) for (const t of states[it.i]?.tags ?? []) m.set(t.toLowerCase(), (m.get(t.toLowerCase()) ?? 0) + 1)
+    return m
+  }, [items, states])
+  const comEtiqueta = (nome: string) => items.filter(it => (states[it.i]?.tags ?? []).some(t => t.toLowerCase() === nome.toLowerCase()))
+  const editarEtiquetaGlobal = (de: string, para: Etiqueta) => {
+    const nova = editarEtiqueta(baseEtiquetas, de, para)
+    if (nova === baseEtiquetas) return
+    setBaseEtiquetas(nova); salvarEtiquetas(nova)
+    if (para.nome !== de) {
+      for (const it of comEtiqueta(de)) onEditarConteudo(it.i, { etiquetas: renomearNoCard(states[it.i]?.tags ?? [], de, para.nome) })
+      if (etiqueta.toLowerCase() === de.toLowerCase()) setEtiqueta(para.nome)
+    }
+  }
+  const excluirEtiquetaGlobal = (nome: string) => {
+    const nova = removerEtiqueta(baseEtiquetas, nome)
+    setBaseEtiquetas(nova); salvarEtiquetas(nova)
+    for (const it of comEtiqueta(nome)) onEditarConteudo(it.i, { etiquetas: (states[it.i]?.tags ?? []).filter(t => t.toLowerCase() !== nome.toLowerCase()) })
+    if (etiqueta.toLowerCase() === nome.toLowerCase()) setEtiqueta('todas')
+  }
+  /** Etiqueta digitada no conteúdo e ainda fora da base entra nela (cor neutra). */
+  const registrarEtiquetas = (nomes: string[]) => {
+    let nova = baseEtiquetas
+    for (const n of nomes) nova = adicionarEtiqueta(nova, n)
+    if (nova !== baseEtiquetas) { setBaseEtiquetas(nova); salvarEtiquetas(nova) }
+  }
+  // Arquivar segue a regra de antes do "excluir": sócio tudo, Social só o que está em "A fazer".
+  const podeArquivar = (it: ContentItem) => podeRemarcar && (podeExcluirTudo || (states[it.i]?.status ?? it.s) === 0)
+  const arquivar = (it: ContentItem) => {
+    if (!window.confirm(`Arquivar "${states[it.i]?.title || it.n}" (${it.c})? Sai do Calendário e da Produção, mas fica em Arquivados e pode ser restaurado.`)) return
+    onArquivar(it.i); setEditando(null)
+    setAviso('Conteúdo arquivado — está em "Arquivados", dá para restaurar.')
+  }
+  const excluirDeVez = onExcluirDefinitivo ? (it: ContentItem) => {
+    if (!window.confirm(`Excluir DEFINITIVAMENTE "${states[it.i]?.title || it.n}" (${it.c})? Não dá para desfazer. Para guardar, use Arquivar.`)) return
+    onExcluirDefinitivo(it.i); setEditando(null)
+    setAviso('Conteúdo excluído definitivamente.')
+  } : undefined
 
   const filtrados = useMemo(() => {
     const permitidos = ETAPAS.find(e => e.key === etapa)!.status
@@ -168,10 +222,10 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
       const st = states[it.i]
       const s = st?.status ?? it.s
       if (cliente !== 'todos' && it.c !== cliente) return false
-      if (tipo !== 'todos' && it.tp !== tipo) return false
+      if (tipo !== 'todos' && tipoDoPadrao(it.tp) !== tipo) return false
       if (permitidos.length && !permitidos.includes(s)) return false
       if (q && !`${it.c} ${st?.title || ''} ${it.n}`.toLowerCase().includes(q)) return false
-      if (etiqueta !== 'todas' && !(st?.tags ?? []).includes(etiqueta)) return false
+      if (etiqueta !== 'todas' && !(st?.tags ?? []).some(t => t.toLowerCase() === etiqueta.toLowerCase())) return false
       return true
     })
   }, [items, states, cliente, tipo, etapa, busca, etiqueta])
@@ -251,9 +305,10 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
   }
 
   const conteudosDoDia = diaAberto ? porDia.get(chaveDia(diaAberto)) ?? [] : []
+  const editandoItem = editando !== null ? items.find(i => i.i === editando) ?? null : null
   // Fila de aprovação: respeita os filtros de cliente e tipo da tela.
   const fila = useMemo(() => podeRemarcar
-    ? aguardandoSocial(items.filter(it => (cliente === 'todos' || it.c === cliente) && (tipo === 'todos' || it.tp === tipo)), states)
+    ? aguardandoSocial(items.filter(it => (cliente === 'todos' || it.c === cliente) && (tipo === 'todos' || tipoDoPadrao(it.tp) === tipo)), states)
     : [], [podeRemarcar, items, states, cliente, tipo])
 
   // ── Padrão Editorial: o mês de referência é o da tela (vale na visão Semana também).
@@ -276,7 +331,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
     return vagasLivres(vagas, ocupantes)
   }, [comVagasNoMes, items, states, clienteSel, vagas, anoRef, mesRef])
   const livresDoDia = (dia: Date) => dia.getFullYear() === anoRef && dia.getMonth() === mesRef
-    ? livres.filter(v => v.dia === dia.getDate() && (tipo === 'todos' || tipoDoPadrao(tipo) === v.tipo))
+    ? livres.filter(v => v.dia === dia.getDate() && (tipo === 'todos' || tipo === v.tipo))
     : []
   const salvarVagas = (nova: Vaga[]) => {
     if (!clienteSel) return
@@ -308,7 +363,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
   const distribuirLista = (lista: { tipo: (typeof TIPOS_PADRAO)[number]; data: Date; titulo: string }[]) => {
     if (!clienteSel) return
     fixarMes()
-    onAdicionarVarios(lista.map(x => ({ cliente: clienteSel, tipo: TIPO_DO_CARD[x.tipo], titulo: x.titulo, data: x.data })))
+    onAdicionarVarios(lista.map(x => ({ cliente: clienteSel, tipo: TIPO_DO_CARD[x.tipo], titulo: x.titulo, data: x.data, status: 0 as Status })))
     setDistribuirAberto(false)
     setAviso(`${lista.length} conteúdo${lista.length !== 1 ? 's' : ''} distribuído${lista.length !== 1 ? 's' : ''} em ${nomeMes} para ${clienteSel}. As entregas entraram na fila pela data de publicação.`)
   }
@@ -358,6 +413,8 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
               ['Distribuir conteúdos', () => setDistribuirAberto(true), !clienteSel || freelancer, freelancer ? 'Freelancer não recebe distribuição automática' : 'Escolha um cliente no filtro'],
               ['Restaurar padrão', () => setConfirmarRestaurar(true), !clienteSel || freelancer, freelancer ? 'Freelancer não tem padrão para restaurar' : 'Escolha um cliente no filtro'],
               ['Reordenar datas', () => { setCapTxt({ video: String(capacidade.video), design: String(capacidade.design) }); setReordenarAberto(true) }, false, ''],
+              ['Etiquetas', () => setEtiquetasAberto(true), false, ''],
+              [arquivados.length ? `Arquivados (${arquivados.length})` : 'Arquivados', () => setArquivadosAberto(true), false, ''],
             ] as const).map(([rotulo, acao, bloqueado, porque]) => (
               <Tooltip key={rotulo} title={bloqueado ? porque : ''}>
                 <span>
@@ -411,22 +468,26 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
             </MenuItem>
           ))}
         </Filtro>
-        <Filtro rotulo="Tipo" value={tipo} onChange={v => setTipo(v as 'todos' | ContentType)} largura={140}>
+        <Filtro rotulo="Tipo" value={tipo} onChange={v => setTipo(v as 'todos' | TipoPadrao)} largura={140}>
           <MenuItem value="todos" sx={{ fontSize: '0.75rem' }}>Todos</MenuItem>
-          {ALL_TYPES.map(t => (
+          {TIPOS_PADRAO.map(t => (
             <MenuItem key={t} value={t} sx={{ fontSize: '0.75rem', gap: 0.8 }}>
-              <Box component="span" sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: corDoConteudo(t), display: 'inline-block' }} />
-              {rotuloDoTipo(t)}
+              <Box component="span" sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: COR_TIPO[t], display: 'inline-block' }} />
+              {ROTULO_TIPO[t]}
             </MenuItem>
           ))}
         </Filtro>
         <Filtro rotulo="Status" value={etapa} onChange={v => setEtapa(v as Etapa)} largura={170}>
           {ETAPAS.map(e => <MenuItem key={e.key} value={e.key} sx={{ fontSize: '0.75rem' }}>{e.label}</MenuItem>)}
         </Filtro>
-        {etiquetas.length > 0 && (
+        {etiquetasBase.length > 0 && (
           <Filtro rotulo="Etiqueta" value={etiqueta} onChange={setEtiqueta} largura={150}>
             <MenuItem value="todas" sx={{ fontSize: '0.75rem' }}>Todas</MenuItem>
-            {etiquetas.map(e => <MenuItem key={e} value={e} sx={{ fontSize: '0.75rem' }}>{e}</MenuItem>)}
+            {etiquetasBase.map(e => (
+              <MenuItem key={e.nome} value={e.nome} sx={{ fontSize: '0.75rem', gap: 0.8 }}>
+                <Box component="span" sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: e.cor, display: 'inline-block' }} />{e.nome}
+              </MenuItem>
+            ))}
           </Filtro>
         )}
         <Box>
@@ -444,8 +505,8 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
         {clienteSel && !freelancer ? (
           <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap', alignItems: 'center' }}>
             <Contador n={`${progresso.feitos.Reel}/${meta.Reel}`} rotulo="reels" ponto={COR_TIPO.Reel} />
-            <Contador n={`${progresso.feitos.Post}/${meta.Post}`} rotulo="design" ponto={COR_TIPO.Post} />
-            {(meta.Feed > 0 || progresso.feitos.Feed > 0) && <Contador n={`${progresso.feitos.Feed}/${meta.Feed}`} rotulo="feed" ponto={COR_TIPO.Feed} />}
+            <Contador n={`${progresso.feitos[segundo]}/${meta[segundo]}`} rotulo={ROTULO_TIPO[segundo].toLowerCase()} ponto={COR_TIPO[segundo]} />
+            {(meta[outro] > 0 || progresso.feitos[outro] > 0) && <Contador n={`${progresso.feitos[outro]}/${meta[outro]}`} rotulo={ROTULO_TIPO[outro].toLowerCase()} ponto={COR_TIPO[outro]} />}
             <Contador n={progresso.programados} rotulo="programados" />
             <Contador n={progresso.restantes} rotulo="faltantes" cor={progresso.restantes > 0 ? DS.amber : DS.green} />
             {progresso.pct !== null && (
@@ -462,9 +523,9 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
         ) : (
         <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap' }}>
           <Contador n={resumo.total} rotulo="no período" />
-          <Contador n={resumo.reels} rotulo="reels/stories" />
-          <Contador n={resumo.posts} rotulo="posts/carrosséis" />
-          {resumo.feed > 0 && <Contador n={resumo.feed} rotulo="feed" />}
+          <Contador n={resumo.reels} rotulo="reels" ponto={COR_TIPO.Reel} />
+          <Contador n={resumo.posts} rotulo="design" ponto={COR_TIPO.Post} />
+          {resumo.feed > 0 && <Contador n={resumo.feed} rotulo="feed" ponto={COR_TIPO.Feed} />}
           <Contador n={resumo.programados} rotulo="programados" />
           <Contador n={resumo.publicados} rotulo="publicados" />
           {resumo.atrasados > 0 && <Contador n={resumo.atrasados} rotulo="atrasados" cor={DS.red} />}
@@ -589,7 +650,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
                     {podeRemarcar && (
                       <Tooltip title="Adicionar conteúdo neste dia">
                         <IconButton size="small" aria-label={`Adicionar conteúdo em ${dia.getDate()}/${dia.getMonth() + 1}`}
-                          onClick={e => { e.stopPropagation(); setNovoAberto(true); setDiaAberto(dia) }}
+                          onClick={e => { e.stopPropagation(); setNovoDia(dia) }}
                           sx={{ p: 0.2, color: DS.t4, '&:hover': { color: DS.accent } }}>
                           <AddIcon sx={{ fontSize: 15 }} />
                         </IconButton>
@@ -599,12 +660,12 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                   {(modo === 'mes' ? lista.slice(0, POR_CELULA) : lista).map(it => (
-                    <MiniConteudo key={it.i} item={it} st={states[it.i]} arrastavel={podeRemarcar && visao === 'postagem'} ig={ig.porItem[it.i]}
+                    <MiniConteudo key={it.i} item={it} st={states[it.i]} arrastavel={podeRemarcar && visao === 'postagem'} ig={ig.porItem[it.i]} etiquetasBase={etiquetasBase}
                       onAbrir={podeRemarcar ? () => setEditando(it.i) : undefined}
                       onDragStart={() => setArrastando(it.i)} onDragEnd={() => { setArrastando(null); setAlvo(null) }} />
                   ))}
                   {modo === 'mes' && lista.length > POR_CELULA && (
-                    <Typography sx={{ fontSize: '0.66rem', fontWeight: 700, color: DS.t2, pl: 0.5, '&:hover': { color: DS.accent } }}>
+                    <Typography sx={{ fontSize: '0.66rem', fontWeight: 800, color: DS.accent, pl: 0.5, '&:hover': { textDecoration: 'underline' } }}>
                       +{lista.length - POR_CELULA} conteúdo{lista.length - POR_CELULA !== 1 ? 's' : ''}
                     </Typography>
                   )}
@@ -625,7 +686,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
       </Box>
 
       {/* Dia aberto: todos os conteúdos */}
-      <Dialog open={!!diaAberto} onClose={() => { setDiaAberto(null); setNovoAberto(false) }} maxWidth="sm" fullWidth>
+      <Dialog open={!!diaAberto} onClose={() => setDiaAberto(null)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1 }}>
           <Box sx={{ flex: 1 }}>
             <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: DS.t1 }}>
@@ -678,54 +739,17 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
               </Box>
             )
           })()}
-          {/* Adicionar — em qualquer dia, com ou sem padrão para ele. */}
-          {podeRemarcar && diaAberto && (novoAberto ? (
-            <Box sx={{ p: 1.4, borderRadius: '11px', border: `1px dashed ${DS.borderHov}`, bgcolor: `${DS.accent}08`, display: 'flex', flexDirection: 'column', gap: 1.2 }}>
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color: DS.t1 }}>Novo conteúdo neste dia</Typography>
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                <TextField select size="small" label="Cliente" value={novoCliente || clienteSel || ''}
-                  onChange={e => setNovoCliente(e.target.value)} sx={{ minWidth: 190, flex: 1, ...CAMPO_SX }}
-                  slotProps={{ inputLabel: { shrink: true } }}>
-                  {clients.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.75rem' }}>{c}</MenuItem>)}
-                </TextField>
-                <TextField select size="small" label="Tipo" value={novoTipo} onChange={e => setNovoTipo(e.target.value as ContentType)}
-                  sx={{ width: 150, ...CAMPO_SX }} slotProps={{ inputLabel: { shrink: true } }}>
-                  {TIPOS_NOVO.map(t => <MenuItem key={t.tp} value={t.tp} sx={{ fontSize: '0.75rem' }}>{t.rotulo}</MenuItem>)}
-                </TextField>
-              </Box>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <TextField size="small" label="Nome do conteúdo" value={novoTitulo} onChange={e => setNovoTitulo(e.target.value)}
-                  placeholder="Se deixar em branco: pauta a definir" slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{ flex: 1, '& .MuiInputBase-root': { fontSize: '0.78rem', bgcolor: DS.field, borderRadius: '8px' } }} />
-                <TextField size="small" label="Horário" type="time" value={novoHora} onChange={e => setNovoHora(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }} sx={{ width: 120, ...CAMPO_SX }} />
-              </Box>
-              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                <Button size="small" onClick={() => setNovoAberto(false)} sx={{ color: DS.t2 }}>Cancelar</Button>
-                <Button size="small" variant="contained" disabled={!(novoCliente || clienteSel)}
-                  onClick={() => {
-                    const c = novoCliente || clienteSel!
-                    const tp = tipoDoPadrao(novoTipo)
-                    const titulo = novoTitulo.trim() || (tp ? tituloPlanejado(tp) : `${novoTipo} — pauta a definir`)
-                    onAdicionar(c, novoTipo, titulo, new Date(diaAberto.getFullYear(), diaAberto.getMonth(), diaAberto.getDate(), 12), horaValida(novoHora) ? novoHora : undefined)
-                    setNovoTitulo(''); setNovoHora(''); setNovoAberto(false)
-                    setAviso(`${TIPOS_NOVO.find(t => t.tp === novoTipo)?.rotulo} adicionado em ${diaAberto.getDate()}/${diaAberto.getMonth() + 1} para ${c}.`)
-                  }}>
-                  Adicionar
-                </Button>
-              </Box>
-            </Box>
-          ) : (
-            <Button size="small" startIcon={<AddIcon sx={{ fontSize: '16px !important' }} />} onClick={() => setNovoAberto(true)}
+          {/* Adicionar — abre a janela própria de novo conteúdo (o dia vem preenchido). */}
+          {podeRemarcar && diaAberto && (
+            <Button size="small" startIcon={<AddIcon sx={{ fontSize: '16px !important' }} />} onClick={() => setNovoDia(diaAberto)}
               sx={{ alignSelf: 'flex-start', fontSize: '0.74rem', fontWeight: 700, color: DS.accent, px: 0.5 }}>
               Adicionar conteúdo neste dia
             </Button>
-          ))}
-          {conteudosDoDia.length === 0 && !novoAberto && (
+          )}
+          {conteudosDoDia.length === 0 && (
             <Typography sx={{ fontSize: '0.8rem', color: DS.t3, py: 3, textAlign: 'center' }}>Nada marcado para este dia.</Typography>
           )}
           {conteudosDoDia.map(it => {
-            const s = states[it.i]?.status ?? it.s
             return (
               <DetalheConteudo key={it.i} item={it} st={states[it.i]} podeRemarcar={podeRemarcar}
                 onEditar={podeRemarcar ? () => setEditando(it.i) : undefined}
@@ -735,9 +759,11 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
                 onReprogramar={() => { setDiaAberto(null); onReprogramar(it.i) }}
                 onReschedule={d => onReschedule(it.i, d)}
                 onMudarTipo={tp => onMudarTipo(it.i, tp)}
-                onExcluir={podeRemarcar && (podeExcluirTudo || s === 0) ? () => {
-                  if (window.confirm(`Excluir "${states[it.i]?.title || it.n}" (${it.c}) do calendário?`)) onExcluir(it.i)
-                } : undefined} />
+                responsavel={responsavelDe(it.i)}
+                etiquetasBase={etiquetasBase}
+                onStatus={podeRemarcar ? el => setMenuStatus({ id: it.i, el }) : undefined}
+                onArquivar={podeArquivar(it) ? () => arquivar(it) : undefined}
+                onExcluir={excluirDeVez ? () => excluirDeVez(it) : undefined} />
             )
           })}
           {conteudosDoDia.length > 0 && (
@@ -759,6 +785,9 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
           inicial={padraoAberto === 'mes' ? padrao : padraoBase}
           plano={plano}
           carteira={naCarteira(carteira, clienteSel)}
+          segundoCliente={segundo}
+          metaInicial={padraoAberto === 'mes' ? excecaoDeMeta(prefs, clienteSel, anoRef, mesRef) : padraoBase.meta}
+          metaHerdada={padraoAberto === 'mes' ? metaEfetiva(undefined, padraoBase, plano) : undefined}
           onClose={() => setPadraoAberto(null)}
           onSalvar={(novo, cart) => {
             if (padraoAberto === 'mes') {
@@ -785,6 +814,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
           livres={livres}
           meta={meta}
           existentes={itensDoMes}
+          segundo={segundo}
           hoje={now}
           onClose={() => setDistribuirAberto(false)}
           onConfirmar={distribuirLista}
@@ -820,10 +850,55 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
         st={editando !== null ? states[editando] : undefined}
         clientes={clientesDoMes}
         podeTrocarCliente={editando !== null && idsCriadosAMao.has(editando)}
-        etiquetasConhecidas={etiquetas}
+        etiquetasBase={etiquetasBase}
+        responsavelAtual={editando !== null ? responsavelDe(editando) : undefined}
         onClose={() => setEditando(null)}
-        onSalvar={(id, e) => { onEditarConteudo(id, e); if (Object.keys(e).length) setAviso('Conteúdo atualizado — vale para o Calendário e para a Produção.') }}
+        onSalvar={(id, e) => {
+          if (e.etiquetas) registrarEtiquetas(e.etiquetas)
+          onEditarConteudo(id, e)
+          if (Object.keys(e).length) setAviso('Conteúdo atualizado — vale para o Calendário e para a Produção.')
+        }}
+        onArquivar={editandoItem && podeArquivar(editandoItem) ? () => arquivar(editandoItem) : undefined}
+        onExcluir={editandoItem && excluirDeVez ? () => excluirDeVez(editandoItem) : undefined}
       />
+
+      <NovoConteudoDialog
+        open={!!novoDia} dia={novoDia}
+        clientes={clientesDoMes}
+        clientePadrao={clienteSel}
+        tipoPadrao={tipo !== 'todos' ? TIPO_DO_CARD[tipo] : undefined}
+        onClose={() => setNovoDia(null)}
+        onCriar={n => {
+          onAdicionar(n)
+          setNovoDia(null)
+          setAviso(`${rotuloDoTipo(n.tipo)} criado em ${n.data.getDate()}/${n.data.getMonth() + 1} para ${n.cliente}.`)
+        }}
+      />
+
+      <EtiquetasDialog open={etiquetasAberto} base={etiquetasBase} uso={usoEtiquetas}
+        onClose={() => setEtiquetasAberto(false)}
+        onCriar={e => { const nova = adicionarEtiqueta(baseEtiquetas, e.nome, e.cor); setBaseEtiquetas(nova); salvarEtiquetas(nova) }}
+        onEditar={editarEtiquetaGlobal}
+        onExcluir={excluirEtiquetaGlobal} />
+
+      <ArquivadosDialog open={arquivadosAberto} itens={arquivados} states={states}
+        onClose={() => setArquivadosAberto(false)}
+        onRestaurar={id => { onRestaurar(id); setAviso('Conteúdo restaurado — voltou para o Calendário e a Produção.') }}
+        onExcluirDefinitivo={onExcluirDefinitivo} />
+
+      {/* Status rápido: as etapas reais da esteira (passa pela mesma regra de quem move o quê). */}
+      <Menu open={!!menuStatus && !!diaAberto && conteudosDoDia.some(i => i.i === menuStatus.id)} anchorEl={menuStatus?.el} onClose={() => setMenuStatus(null)}>
+        {ETAPAS_CONTEUDO.map(st => {
+          const atual = menuStatus ? (states[menuStatus.id]?.status ?? items.find(i => i.i === menuStatus.id)?.s) : null
+          return (
+            <MenuItem key={st} selected={atual === st} sx={{ fontSize: '0.8rem', gap: 1 }}
+              onClick={() => { if (menuStatus && atual !== st) onEditarConteudo(menuStatus.id, { status: st }); setMenuStatus(null) }}>
+              <Box component="span" sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: STATUS_CONFIG[st].color, display: 'inline-block' }} />
+              {STATUS_CONFIG[st].label}
+            </MenuItem>
+          )
+        })}
+      </Menu>
 
       {/* Restaurar: sempre com confirmação — substitui as escolhas manuais do mês. */}
       <Dialog open={confirmarRestaurar && !!clienteSel} onClose={() => setConfirmarRestaurar(false)} maxWidth="xs" fullWidth>
@@ -916,18 +991,19 @@ function VagaChip({ vaga, arrastavel, onDragStart, onDragEnd }: { vaga: Vaga; ar
   )
 }
 
-function StatusPill({ s }: { s: Status }) {
+function StatusPill({ s, seta }: { s: Status; seta?: boolean }) {
   const cfg = STATUS_CONFIG[s]
   return (
     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4, px: 0.7, py: '2px', borderRadius: '999px', border: `1px solid ${cfg.color}66`, bgcolor: `${cfg.color}14`, maxWidth: '100%' }}>
       <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: cfg.color, flexShrink: 0 }} />
-      <Typography noWrap sx={{ fontSize: '0.56rem', fontWeight: 800, color: cfg.color, lineHeight: 1.2 }}>{cfg.shortLabel}</Typography>
+      <Typography noWrap sx={{ fontSize: seta ? '0.66rem' : '0.56rem', fontWeight: 800, color: cfg.color, lineHeight: 1.2 }}>{cfg.shortLabel}{seta ? ' ▾' : ''}</Typography>
     </Box>
   )
 }
 
-function MiniConteudo({ item, st, arrastavel, onDragStart, onDragEnd, ig, onAbrir }: {
+function MiniConteudo({ item, st, arrastavel, onDragStart, onDragEnd, ig, onAbrir, etiquetasBase }: {
   item: ContentItem; st: ItemState | undefined; arrastavel: boolean; onDragStart: () => void; onDragEnd: () => void
+  etiquetasBase: Etiqueta[]
   ig?: AgendamentosDoCard
   /** Abre o painel lateral de edição. */
   onAbrir?: () => void
@@ -972,7 +1048,7 @@ function MiniConteudo({ item, st, arrastavel, onDragStart, onDragEnd, ig, onAbri
         {!!st?.tags?.length && (
           <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap', mt: 0.4 }}>
             {st.tags.slice(0, 2).map(t => (
-              <Box key={t} sx={{ px: 0.6, py: '1px', borderRadius: '5px', bgcolor: DS.field, border: `1px solid ${DS.border}` }}>
+              <Box key={t} sx={{ px: 0.6, py: '1px', borderRadius: '5px', bgcolor: `${corDaEtiqueta(etiquetasBase, t)}1f`, border: `1px solid ${corDaEtiqueta(etiquetasBase, t)}77` }}>
                 <Typography noWrap sx={{ fontSize: '0.52rem', fontWeight: 700, color: DS.t2, maxWidth: 80 }}>{t}</Typography>
               </Box>
             ))}
@@ -984,8 +1060,13 @@ function MiniConteudo({ item, st, arrastavel, onDragStart, onDragEnd, ig, onAbri
   )
 }
 
-function DetalheConteudo({ item, st, podeRemarcar, onReschedule, onMudarTipo, onExcluir, ig, conta, onProgramar, onMudarHora, onReprogramar, onEditar }: {
+function DetalheConteudo({ item, st, podeRemarcar, onReschedule, onMudarTipo, onArquivar, onExcluir, ig, conta, onProgramar, onMudarHora, onReprogramar, onEditar, onStatus, responsavel, etiquetasBase }: {
   item: ContentItem; st: ItemState | undefined; podeRemarcar: boolean; onReschedule: (d: Date) => void
+  /** Status clicável: abre as etapas da esteira. */
+  onStatus?: (el: HTMLElement) => void
+  responsavel?: string
+  etiquetasBase: Etiqueta[]
+  onArquivar?: () => void
   /** Abre o painel lateral com todos os campos. */
   onEditar?: () => void
   onMudarTipo: (tp: ContentType) => void
@@ -994,10 +1075,11 @@ function DetalheConteudo({ item, st, podeRemarcar, onReschedule, onMudarTipo, on
   onProgramar: () => void
   onMudarHora: (hora: string) => void
   onReprogramar: () => void
-  /** Ausente = quem vê não pode excluir este conteúdo. */
+  /** Exclusão definitiva. Ausente = quem vê não pode. */
   onExcluir?: () => void
 }) {
   const s = st?.status ?? item.s
+  const tiposDoCard = TIPOS_CRIACAO.some(t => t.tp === item.tp) ? TIPOS_CRIACAO : [...TIPOS_CRIACAO, { tp: item.tp, rotulo: rotuloDoTipo(item.tp) }]
   const cor = corDoConteudo(item.tp)
   const dt = new Date(item.dt)
   const pad = (n: number) => String(n).padStart(2, '0')
@@ -1014,27 +1096,36 @@ function DetalheConteudo({ item, st, podeRemarcar, onReschedule, onMudarTipo, on
             aria-label="Tipo do conteúdo"
             sx={{ width: 130, '& .MuiInputBase-root': { fontSize: '0.66rem', fontWeight: 800, height: 26, color: cor, bgcolor: DS.field, borderRadius: '7px' },
               '& .MuiOutlinedInput-notchedOutline': { borderColor: `${cor}55` } }}>
-            {TIPOS_NOVO.map(t => <MenuItem key={t.tp} value={t.tp} sx={{ fontSize: '0.72rem' }}>{t.rotulo}</MenuItem>)}
+            {tiposDoCard.map(t => <MenuItem key={t.tp} value={t.tp} sx={{ fontSize: '0.72rem' }}>{t.rotulo}</MenuItem>)}
           </TextField>
         ) : (
           <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: cor, textTransform: 'uppercase' }}>{rotuloDoTipo(item.tp)}</Typography>
         )}
         <Typography sx={{ fontSize: '0.7rem', color: DS.t2, fontWeight: 600 }}>{item.c}</Typography>
         <Box sx={{ flex: 1 }} />
-        <StatusPill s={s} />
+        {onStatus ? (
+          <Tooltip title="Mudar etapa">
+            <Box component="button" type="button" onClick={e => onStatus(e.currentTarget)} aria-label={`Etapa: ${STATUS_CONFIG[s]?.label}. Mudar`}
+              sx={{ p: 0, border: 0, bgcolor: 'transparent', cursor: 'pointer', font: 'inherit', borderRadius: '999px', '&:hover': { filter: 'brightness(1.25)' } }}>
+              <StatusPill s={s} seta />
+            </Box>
+          </Tooltip>
+        ) : <StatusPill s={s} />}
         {onEditar && (
           <Button size="small" onClick={onEditar} sx={{ minWidth: 0, px: 1, fontSize: '0.68rem', fontWeight: 700, color: DS.accent }}>Editar</Button>
         )}
-        {onExcluir && (
-          <Tooltip title="Excluir do calendário">
-            <IconButton size="small" onClick={onExcluir} aria-label={`Excluir ${st?.title || item.n}`}
-              sx={{ p: 0.4, color: DS.t4, '&:hover': { color: DS.red } }}>
-              <DeleteOutlineIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-          </Tooltip>
-        )}
       </Box>
-      <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, color: DS.t1, mb: 0.8 }}>{st?.title || item.n}</Typography>
+      <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, color: DS.t1, mb: 0.6 }}>{st?.title || item.n}</Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap', mb: 0.8 }}>
+        <Typography sx={{ fontSize: '0.7rem', color: responsavel ? DS.t1 : DS.t3, fontWeight: 600 }}>
+          {responsavel ? `Responsável: ${nomeDe(responsavel)}` : 'Sem responsável'}
+        </Typography>
+        {(st?.tags ?? []).map(t => (
+          <Box key={t} sx={{ px: 0.7, py: '1px', borderRadius: '6px', bgcolor: `${corDaEtiqueta(etiquetasBase, t)}1f`, border: `1px solid ${corDaEtiqueta(etiquetasBase, t)}77` }}>
+            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: DS.t1 }}>{t}</Typography>
+          </Box>
+        ))}
+      </Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, flexWrap: 'wrap' }}>
         {s === 9 && st?.programadoPara && (
           <Typography sx={{ fontSize: '0.7rem', color: DS.t1, fontWeight: 700 }}>
@@ -1087,6 +1178,12 @@ function DetalheConteudo({ item, st, podeRemarcar, onReschedule, onMudarTipo, on
         </Box>
       )}
       {podeRemarcar && <SituacaoIG item={item} st={st} agendamentos={ig} conta={conta} onReprogramar={onReprogramar} />}
+      {(onArquivar || onExcluir) && (
+        <Box sx={{ display: 'flex', gap: 0.8, mt: 1, pt: 1, borderTop: `1px solid ${DS.border}` }}>
+          {onArquivar && <Button size="small" onClick={onArquivar} sx={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'none', color: DS.t2, border: `1px solid ${DS.border}`, px: 1.2 }}>Arquivar</Button>}
+          {onExcluir && <Button size="small" onClick={onExcluir} sx={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'none', color: DS.red, border: `1px solid ${DS.red}44`, px: 1.2 }}>Excluir</Button>}
+        </Box>
+      )}
     </Box>
   )
 }

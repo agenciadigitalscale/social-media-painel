@@ -160,6 +160,8 @@ export const SYNC_KEYS = [
   'sm_carteira',
   'sm_capacidade_entrega',
   'sm_ordem_clientes',
+  // Base global de etiquetas (nome + cor) — 2026-10-06.
+  'sm_etiquetas',
 ] as const
 
 export type SyncKey = (typeof SYNC_KEYS)[number]

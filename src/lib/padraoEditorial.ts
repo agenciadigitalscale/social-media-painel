@@ -19,6 +19,19 @@ export const TIPOS_PADRAO: TipoPadrao[] = ['Reel', 'Post', 'Feed']
 /** Como a equipe chama cada tipo (2026-10-05): Reel · Design · Feed. Internamente o Design segue sendo "Post". */
 export const ROTULO_TIPO: Record<TipoPadrao, string> = { Reel: 'Reel', Post: 'Design', Feed: 'Feed' }
 
+/**
+ * Os tipos que se CRIAM hoje (2026-10-06): Reel · Design · Feed. Story e
+ * Carrossel continuam válidos nos cards antigos (o tipo segue no dado), só não
+ * são oferecidos para conteúdo novo.
+ */
+export const TIPOS_CRIACAO: { tp: ContentType; rotulo: string }[] = [
+  { tp: 'Reel', rotulo: 'Reel' }, { tp: 'Post', rotulo: 'Design' }, { tp: 'Feed', rotulo: 'Feed' },
+]
+/** Rótulo de qualquer tipo de card (os antigos mantêm o nome deles). */
+export function rotuloDoTipo(tp: ContentType): string {
+  return TIPOS_CRIACAO.find(t => t.tp === tp)?.rotulo ?? tp
+}
+
 /** A que tipo do padrão um card pertence (Carrossel conta como Post Design; Story fica fora). */
 export function tipoDoPadrao(tp: ContentType): TipoPadrao | null {
   if (tp === 'Reel') return 'Reel'
@@ -57,7 +70,12 @@ export interface PadraoCliente {
   plano?: PlanoEditorial
   /** 6+6: dias da semana FRACA, por tipo. Ausente = o primeiro dia da semana forte. */
   diasFraca?: Partial<Record<TipoPadrao, number[]>>
+  /** Segundo tipo do cliente, além do Reel: Design (Post) ou Feed. Ausente = deduzido (Design). */
+  segundo?: SegundoTipo
+  /** 6+6: o mês começa pela semana FRACA (padrão: forte, fraca, forte…). */
+  comecaFraca?: boolean
 }
+export type SegundoTipo = 'Post' | 'Feed'
 export type PadroesStore = Record<string, PadraoCliente>
 
 export const PADRAO_KEY = 'sm_padrao_editorial'
@@ -80,16 +98,44 @@ export function salvarPadroes(store: PadroesStore): void {
 
 export function padraoDo(store: PadroesStore, cliente: string): PadraoCliente {
   const p = store[cliente]
-  return p ? { dias: { ...PADRAO_VAZIO.dias, ...p.dias }, meta: p.meta, plano: p.plano, diasFraca: p.diasFraca } : PADRAO_VAZIO
+  return p ? { dias: { ...PADRAO_VAZIO.dias, ...p.dias }, meta: p.meta, plano: p.plano, diasFraca: p.diasFraca, segundo: p.segundo, comecaFraca: p.comecaFraca } : PADRAO_VAZIO
 }
 
-/** Meta do mês: o que o padrão fixar; senão o plano do cliente (ex.: 4+4). */
+/**
+ * O segundo tipo do cliente (Reel + Design, ou Reel + Feed). Sem escolha
+ * gravada, vale o que o padrão já usa: só Feed configurado = Feed; senão Design.
+ */
+export function segundoTipo(p: Pick<PadraoCliente, 'segundo' | 'dias' | 'meta'>): SegundoTipo {
+  if (p.segundo) return p.segundo
+  const usaFeed = (p.dias.Feed?.length ?? 0) > 0 || (p.meta?.Feed ?? 0) > 0
+  const usaPost = (p.dias.Post?.length ?? 0) > 0 || (p.meta?.Post ?? 0) > 0
+  return usaFeed && !usaPost ? 'Feed' : 'Post'
+}
+
+/**
+ * Meta permanente: o que o padrão fixar; senão o plano do cliente — o número de
+ * "posts" do plano vai para o SEGUNDO tipo dele (Design ou Feed).
+ */
 export function metaDoMes(padrao: PadraoCliente, cliente: Pick<Client, 'postsPerMonth' | 'reelsPerMonth'> | undefined): Record<TipoPadrao, number> {
+  const seg = segundoTipo(padrao)
   return {
     Reel: padrao.meta?.Reel ?? cliente?.reelsPerMonth ?? 0,
-    Post: padrao.meta?.Post ?? cliente?.postsPerMonth ?? 0,
-    Feed: padrao.meta?.Feed ?? 0,
+    Post: padrao.meta?.Post ?? (seg === 'Post' ? cliente?.postsPerMonth ?? 0 : 0),
+    Feed: padrao.meta?.Feed ?? (seg === 'Feed' ? cliente?.postsPerMonth ?? 0 : 0),
   }
+}
+
+/**
+ * Meta de UM mês: a exceção daquele mês (quando alguém a fixou) e, no que ela
+ * não disser, a meta permanente do cliente. Novembro sem exceção volta ao padrão.
+ */
+export function metaEfetiva(
+  excecao: Partial<Record<TipoPadrao, number>> | undefined,
+  base: PadraoCliente,
+  cliente: Pick<Client, 'postsPerMonth' | 'reelsPerMonth'> | undefined,
+): Record<TipoPadrao, number> {
+  const perm = metaDoMes(base, cliente)
+  return { Reel: excecao?.Reel ?? perm.Reel, Post: excecao?.Post ?? perm.Post, Feed: excecao?.Feed ?? perm.Feed }
 }
 
 // ── Datas ──────────────────────────────────────────────────────────────
@@ -109,10 +155,15 @@ export function semanaDoMes(d: Date): number {
   return Math.floor((d.getDate() - 1 + primeiro) / 7)
 }
 
+/** No 6+6, esta semana do mês é forte? Alterna sozinha; `comecaFraca` inverte. */
+export function semanaForte(padrao: Pick<PadraoCliente, 'comecaFraca'>, d: Date): boolean {
+  return (semanaDoMes(d) % 2 === 0) !== !!padrao.comecaFraca
+}
+
 /** Dias da semana que valem para um tipo numa data — forte ou fraca no 6+6. */
 export function diasDaSemana(padrao: PadraoCliente, tipo: TipoPadrao, d: Date): number[] {
   const fortes = padrao.dias[tipo] ?? []
-  if (padrao.plano !== '6+6' || semanaDoMes(d) % 2 === 0) return fortes
+  if (padrao.plano !== '6+6' || semanaForte(padrao, d)) return fortes
   const fracos = padrao.diasFraca?.[tipo]
   return fracos?.length ? fracos : fortes.slice(0, 1)
 }

@@ -11,6 +11,7 @@ import { STATUS_CONFIG } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { DS, ctaGradient } from '../theme'
 import { linkDoMaterial, normalizarLinkMaterial } from '../lib/linkMaterial'
+import { TIPOS_CRIACAO, rotuloDoTipo } from '../lib/padraoEditorial'
 
 const fieldSx = {
   '& .MuiInputBase-input': { fontSize: '0.8rem' },
@@ -188,9 +189,10 @@ export default function EditItemDialog({ open, item, state, onSave, onSaveState,
               <Box sx={{ flex: 1 }}>
                 <Typography sx={{ fontSize: '0.6rem', color: 'rgba(247,247,245,0.28)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', mb: 0.6 }}>Tipo</Typography>
                 <ToggleButtonGroup size="small" value={type} exclusive onChange={(_, v) => v && setType(v)} fullWidth>
-                  {(['Post', 'Reel', 'Story', 'Carrossel', 'Feed'] as ContentType[]).map(t => (
+                  {/* Só Reel · Design · Feed; o tipo antigo deste card (Story/Carrossel) continua aparecendo. */}
+                  {[...TIPOS_CRIACAO, ...(TIPOS_CRIACAO.some(x => x.tp === type) ? [] : [{ tp: type, rotulo: rotuloDoTipo(type) }])].map(({ tp: t, rotulo }) => (
                     <ToggleButton key={t} value={t} sx={{ fontSize: '0.62rem', py: 0.6, '&.Mui-selected': { bgcolor: 'rgba(255,122,0,0.18)', color: 'primary.main', borderColor: 'rgba(255,122,0,0.4)' } }}>
-                      {t}
+                      {rotulo}
                     </ToggleButton>
                   ))}
                 </ToggleButtonGroup>

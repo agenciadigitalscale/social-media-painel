@@ -54,10 +54,22 @@ export function comPreferencias(prefs: PrefMesStore, cliente: string, ano: numbe
   return { ...prefs, [cliente]: { ...(prefs[cliente] ?? {}), [chaveMes(ano, mes)]: copia } }
 }
 
+/** O padrão sem a meta: criar o mês copia os DIAS; a meta só vira exceção quando alguém a fixa no mês. */
+function semMeta(p: PadraoCliente): PadraoCliente {
+  const { meta: _meta, ...resto } = p
+  return resto
+}
+
 /** "Criar o mês": copia o padrão para o mês só se ele ainda não tem preferências próprias. */
 export function garantirMes(prefs: PrefMesStore, padroes: PadroesStore, cliente: string, ano: number, mes: number): PrefMesStore {
   if (prefs[cliente]?.[chaveMes(ano, mes)]) return prefs
-  return comPreferencias(prefs, cliente, ano, mes, padraoDo(padroes, cliente))
+  return comPreferencias(prefs, cliente, ano, mes, semMeta(padraoDo(padroes, cliente)))
+}
+
+/** A exceção de meta de um mês (ausente = o mês segue a meta permanente do cliente). */
+export function excecaoDeMeta(prefs: PrefMesStore, cliente: string, ano: number, mes: number): MesDoCliente['meta'] {
+  const m = prefs[cliente]?.[chaveMes(ano, mes)]?.meta
+  return m && Object.keys(m).length ? m : undefined
 }
 
 /** As vagas (preferências por data) do mês: as gravadas, ou as que o padrão do mês gera. */
@@ -92,7 +104,9 @@ export function removerVaga(vagas: Vaga[], alvo: Vaga): Vaga[] {
  * conteúdo é apagado nem movido.
  */
 export function restaurarMes(prefs: PrefMesStore, padroes: PadroesStore, cliente: string, ano: number, mes: number): PrefMesStore {
-  return comPreferencias(prefs, cliente, ano, mes, padraoDo(padroes, cliente))
+  // A exceção de META do mês não é preferência: continua valendo.
+  const meta = excecaoDeMeta(prefs, cliente, ano, mes)
+  return comPreferencias(prefs, cliente, ano, mes, { ...semMeta(padraoDo(padroes, cliente)), ...(meta ? { meta } : {}) })
 }
 
 export function carregarPrefMes(): PrefMesStore {

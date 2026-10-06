@@ -39,6 +39,8 @@ import type { Client, ContentItem, ContentType, ItemEditPatch, ItemState, Roteir
 import { STATUS_CONFIG, isOpenStatus, isPreClientStatus, statusRank, STATUS_ORDER } from '../types'
 import { clickable } from '../shared/a11y'
 import { BRAND, DS, typeColor, ctaGradient } from '../theme'
+import { TIPOS_CRIACAO } from '../lib/padraoEditorial'
+import { useEsteira } from './producao/useEsteira'
 import { linkDoMaterial } from '../lib/linkMaterial'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
 import { syncToCloud, forceSync, onSyncStatus } from '../lib/storage'
@@ -1047,6 +1049,8 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   }
 
   const boardScrollRef = useRef<HTMLDivElement>(null)
+  // Esteira na altura da tela (cada coluna rola sozinha) + arrastar pelo fundo.
+  useEsteira(boardScrollRef, { ativo: subTab < 4 })
 
   function getDriveEmbedUrl(link: string): string {
     const folderMatch = link.match(/\/folders\/([a-zA-Z0-9_-]+)/)
@@ -1844,7 +1848,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               <Box
                 ref={boardScrollRef}
                 sx={{
-                  flex: 1, minHeight: 0,
+                  flex: 'none', minHeight: 0, cursor: 'grab',
                   overflowX: 'auto', overflowY: 'hidden',
                   // barra nativa escondida — usamos a BoardScrollbar customizada abaixo
                   scrollbarWidth: 'none',
@@ -2288,12 +2292,12 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               Tipo de conteúdo
             </Typography>
             <ToggleButtonGroup exclusive value={addType} onChange={(_, v) => v && setAddType(v)} size="small" fullWidth>
-              {ALL_TYPES.map(t => (
+              {TIPOS_CRIACAO.map(({ tp: t, rotulo }) => (
                 <ToggleButton key={t} value={t} sx={{
                   fontSize: '0.6rem', fontWeight: 700, py: 0.6, gap: 0.3,
                   '&.Mui-selected': { color: DS.accent, bgcolor: `${DS.accent}18`, borderColor: `${DS.accent}50` },
                 }}>
-                  {t}
+                  {rotulo}
                 </ToggleButton>
               ))}
             </ToggleButtonGroup>
@@ -2404,13 +2408,13 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
               Tipo de conteúdo
             </Typography>
             <ToggleButtonGroup exclusive value={addType} onChange={(_, v) => v && setAddType(v)} size="small" fullWidth>
-              {ALL_TYPES.map(t => (
+              {TIPOS_CRIACAO.map(({ tp: t, rotulo }) => (
                 <ToggleButton key={t} value={t} sx={{
                   fontSize: '0.6rem', fontWeight: 700, py: 0.6, gap: 0.3,
                   '&.Mui-selected': { color: TYPE_COLOR[t], bgcolor: `${TYPE_COLOR[t]}18`, borderColor: `${TYPE_COLOR[t]}50` },
                 }}>
                   <Typography sx={{ fontSize: '0.72rem', lineHeight: 1 }}>{TYPE_EMOJI[t]}</Typography>
-                  {t}
+                  {rotulo}
                 </ToggleButton>
               ))}
             </ToggleButtonGroup>

@@ -338,7 +338,8 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       sx={{
-        px: 1.5, pt: 1.3, pb: 1.1,
+        // Mais compacto (2026-10-06): a esteira inteira cabe melhor na tela, sem tirar informação.
+        px: 1.2, pt: 1, pb: 0.9,
         borderRadius: '12px',
         bgcolor: isDragging ? `${colColor}0c` : isSelected ? `${colColor}10` : DS.surfaceAlt,
         border: `1px solid ${isSelected ? colColor + '55' : DS.border}`,
@@ -348,7 +349,7 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
         userSelect: 'none',
         position: 'relative',
         overflow: 'hidden',
-        minHeight: 72,
+        minHeight: 64,
         transition: 'border 0.15s, background-color 0.15s, transform 0.18s ease, box-shadow 0.18s ease',
         // Card que acabou de trocar de coluna pisca a borda: sem isso ele some de
         // um lado e aparece do outro sem nenhum sinal de que a esteira agiu.

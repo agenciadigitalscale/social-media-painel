@@ -1247,6 +1247,38 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > Lê os MESMOS cards do Calendário (`lib/cronograma.ts`, testado: data de postagem, título do card sem
 > prefixo, resumo Reel/Design/Feed) — atualiza sozinho. Logo = `/logotipo.png` (transparente) recortado.
 > Só sócio e Social (`roles.ts`, `TODAS_AS_ABAS` = 37). `semPrefixo` mudou para `lib/padraoEditorial.ts`.
+> **Planejamento estilo CC (2026-10-06) — vale sobre as notas abaixo no que diverge.**
+> - **Tipo padrão do cliente:** `PadraoCliente.segundo` = `'Post'` (Design) | `'Feed'` — o cliente é Reel + Design
+>   OU Reel + Feed (`segundoTipo`, deduz de dados antigos). A meta do plano vai para o segundo tipo (`metaDoMes`).
+> - **Meta do mês = exceção explícita:** criar o mês (distribuir/mexer em vaga) NÃO copia mais a meta
+>   (`garantirMes`); só "Preferências do mês" com meta preenchida vira exceção (`excecaoDeMeta`).
+>   `metaEfetiva(exceção, padrão, plano)`. Restaurar padrão refaz as vagas e MANTÉM a exceção de meta.
+>   Meses antigos de produção com meta copiada (ARCA, Aventur, Chalés em out/26) seguem como exceção — iguais ao padrão hoje.
+> - **6+6 começa forte ou fraca:** `comecaFraca` + `semanaForte()`; alterna sozinho.
+> - **Só Reel · Design · Feed na criação** (`TIPOS_CRIACAO`, `rotuloDoTipo`): Calendário, painel do conteúdo,
+>   card novo da Produção e EditItemDialog. Story/Carrossel antigos seguem válidos e aparecem só no próprio card.
+>   `CriarPublicacaoDialog` (Agendamento) ficou de fora — lá Carrossel/Story são formato de publicação.
+> - **Novo conteúdo = janela própria** (`calendario/NovoConteudoDialog.tsx`): cliente, nome, tipo, postagem (dia
+>   clicado), horário, ENTREGA manual (vazia = fila decide), responsável e STATUS INICIAL. `EscolherQuando` ganhou
+>   `rotulo`/`titulo`/`semHora` (serve para a data de entrega).
+> - **Painel do conteúdo** edita também entrega manual (`deliveryDate`; null = fila) e responsável (via `reatribuir`,
+>   a mesma fonte da Produção: gaveta + `assignedEditor`; dono lido por `donoDoCard`). Entrega manual na mesma
+>   edição que muda a postagem não é sobrescrita pela fila.
+> - **Lista do dia:** status clicável (menu com `ETAPAS_CONTEUDO`, passa pelo `setStatus` do App — mesma regra
+>   `podeMover`), responsável e etiquetas no card, botões Arquivar / Excluir.
+> - **Arquivar = o `sm_deleted` de sempre** (soft delete, sai de todas as telas). **Arquivados** (botão no
+>   Calendário, `calendario/ArquivadosDialog.tsx`) lista os cards criados à mão arquivados: Restaurar (tira do
+>   `sm_deleted`) e Excluir de vez (só sócio: tira do `sm_custom` e MANTÉM o id no `sm_deleted`, para cópia velha
+>   não ressuscitar). Arquivar segue a regra antiga do excluir: sócio tudo, Social só "A fazer".
+> - **Etiquetas globais:** `lib/etiquetas.ts` + `sm_etiquetas` ([{nome, cor}], SYNC_KEYS + ramo no applyRemoteSync).
+>   O card continua guardando o NOME em `state.tags`; renomear/excluir na base aplica nos cards. Etiqueta antiga
+>   fora da base aparece com cor neutra. Paleta `CORES_ETIQUETA` no `theme.ts`.
+> - **Esteira (Produções) — só visual:** `producao/useEsteira.ts` dá à esteira a altura que sobra na tela (cada
+>   coluna rola sozinha; antes uma coluna de 99 cards esticava a página a 11.723 px) e arrastar o FUNDO move a
+>   esteira para os lados. O arraste de card é do dnd-kit: o fundo ignora `[data-kanban-card]`, botões e campos.
+>   Cards um pouco mais compactos. Workflow, filtros e regras intactos.
+> - Duplicações registradas para depois: abas 26–28 (por pessoa) × "Entregas do time" (25); "Hoje" × "Meu Dia";
+>   nomes "Entregas" (23) × "Entregas do time" (25).
 > **Calendário — vagas por data + fila inteligente (2026-10-05) — vale sobre a nota abaixo no que diverge.**
 > - **Tipos:** Reel · Design · Feed (`ROTULO_TIPO`; internamente o Design segue `Post`). Cores
 >   por tipo em `COR_TIPO_CONTEUDO` (`theme.ts`, categoria como `BRAND`): Reel azul `#4C8DFF`,

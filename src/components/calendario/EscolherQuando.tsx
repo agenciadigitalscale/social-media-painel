@@ -41,7 +41,7 @@ const CAMPO = {
   '& fieldset': { borderColor: DS.border },
 }
 
-export default function EscolherQuando({ data, hora, onData, onHora, direcao = 'futuro' }: {
+export default function EscolherQuando({ data, hora, onData, onHora, direcao = 'futuro', rotulo = 'Dia', titulo, semHora, largura }: {
   /** "aaaa-mm-dd" */
   data: string
   /** "HH:MM" */
@@ -50,6 +50,14 @@ export default function EscolherQuando({ data, hora, onData, onHora, direcao = '
   onHora: (v: string) => void
   /** futuro = agendar (dias passados bloqueados); passado = registrar o que já saiu. */
   direcao?: 'futuro' | 'passado' | 'livre'
+  /** Rótulo do botão ("Data de postagem", "Data de entrega"). */
+  rotulo?: string
+  /** Título da janela do calendário. */
+  titulo?: string
+  /** Só o dia (ex.: data de entrega). */
+  semHora?: boolean
+  /** Largura do botão do dia (padrão 230). */
+  largura?: number | string
 }) {
   const [ancora, setAncora] = useState<HTMLElement | null>(null)
   const [mes, setMes] = useState(() => { const d = deInput(data) ?? new Date(); return new Date(d.getFullYear(), d.getMonth(), 1, 12) })
@@ -87,14 +95,14 @@ export default function EscolherQuando({ data, hora, onData, onHora, direcao = '
         {/* Botão do dia — como o "Período" do Painel de Tráfego */}
         <Box component="button" type="button" onClick={e => abrir(e.currentTarget)} aria-haspopup="dialog" aria-expanded={!!ancora}
           sx={{
-            minWidth: 230, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2,
+            minWidth: largura ?? 230, width: largura, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2,
             px: 1.5, borderRadius: '10px', cursor: 'pointer', textAlign: 'left', font: 'inherit',
             border: `1px solid ${ancora ? 'rgba(255,122,0,0.78)' : DS.border}`, bgcolor: DS.surface, color: DS.t1,
             boxShadow: ancora ? '0 0 0 3px rgba(255,122,0,0.08)' : 'none',
             transition: 'border-color 0.18s ease', '&:hover': { borderColor: 'rgba(255,122,0,0.52)' },
           }}>
           <Box>
-            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: DS.t2, lineHeight: 1.2 }}>Dia</Typography>
+            <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: DS.t2, lineHeight: 1.2, whiteSpace: 'nowrap' }}>{rotulo}</Typography>
             <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: DS.t1, lineHeight: 1.3 }}>{formatar(data)}</Typography>
           </Box>
           <Box sx={{ width: 27, height: 27, borderRadius: '8px', bgcolor: 'rgba(255,122,0,0.1)', display: 'grid', placeItems: 'center' }}>
@@ -103,16 +111,16 @@ export default function EscolherQuando({ data, hora, onData, onHora, direcao = '
         </Box>
 
         {/* Horário livre */}
-        <TextField size="small" label="Horário" value={texto} placeholder="ex.: 14:37"
+        {!semHora && <TextField size="small" label="Horário" value={texto} placeholder="ex.: 14:37"
           onChange={e => setTexto(e.target.value.replace(/[^\d:]/g, '').slice(0, 5))}
           onBlur={confirmarHora}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); confirmarHora() } }}
           error={horaRuim} helperText={horaRuim ? 'Use o formato 14:37' : undefined}
           slotProps={{ inputLabel: { shrink: true }, htmlInput: { inputMode: 'numeric', 'aria-label': 'Horário' } }}
-          sx={{ width: 130, ...CAMPO }} />
+          sx={{ width: 130, ...CAMPO }} />}
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', mt: 1 }}>
+      {!semHora && <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', mt: 1 }}>
         {HORARIOS.map(h => (
           <Box key={h} {...clickable(() => onHora(h))} aria-pressed={hora === h} sx={{
             px: 1.1, height: 28, display: 'flex', alignItems: 'center', borderRadius: '8px', cursor: 'pointer',
@@ -122,7 +130,7 @@ export default function EscolherQuando({ data, hora, onData, onHora, direcao = '
             transition: 'all 0.18s ease', '&:hover': { borderColor: hora === h ? DS.accent : 'rgba(255,122,0,0.52)' },
           }}>{h}</Box>
         ))}
-      </Box>
+      </Box>}
 
       {/* Igual ao "Período do relatório" do Painel de Tráfego: janela no centro,
           resumo do dia escolhido em cima e o calendário grande embaixo. */}
@@ -135,7 +143,7 @@ export default function EscolherQuando({ data, hora, onData, onHora, direcao = '
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, mb: 2 }}>
           <Box>
             <Typography sx={{ fontSize: { xs: '0.62rem', xl: '0.7rem' }, fontWeight: 900, letterSpacing: '0.14em', color: DS.accent }}>
-              {direcao === 'passado' ? 'DIA EM QUE FOI PUBLICADO' : 'DIA DA PUBLICAÇÃO'}
+              {titulo ?? (direcao === 'passado' ? 'DIA EM QUE FOI PUBLICADO' : 'DIA DA PUBLICAÇÃO')}
             </Typography>
             <Typography sx={{ fontSize: { xs: '1.15rem', xl: '1.3rem' }, fontWeight: 800, color: DS.t1, mt: 0.3 }}>Escolha o dia</Typography>
           </Box>

@@ -7,6 +7,8 @@ import { createTheme, responsiveFontSizes, type ThemeOptions } from '@mui/materi
  * distribuição. Fora disso o painel segue sóbrio.
  */
 export const COR_TIPO_CONTEUDO = { Reel: '#4C8DFF', Design: '#FFD400', Feed: '#A78BFA' } as const
+/** Cores das etiquetas (escolha de quem cria a etiqueta). Categoria, como `COR_TIPO_CONTEUDO`. */
+export const CORES_ETIQUETA = ['#9AA3B2', '#FF7A00', '#FFD400', '#31D17C', '#4C8DFF', '#A78BFA', '#FF5F6D', '#2DD4BF'] as const
 
 // ── Design tokens DS HUB — identidade Digital Scale (laranja/amarelo) ────────
 // 2026-09-28: o painel voltou para a identidade da agência — a MESMA do Painel

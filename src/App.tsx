@@ -57,9 +57,11 @@ import { TextField } from '@mui/material'
 import { MANUAIS_KEY, EXCLUIR_KEY } from './lib/producaoEditor'
 import { AJUSTE_MANUAL_KEY } from './lib/designerProducao'
 import { PADRAO_KEY, EVENTO_PADRAO } from './lib/padraoEditorial'
+import { ETIQUETAS_KEY } from './lib/etiquetas'
 import { PREF_MES_KEY, CARTEIRA_KEY, ORDEM_KEY } from './lib/planejamentoMes'
 import { CAPACIDADE_KEY, STATUS_NA_FILA, carregarCapacidade, reordenarEntregas, type Capacidade } from './lib/datasEntrega'
 import type { EdicaoConteudo } from './components/calendario/EditarConteudoPainel'
+import type { NovoConteudo } from './components/calendario/NovoConteudoDialog'
 import { FECHAMENTO_KEY } from './lib/designerFechamento'
 import { PESQ_CONFIG_KEY, PESQ_PUBS_KEY } from './lib/pesq/publicacoes'
 import type { ContentItem, ContentType, HandoffNotif, HistoryEntry, ItemEditPatch, ItemState, Notification, Roteiro, Status } from './types'
@@ -628,6 +630,7 @@ export default function App() {
           case CARTEIRA_KEY:
           case CAPACIDADE_KEY:
           case ORDEM_KEY:
+          case ETIQUETAS_KEY:
             localStorage.setItem(key, value)
             window.dispatchEvent(new Event(EVENTO_PADRAO))
             break
@@ -2455,15 +2458,60 @@ export default function App() {
     setTimeout(() => reordenarFila('empurrar', undefined, [id]), 400)
   }, [reordenarFila])
 
-  /** Conteúdo novo pelo Calendário: entra na fila pela publicação e empurra só o necessário. */
-  const adicionarNoCalendario = useCallback((lista: { cliente: string; tipo: ContentType; titulo: string; data: Date; hora?: string }[]) => {
-    const ids: number[] = []
+  /**
+   * Conteúdo novo pelo Calendário (o mesmo card da Produção). Etapa inicial à
+   * escolha — conteúdo cadastrado depois nasce onde já está. Entrega: a fixada à
+   * mão vale; sem ela, a fila encaixa pela publicação e empurra só o necessário.
+   */
+  const adicionarNoCalendario = useCallback((lista: NovoConteudo[]) => {
+    const naFila: number[] = []
+    const comDono: { id: number; membro: string }[] = []
     for (const x of lista) {
-      const id = addItem(x.cliente, x.titulo, x.tipo, x.data, 0, undefined, undefined, undefined, undefined, undefined, x.hora)
-      if (typeof id === 'number') ids.push(id)
+      const id = addItem(x.cliente, x.titulo, x.tipo, x.data, x.status, undefined, undefined, undefined, undefined, x.entrega?.getTime(), x.hora)
+      if (typeof id !== 'number') continue
+      if (!x.entrega && STATUS_NA_FILA.includes(x.status)) naFila.push(id)
+      if (x.responsavel) comDono.push({ id, membro: x.responsavel })
     }
-    setTimeout(() => reordenarFila('empurrar', undefined, ids), 400)
-  }, [addItem, reordenarFila])
+    setTimeout(() => {
+      for (const d of comDono) reatribuir([d.id], d.membro)
+      if (naFila.length) reordenarFila('empurrar', undefined, naFila)
+    }, 400)
+  }, [addItem, reordenarFila, reatribuir])
+
+  /** Arquivados → de volta ao trabalho (sai da lista de arquivados, nada mais muda). */
+  const restaurarItem = useCallback((id: number) => {
+    setDeletedIds(prev => {
+      const next = prev.filter(x => x !== id)
+      localStorage.setItem('sm_deleted', JSON.stringify(next))
+      syncToCloud('sm_deleted', next)
+      return next
+    })
+  }, [])
+
+  /**
+   * Exclusão DEFINITIVA (só sócio, a partir de Arquivados): o card sai da lista
+   * de conteúdos. O id continua em `sm_deleted` de propósito — um aparelho com
+   * cópia velha que ainda o tenha não consegue fazê-lo reaparecer.
+   */
+  const excluirDefinitivo = useCallback((id: number) => {
+    const item = customItems.find(i => i.i === id)
+    if (!item) return
+    if (currentUser) logActivity({ user: currentUser, action: 'excluiu', itemId: id, itemTitle: states[id]?.title || item.n, clientName: item.c, detail: 'exclusão definitiva', ts: Date.now() })
+    setDeletedIds(prev => {
+      if (prev.includes(id)) return prev
+      const next = [...prev, id]
+      localStorage.setItem('sm_deleted', JSON.stringify(next))
+      syncToCloud('sm_deleted', next)
+      return next
+    })
+    setCustomItems(prev => {
+      const next = prev.filter(i => i.i !== id)
+      const serialized = next.map(serializeItem)
+      localStorage.setItem('sm_custom', JSON.stringify(serialized))
+      syncToCloud('sm_custom', serialized)
+      return next
+    })
+  }, [customItems, states, currentUser])
 
   /**
    * "Criar publicação": post que não veio da esteira. Nasce em "Cliente ok" (5)
@@ -3012,15 +3060,16 @@ export default function App() {
       case 32: {
         // Programado tem hora marcada: remarcar move a hora junto, senão o card
         // continuaria no dia antigo (o calendário lê programadoPara). A entrega
-        // acompanha a publicação (−12 dias) enquanto o card está na produção.
-        const remarcarNoCalendario = (id: number, dt: Date) => {
+        // se recoloca na fila pela nova publicação — a não ser que, na mesma
+        // edição, alguém tenha fixado a entrega à mão.
+        const remarcarNoCalendario = (id: number, dt: Date, fila = true) => {
           const st = states[id]
           if (st?.status === 9 && st.programadoPara) {
             const h = new Date(st.programadoPara)
             remarcar(id, new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), h.getHours(), h.getMinutes()).getTime())
           }
           rescheduleItem(id, dt)
-          entregaAcompanha(id, dt)
+          if (fila) entregaAcompanha(id, dt)
         }
         const editarConteudo = (id: number, e: EdicaoConteudo) => {
           const patchItem: ItemEditPatch = {}
@@ -3032,8 +3081,11 @@ export default function App() {
           if (e.nome) patch.title = e.nome
           if (e.notas !== undefined) patch.notes = e.notas
           if (e.etiquetas) patch.tags = e.etiquetas
-          if (Object.keys(patch).length) updateItem(id, patch)
-          if (e.data) remarcarNoCalendario(id, e.data)
+          // Entrega manual: independente da postagem. null = volta para a fila decidir.
+          if (e.entrega !== undefined) patch.deliveryDate = e.entrega ? e.entrega.getTime() : undefined
+          if (Object.keys(patch).length || e.entrega !== undefined) updateItem(id, patch)
+          if (e.responsavel) reatribuir([id], e.responsavel)
+          if (e.data) remarcarNoCalendario(id, e.data, e.entrega === undefined)
           if (e.hora !== undefined) mudarHoraPostagem(id, e.hora)
           if (e.status !== undefined) setStatus(id, e.status)
         }
@@ -3050,13 +3102,16 @@ export default function App() {
             onAbrirProducao={() => setTab(4)}
             planos={allClients}
             podeExcluirTudo={isSocio(currentUser)}
-            onAdicionar={(cliente, tipo, titulo, data, hora) => adicionarNoCalendario([{ cliente, tipo, titulo, data, hora }])}
+            onAdicionar={n => adicionarNoCalendario([n])}
+            arquivados={customItems.filter(i => deletedSet.has(i.i))}
+            onRestaurar={restaurarItem}
+            onExcluirDefinitivo={isSocio(currentUser) ? excluirDefinitivo : undefined}
             onProgramar={id => setStatus(id, 9)}
             onMudarHora={mudarHoraPostagem}
             onReprogramar={id => setProgramarId(id)}
             onAbrirFila={() => setTab(33)}
             onMudarTipo={(id, tipo) => editItem(id, { tp: tipo })}
-            onExcluir={deleteItem}
+            onArquivar={deleteItem}
           />
         )
       }

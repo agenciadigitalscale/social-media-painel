@@ -15,12 +15,11 @@ import { DS } from '../../theme'
 import { clickable } from '../../shared/a11y'
 import { COR_TIPO, ROTULO_TIPO, distribuirNasVagas, semPrefixo, tipoDoPadrao, tituloPlanejado, type TipoPadrao, type Vaga } from '../../lib/padraoEditorial'
 
-const ORDEM: TipoPadrao[] = ['Reel', 'Post', 'Feed']
 const DIA_CURTO = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
 
 export interface Distribuicao { tipo: TipoPadrao; data: Date; titulo: string }
 
-export default function DistribuirDialog({ open, cliente, nomeMes, ano, mes, livres, meta, existentes, hoje, onClose, onConfirmar }: {
+export default function DistribuirDialog({ open, cliente, nomeMes, ano, mes, livres, meta, existentes, segundo = 'Post', hoje, onClose, onConfirmar }: {
   open: boolean
   cliente: string
   nomeMes: string
@@ -30,13 +29,16 @@ export default function DistribuirDialog({ open, cliente, nomeMes, ano, mes, liv
   livres: Vaga[]
   meta: Record<TipoPadrao, number>
   existentes: ContentItem[]
+  /** Segundo tipo do cliente (Design ou Feed): já vem marcado junto com o Reel. */
+  segundo?: TipoPadrao
   hoje: Date
   onClose: () => void
   onConfirmar: (lista: Distribuicao[]) => void
 }) {
-  const [tipos, setTipos] = useState<TipoPadrao[]>(['Reel', 'Post'])
+  const ORDEM: TipoPadrao[] = ['Reel', segundo, segundo === 'Post' ? 'Feed' : 'Post']
+  const [tipos, setTipos] = useState<TipoPadrao[]>(['Reel', segundo])
   const [nomes, setNomes] = useState<Record<TipoPadrao, string>>({ Reel: '', Post: '', Feed: '' })
-  useEffect(() => { if (open) { setTipos(['Reel', 'Post']); setNomes({ Reel: '', Post: '', Feed: '' }) } }, [open])
+  useEffect(() => { if (open) { setTipos(['Reel', segundo]); setNomes({ Reel: '', Post: '', Feed: '' }) } }, [open, segundo])
 
   const linhas = (t: TipoPadrao) => nomes[t].split('\n').map(semPrefixo).filter(Boolean)
   const ja = (t: TipoPadrao) => existentes.filter(i => tipoDoPadrao(i.tp) === t).length

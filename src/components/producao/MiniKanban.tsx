@@ -71,7 +71,7 @@ function isTouchDrag(activatorEvent: Event | null): boolean {
 function SortableCard({ id, children }: { id: string; children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
   return (
-    <Box ref={setNodeRef} {...listeners} {...attributes}
+    <Box ref={setNodeRef} {...listeners} {...attributes} data-kanban-card
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
@@ -91,7 +91,7 @@ function DropCol({ colId, color, children }: { colId: string; color: string; chi
   const { setNodeRef, isOver } = useDroppable({ id: colId })
   return (
     <Box ref={setNodeRef} sx={{
-      flex: 1, display: 'flex', flexDirection: 'column', gap: 1.2, p: 0.5,
+      flex: 1, display: 'flex', flexDirection: 'column', gap: 0.9, p: 0.5,
       borderRadius: 1.5, minHeight: 120,
       // Drop-zone destacada: quando o card paira sobre a coluna, a área de soltar
       // fica inequívoca — borda sólida na cor da coluna, fundo tingido e halo.
@@ -545,7 +545,7 @@ function MiniKanban({
                         />
                       )
                       return bulkMode ? (
-                        <Box key={item.i}>{card}</Box>
+                        <Box key={item.i} data-kanban-card>{card}</Box>
                       ) : (
                         <SortableCard key={item.i} id={String(item.i)}>{card}</SortableCard>
                       )
