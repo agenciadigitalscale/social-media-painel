@@ -54,3 +54,11 @@ describe('Proposta (aba 35)', () => {
     for (const u of ['robson', 'arthur', 'kaique', 'jhones', 'julio', 'kerges']) expect(getUserPerms(u).hiddenTabs).toContain(35)
   })
 })
+
+// Aba 36 — Cronograma: mesma regra do Calendário de postagem (sócios e Social Media).
+describe('Cronograma (aba 36)', () => {
+  it('sócios e Social veem; editor, designers e copy não', () => {
+    for (const u of ['pradox', 'testa', 'arthur', 'robson']) expect(getUserPerms(u).hiddenTabs).not.toContain(36)
+    for (const u of ['kaique', 'jhones', 'julio', 'kerges']) expect(getUserPerms(u).hiddenTabs).toContain(36)
+  })
+})

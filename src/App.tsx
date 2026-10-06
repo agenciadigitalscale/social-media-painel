@@ -113,6 +113,8 @@ import ScaleAI from './components/ScaleAI'
 import CalendarioPostagem from './components/CalendarioPostagem'
 import AgendamentoTab from './components/AgendamentoTab'
 import PainelTrafegoTab, { PropostaTab } from './components/PainelTrafegoTab'
+import CronogramaTab from './components/CronogramaTab'
+import ViewListIcon from '@mui/icons-material/ViewList'
 import Foguete from './shared/ui/Foguete'
 import RequestQuoteIcon from '@mui/icons-material/RequestQuote'
 import InsightsIcon from '@mui/icons-material/Insights'
@@ -2856,6 +2858,8 @@ export default function App() {
     { label: 'Painel de Tráfego', icon: <InsightsIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 34
     // 35 — gerador de propostas comerciais embutido (2026-10-02): só sócios.
     { label: 'Proposta', icon: <RequestQuoteIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 35
+    // 36 — cronograma de postagens do cliente no mês (2026-10-06): lê os cards do Calendário.
+    { label: 'Cronograma', icon: <ViewListIcon />, mobileOnly: false, hidden: false, mobileHidden: true }, // 36
   ]
 
   // Mantém os atalhos de dígito (1–9) fora das abas ocultas e das restritas
@@ -2886,7 +2890,7 @@ export default function App() {
     // 2026-09-29: saíram Calendário (5), Editor (10) e Design (16) — o trabalho
     // deles vive em Produções (filtros Tipo/Encarregado) e na "Minha esteira".
     // Mesmo dia: saiu Onboarding (22), a pedido do dono.
-    { key: 'operacao',  label: 'Operação',     tabs: [31, 7, 0, 4, 33, 32, 9] },
+    { key: 'operacao',  label: 'Operação',     tabs: [31, 7, 0, 4, 33, 32, 36, 9] },
     { key: 'clientes',  label: 'Clientes',     tabs: [6, 30, 21, 23] },
     { key: 'equipe',    label: 'Equipe',       tabs: [12, 25, 26, 27, 28, 29] },
     { key: 'trafego',   label: 'Tráfego',      tabs: [34] },
@@ -2989,6 +2993,8 @@ export default function App() {
         return <PainelTrafegoTab />
       case 35:
         return <PropostaTab />
+      case 36:
+        return <CronogramaTab items={allItems} states={states} clients={allClients.map(c => c.name)} now={now} />
       case 33:
         return (
           <AgendamentoTab

@@ -13,15 +13,10 @@ import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextFie
 import type { ContentItem } from '../../types'
 import { DS } from '../../theme'
 import { clickable } from '../../shared/a11y'
-import { COR_TIPO, ROTULO_TIPO, distribuirNasVagas, tipoDoPadrao, tituloPlanejado, type TipoPadrao, type Vaga } from '../../lib/padraoEditorial'
+import { COR_TIPO, ROTULO_TIPO, distribuirNasVagas, semPrefixo, tipoDoPadrao, tituloPlanejado, type TipoPadrao, type Vaga } from '../../lib/padraoEditorial'
 
 const ORDEM: TipoPadrao[] = ['Reel', 'Post', 'Feed']
 const DIA_CURTO = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
-
-/** Tira o prefixo que a equipe costuma digitar ("VIDEO - ", "Post: ") — o campo já é o tipo. */
-export function semPrefixo(linha: string): string {
-  return linha.replace(/^\s*(v[ií]deo|reels?|posts?|design|arte|feed|foto)\s*[-–—:|]\s*/i, '').trim()
-}
 
 export interface Distribuicao { tipo: TipoPadrao; data: Date; titulo: string }
 

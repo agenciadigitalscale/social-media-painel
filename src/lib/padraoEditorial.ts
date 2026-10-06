@@ -198,6 +198,11 @@ export function distribuirNasVagas(opts: {
   return { plano: plano.sort((a, b) => a.data.getTime() - b.data.getTime()), sobra }
 }
 
+/** Tira o prefixo que a equipe costuma digitar ("VIDEO - ", "Post: ") — o campo já é o tipo. */
+export function semPrefixo(linha: string): string {
+  return linha.replace(/^\s*(v[ií]deo|reels?|posts?|design|arte|feed|foto)\s*[-–—:|]\s*/i, '').trim()
+}
+
 /** Título de um conteúdo criado pela distribuição — a pauta é definida depois. */
 export function tituloPlanejado(tipo: TipoPadrao): string {
   return `${ROTULO_TIPO[tipo]} — pauta a definir`

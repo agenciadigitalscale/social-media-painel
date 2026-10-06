@@ -1241,6 +1241,12 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > (`normalizarHora` em `lib/programacao.ts`: "1437", "14h30", "9:5") com atalhos. Os campos
 > nativos do navegador saíram porque seguiam o idioma dele ("09/30/2026", AM/PM) e pintavam azul.
 > Diálogos/menus/tooltips são grafite (`rgba(16,18,23,…)`), não mais o marinho `rgba(10,17,32,…)`.
+> **Aba 36 "Cronograma" (2026-10-06)** — `CronogramaTab.tsx`: o "Relatório de postagens" do cliente
+> no mês no layout da arte da agência (arte fixa 1600×900 que escala na tela; cresce se tiver muitas
+> linhas). Filtros Cliente (carteira do mês) e Mês, "Só publicados", **Baixar imagem** (`html-to-image`).
+> Lê os MESMOS cards do Calendário (`lib/cronograma.ts`, testado: data de postagem, título do card sem
+> prefixo, resumo Reel/Design/Feed) — atualiza sozinho. Logo = `/logotipo.png` (transparente) recortado.
+> Só sócio e Social (`roles.ts`, `TODAS_AS_ABAS` = 37). `semPrefixo` mudou para `lib/padraoEditorial.ts`.
 > **Calendário — vagas por data + fila inteligente (2026-10-05) — vale sobre a nota abaixo no que diverge.**
 > - **Tipos:** Reel · Design · Feed (`ROTULO_TIPO`; internamente o Design segue `Post`). Cores
 >   por tipo em `COR_TIPO_CONTEUDO` (`theme.ts`, categoria como `BRAND`): Reel azul `#4C8DFF`,
