@@ -3,8 +3,8 @@
  * Produção — não há base paralela: o que muda aqui muda lá, e vice-versa.
  *
  * Campos: cliente, nome, tipo, data e hora de publicação, etapa, observação e
- * etiquetas. A data de entrega não se edita: é a publicação − 12 dias, refeita
- * a cada mudança de data (e encaixada na capacidade por "Reordenar datas").
+ * etiquetas. A data de entrega não se edita aqui: quem decide é a fila
+ * inteligente (lib/datasEntrega) — mudar a publicação recoloca o card na fila.
  */
 import { useEffect, useState } from 'react'
 import { Autocomplete, Box, Button, Chip, Drawer, IconButton, MenuItem, TextField, Typography } from '@mui/material'
@@ -13,7 +13,6 @@ import type { ContentItem, ContentType, ItemState, Status } from '../../types'
 import { STATUS_CONFIG } from '../../types'
 import { DS } from '../../theme'
 import { horaValida, postagemDoCard } from '../../lib/programacao'
-import { entregaPadrao } from '../../lib/datasEntrega'
 import EscolherQuando, { dataInput } from './EscolherQuando'
 
 const TIPOS: { tp: ContentType; rotulo: string }[] = [
@@ -69,7 +68,6 @@ export default function EditarConteudoPainel({ item, st, clientes, podeTrocarCli
   if (!item) return null
   const [a, m, d] = data.split('-').map(Number)
   const novaData = a && m && d ? new Date(a, m - 1, d, item.dt.getHours() || 12, item.dt.getMinutes()) : item.dt
-  const entrega = new Date(entregaPadrao(novaData))
 
   const salvar = () => {
     const e: EdicaoConteudo = {}
@@ -118,11 +116,10 @@ export default function EditarConteudoPainel({ item, st, clientes, podeTrocarCli
           <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', color: DS.t3, mb: 0.8 }}>PUBLICAÇÃO</Typography>
           <EscolherQuando data={data} hora={hora} onData={setData} onHora={setHora} direcao="livre" />
           <Typography sx={{ fontSize: '0.72rem', color: DS.t2, mt: 1 }}>
-            Entrega: <b style={{ color: DS.t1 }}>{entrega.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })}</b>
-            {' '}— 12 dias antes, automática
-            {st?.deliveryDate && dataInput(new Date(st.deliveryDate)) !== dataInput(entrega) && (
-              <Box component="span" sx={{ color: DS.t3 }}> (hoje na fila: {new Date(st.deliveryDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })})</Box>
-            )}
+            Entrega: {st?.deliveryDate
+              ? <b style={{ color: DS.t1 }}>{new Date(st.deliveryDate).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })}</b>
+              : <b style={{ color: DS.t3 }}>sem data</b>}
+            {' '}— definida pela fila de entrega (a publicação mais próxima entrega primeiro)
           </Typography>
         </Box>
 

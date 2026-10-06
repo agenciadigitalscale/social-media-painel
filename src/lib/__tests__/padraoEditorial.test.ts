@@ -1,101 +1,84 @@
 import { describe, it, expect } from 'vitest'
 import {
-  planejarDistribuicao, planejarRestauracao, substituiveisNoRestaurar, metaDoMes, tipoDoPadrao, padraoDo,
+  gerarVagas, vagasLivres, distribuirNasVagas, metaDoMes, tipoDoPadrao, padraoDo, ROTULO_TIPO, corDoConteudo,
   type PadraoCliente,
 } from '../padraoEditorial'
-import type { ContentItem, ItemState, Status } from '../../types'
 
-// Outubro/2026: quartas 7,14,21,28 · sextas 2,9,16,23,30
+// Outubro/2026: segundas 5,12,19,26 · quartas 7,14,21,28 · sextas 2,9,16,23,30
 const ANO = 2026, OUT = 9
 const PADRAO: PadraoCliente = { dias: { Reel: [3], Post: [5], Feed: [] } }
-const META_4_4 = { Reel: 4, Post: 4, Feed: 0 }
 const ANTES_DO_MES = new Date(2026, 8, 1)
-const item = (i: number, tp: ContentItem['tp'], dia: number, s: Status = 0): ContentItem =>
-  ({ i, c: 'Cliente', dt: new Date(ANO, OUT, dia, 12), tp, n: `c${i}`, s, custom: true })
 
-describe('Padrão Editorial — distribuir o mês', () => {
-  it('plano 4+4: Reel nas quartas e Post nas sextas', () => {
-    const plano = planejarDistribuicao({ ano: ANO, mes: OUT, padrao: PADRAO, meta: META_4_4, existentes: [], hoje: ANTES_DO_MES })
-    const reels = plano.filter(p => p.tipo === 'Reel')
-    const posts = plano.filter(p => p.tipo === 'Post')
-    expect(reels).toHaveLength(4)
-    expect(posts).toHaveLength(4)
-    expect(reels.every(p => p.data.getDay() === 3)).toBe(true)
-    expect(posts.every(p => p.data.getDay() === 5)).toBe(true)
-    expect(new Set(posts.map(p => p.data.getDate())).size).toBe(4) // sem repetir dia
+describe('Vagas do mês — o padrão gera TODAS as ocorrências', () => {
+  it('quarta e sexta: 4 quartas e 5 sextas em outubro, sem forçar 4/6/8', () => {
+    const v = gerarVagas(PADRAO, ANO, OUT)
+    expect(v.filter(x => x.tipo === 'Reel').map(x => x.dia)).toEqual([7, 14, 21, 28])
+    expect(v.filter(x => x.tipo === 'Post').map(x => x.dia)).toEqual([2, 9, 16, 23, 30])
   })
-
-  it('só cria o que FALTA: o que já existe no mês (inclusive exceção manual) conta', () => {
-    // um Reel manual numa segunda (exceção ao padrão) + um Post na sexta 9
-    const existentes = [item(1, 'Reel', 5), item(2, 'Post', 9)]
-    const plano = planejarDistribuicao({ ano: ANO, mes: OUT, padrao: PADRAO, meta: META_4_4, existentes, hoje: ANTES_DO_MES })
-    expect(plano.filter(p => p.tipo === 'Reel')).toHaveLength(3)
-    const posts = plano.filter(p => p.tipo === 'Post')
-    expect(posts).toHaveLength(3)
-    expect(posts.some(p => p.data.getDate() === 9)).toBe(false) // não repete o dia ocupado
+  it('Reel segunda + sexta: toda segunda e toda sexta recebem vaga (9 no mês)', () => {
+    const v = gerarVagas({ dias: { Reel: [1, 5], Post: [], Feed: [] } }, ANO, OUT)
+    expect(v).toHaveLength(9)
   })
-
-  it('mês em curso: prefere de hoje em diante (não nasce card atrasado)', () => {
-    const hoje = new Date(ANO, OUT, 15)
-    const plano = planejarDistribuicao({ ano: ANO, mes: OUT, padrao: PADRAO, meta: { Reel: 2, Post: 0, Feed: 0 }, existentes: [], hoje })
-    expect(plano.map(p => p.data.getDate())).toEqual([21, 28])
+  it('sem padrão: nenhuma vaga (o mês começa vazio e a pessoa põe à mão)', () => {
+    expect(gerarVagas(padraoDo({}, 'Novo'), ANO, OUT)).toEqual([])
   })
+})
 
-  it('sem padrão configurado: espalha de segunda a sexta', () => {
-    const plano = planejarDistribuicao({ ano: ANO, mes: OUT, padrao: padraoDo({}, 'Novo'), meta: { Reel: 3, Post: 0, Feed: 0 }, existentes: [], hoje: ANTES_DO_MES })
-    expect(plano).toHaveLength(3)
-    expect(plano.every(p => p.data.getDay() >= 1 && p.data.getDay() <= 5)).toBe(true)
+describe('Vaga ocupada some da tela e volta quando o conteúdo sai', () => {
+  const v = gerarVagas(PADRAO, ANO, OUT)
+  it('um Reel no dia 7 ocupa a vaga de Reel do dia 7', () => {
+    const livres = vagasLivres(v, [{ dia: 7, tipo: 'Reel' }])
+    expect(livres.some(x => x.dia === 7 && x.tipo === 'Reel')).toBe(false)
+    expect(livres).toHaveLength(v.length - 1)
   })
-
-  it('meta maior que os dias do padrão: completa repetindo os dias preferidos', () => {
-    const plano = planejarDistribuicao({ ano: ANO, mes: OUT, padrao: PADRAO, meta: { Reel: 6, Post: 0, Feed: 0 }, existentes: [], hoje: ANTES_DO_MES })
-    expect(plano).toHaveLength(6)
-    expect(plano.every(p => p.data.getDay() === 3)).toBe(true)
+  it('conteúdo de outro tipo não ocupa; conteúdo fora do padrão (Story) também não', () => {
+    expect(vagasLivres(v, [{ dia: 7, tipo: 'Post' }, { dia: 7, tipo: null }])).toHaveLength(v.length)
   })
-
-  it('meta vem do plano do cliente, e o padrão pode sobrescrever', () => {
-    expect(metaDoMes(PADRAO, { postsPerMonth: 4, reelsPerMonth: 4 })).toEqual({ Reel: 4, Post: 4, Feed: 0 })
-    expect(metaDoMes({ ...PADRAO, meta: { Reel: 6, Feed: 2 } }, { postsPerMonth: 4, reelsPerMonth: 4 })).toEqual({ Reel: 6, Post: 4, Feed: 2 })
+  it('sem ocupante, todas aparecem (a vaga nunca foi apagada)', () => {
+    expect(vagasLivres(v, [])).toEqual(v)
   })
+})
 
-  it('Carrossel conta como Post Design; Story fica fora do padrão', () => {
+describe('Distribuir conteúdos — só vagas compatíveis, em ordem de data', () => {
+  const livres = gerarVagas(PADRAO, ANO, OUT)
+  it('cada conteúdo vai para a próxima vaga livre do tipo, cronologicamente', () => {
+    const r = distribuirNasVagas({ ano: ANO, mes: OUT, livres, pedidos: { Reel: 2, Post: 3 }, hoje: ANTES_DO_MES })
+    expect(r.plano.filter(p => p.tipo === 'Reel').map(p => p.data.getDate())).toEqual([7, 14])
+    expect(r.plano.filter(p => p.tipo === 'Post').map(p => p.data.getDate())).toEqual([2, 9, 16])
+    expect(r.sobra).toEqual({})
+  })
+  it('mês em curso: só de hoje em diante', () => {
+    const r = distribuirNasVagas({ ano: ANO, mes: OUT, livres, pedidos: { Reel: 2 }, hoje: new Date(ANO, OUT, 15) })
+    expect(r.plano.map(p => p.data.getDate())).toEqual([21, 28])
+  })
+  it('mais conteúdos que vagas: o que não cabe volta em "sobra" (nada vai para dia sem preferência)', () => {
+    const r = distribuirNasVagas({ ano: ANO, mes: OUT, livres, pedidos: { Reel: 6 }, hoje: ANTES_DO_MES })
+    expect(r.plano).toHaveLength(4)
+    expect(r.sobra).toEqual({ Reel: 2 })
+  })
+  it('tipo sem vaga nenhuma (Feed): tudo sobra', () => {
+    const r = distribuirNasVagas({ ano: ANO, mes: OUT, livres, pedidos: { Feed: 2 }, hoje: ANTES_DO_MES })
+    expect(r.plano).toEqual([])
+    expect(r.sobra).toEqual({ Feed: 2 })
+  })
+})
+
+describe('Tipos, rótulos e cores', () => {
+  it('a equipe chama de Reel · Design · Feed', () => {
+    expect(ROTULO_TIPO).toEqual({ Reel: 'Reel', Post: 'Design', Feed: 'Feed' })
+  })
+  it('Carrossel conta como Design; Story fica fora do padrão', () => {
     expect(tipoDoPadrao('Carrossel')).toBe('Post')
     expect(tipoDoPadrao('Story')).toBeNull()
   })
-})
-
-describe('Restaurar padrão — sem apagar pauta', () => {
-  const vazio: Record<number, ItemState> = {}
-  it('devolve os "A fazer" para os dias do padrão e cria só o que falta', () => {
-    // Reel com pauta numa segunda (exceção manual) + Post numa terça
-    const itens = [item(1, 'Reel', 5), item(2, 'Post', 6)]
-    const r = planejarRestauracao({ ano: ANO, mes: OUT, padrao: PADRAO, meta: META_4_4, itensDoMes: itens, states: vazio, hoje: ANTES_DO_MES })
-    expect(r.mover.map(m => m.id).sort()).toEqual([1, 2])
-    expect(r.mover.find(m => m.id === 1)!.data.getDay()).toBe(3) // Reel → quarta
-    expect(r.mover.find(m => m.id === 2)!.data.getDay()).toBe(5) // Post → sexta
-    expect(r.criar.filter(c => c.tipo === 'Reel')).toHaveLength(3)
-    expect(r.criar.filter(c => c.tipo === 'Post')).toHaveLength(3)
+  it('a mesma cor por tipo: Reel azul · Design amarelo · Feed roxo', () => {
+    expect(corDoConteudo('Reel')).toBe('#4C8DFF')
+    expect(corDoConteudo('Post')).toBe('#FFD400')
+    expect(corDoConteudo('Carrossel')).toBe('#FFD400')
+    expect(corDoConteudo('Feed')).toBe('#A78BFA')
   })
-
-  it('o que já está em produção não se mexe e conta para a meta', () => {
-    const itens = [item(1, 'Reel', 5, 1), item(2, 'Reel', 6, 0)]
-    const r = planejarRestauracao({ ano: ANO, mes: OUT, padrao: PADRAO, meta: { Reel: 2, Post: 0, Feed: 0 }, itensDoMes: itens, states: vazio, hoje: ANTES_DO_MES })
-    expect(r.mover.map(m => m.id)).toEqual([2])
-    expect(r.criar).toHaveLength(0)
-  })
-
-  it('mais "A fazer" que a meta: nenhum some — todos ganham dia do padrão', () => {
-    const itens = [item(1, 'Reel', 5), item(2, 'Reel', 6), item(3, 'Reel', 8)]
-    const r = planejarRestauracao({ ano: ANO, mes: OUT, padrao: PADRAO, meta: { Reel: 1, Post: 0, Feed: 0 }, itensDoMes: itens, states: vazio, hoje: ANTES_DO_MES })
-    expect(r.mover).toHaveLength(3)
-    expect(r.mover.every(m => m.data.getDay() === 3)).toBe(true)
-  })
-})
-
-describe('Restaurar padrão', () => {
-  it('substitui só o que está em "A fazer"; o que já entrou em produção fica', () => {
-    const itens = [item(1, 'Reel', 7, 0), item(2, 'Reel', 14, 1), item(3, 'Post', 9, 0)]
-    const states: Record<number, ItemState> = { 2: { status: 1 as Status, title: '', link: '', caption: '', notes: '' } }
-    expect(substituiveisNoRestaurar(itens, states).map(i => i.i)).toEqual([1, 3])
+  it('meta vem do plano do cliente, e o padrão pode sobrescrever', () => {
+    expect(metaDoMes(PADRAO, { postsPerMonth: 4, reelsPerMonth: 4 })).toEqual({ Reel: 4, Post: 4, Feed: 0 })
+    expect(metaDoMes({ ...PADRAO, meta: { Reel: 6, Feed: 2 } }, { postsPerMonth: 4, reelsPerMonth: 4 })).toEqual({ Reel: 6, Post: 4, Feed: 2 })
   })
 })

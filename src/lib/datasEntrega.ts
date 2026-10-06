@@ -1,111 +1,107 @@
-/* lib/datasEntrega.ts — data de entrega automática e a fila de produção (2026-10-01).
+/* lib/datasEntrega.ts — a fila inteligente de entrega da produção (2026-10-05).
 
-   Regra padrão: ENTREGA = PUBLICAÇÃO − 12 dias corridos. É o prazo para quem
-   produz (editor/designer) — a publicação é do Social.
+   A DATA DE PUBLICAÇÃO é a prioridade: publicação mais próxima = entrega mais
+   cedo. Não existe mais "entrega = publicação − 12 dias" — a fila começa hoje e
+   enche cada dia útil até a CAPACIDADE da frente (vídeo e design têm a sua).
 
-   "Reordenar datas" encaixa a fila numa CAPACIDADE DIÁRIA (ex.: 10 por dia):
-   cada conteúdo ainda em produção vai para o dia ideal (publicação − 12) e, se o
-   dia já está cheio, para o próximo dia útil com vaga. Duas regras da agência:
+   Exemplo (capacidade 10): publicações do dia 1 (4), dia 2 (5) e dia 3 (3) →
+   o primeiro dia de entrega leva os 4 do dia 1, os 5 do dia 2 e 1 do dia 3; os
+   outros 2 do dia 3 vão para o próximo dia útil.
 
+   Regras da agência:
    - Só entra na fila o que ainda está sendo PRODUZIDO (A fazer, Produção,
-     Ajuste). O que já foi entregue, aprovado, programado ou publicado não ocupa
-     vaga e não é mexido — etapa final não é substituída pela fila.
-   - Programar um conteúdo NÃO puxa outro para o lugar dele. Por isso a
-     reorganização automática (quando entra conteúdo novo) só EMPURRA para frente:
-     ninguém volta para antes da entrega que já tinha. Só o botão "Reordenar
-     datas" refaz a fila inteira a partir do dia ideal. */
-import type { ContentItem, ItemState, Status } from '../types'
+     Ajuste). Entregue, aprovado, programado ou publicado não ocupa vaga e não é
+     mexido — etapa final não volta para a fila.
+   - Programar um conteúdo NÃO repõe a vaga: se 3 de 10 viram Programados, ficam
+     7 naquele dia e ninguém é puxado para o lugar deles (dá para ver que a
+     produção está adiantada). Por isso o automático (conteúdo novo, data de
+     publicação mudada) só EMPURRA em cascata o necessário; só o botão
+     "Reordenar datas" refaz a fila inteira a partir de hoje.
+   - Nunca mexe na data de PUBLICAÇÃO — só na de entrega. */
+import type { ContentItem, ContentType, ItemState, Status } from '../types'
 import { syncToCloud } from './storage'
 import { EVENTO_PADRAO } from './padraoEditorial'
 
-export const DIAS_ANTES_DA_POSTAGEM = 12
 const DIA_MS = 86_400_000
 
 /** Etapas que ainda dependem de quem produz — as únicas que a fila organiza. */
 export const STATUS_NA_FILA: readonly Status[] = [0, 1, 6]
 
+/** Frente de produção: vídeo (editor) ou design (designers). Cada uma tem capacidade própria. */
+export type Frente = 'video' | 'design'
+export const frenteDo = (tp: ContentType): Frente => (tp === 'Reel' || tp === 'Story' ? 'video' : 'design')
+export const ROTULO_FRENTE: Record<Frente, string> = { video: 'Vídeos', design: 'Designs' }
+
+export interface Capacidade { video: number; design: number }
+export const CAPACIDADE_PADRAO: Capacidade = { video: 10, design: 6 }
+
 const inicioDoDia = (ms: number) => { const d = new Date(ms); return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12).getTime() }
 const ehFimDeSemana = (ms: number) => { const w = new Date(ms).getDay(); return w === 0 || w === 6 }
-
-/** Entrega padrão: publicação − 12 dias corridos, ao meio-dia (evita virar o dia no fuso). */
-export function entregaPadrao(publicacao: Date): number {
-  return inicioDoDia(publicacao.getTime() - DIAS_ANTES_DA_POSTAGEM * DIA_MS)
-}
-
-/**
- * Entrega de quem ACABOU de entrar na fila (card novo ou data mudada): a padrão,
- * mas nunca no passado nem no fim de semana — publicação daqui a 9 dias não pode
- * nascer com entrega para 3 dias atrás. A capacidade é encaixada depois, pela fila.
- */
-export function entregaInicial(publicacao: Date, hoje: Date): number {
-  let d = Math.max(entregaPadrao(publicacao), inicioDoDia(hoje.getTime()))
-  while (ehFimDeSemana(d)) d = inicioDoDia(d + DIA_MS)
-  return d
-}
 
 export interface EntregaNova { id: number; entrega: number; antes?: number }
 
 /**
  * A fila encaixada na capacidade. Devolve só os conteúdos cuja entrega mudou.
  *
- * `modo: 'completo'` — o botão: todos partem do dia ideal.
- * `modo: 'empurrar'` — automático, quando entra conteúdo novo: ninguém vai para
- *  antes da entrega que já tem; só o necessário é empurrado para frente.
+ * `modo: 'completo'` — o botão "Reordenar datas": todos recomeçam de hoje.
+ * `modo: 'empurrar'` — automático: ninguém vai para antes da entrega que já tem;
+ *  quem não cabe é empurrado em cascata. `recolocar` são os que acabaram de
+ *  entrar ou mudaram de publicação — esses disputam a vaga desde hoje.
  */
 export function reordenarEntregas(opts: {
   itens: ContentItem[]
   states: Record<number, ItemState>
-  capacidade: number
+  capacidade: Capacidade
   hoje: Date
   modo: 'completo' | 'empurrar'
+  recolocar?: ReadonlySet<number>
   /** Sábado e domingo não recebem entrega (padrão: true). */
   soDiasUteis?: boolean
 }): EntregaNova[] {
   const { itens, states, hoje, modo } = opts
-  const capacidade = Math.max(1, Math.floor(opts.capacidade) || 1)
+  const recolocar = opts.recolocar ?? new Set<number>()
+  const cap = (f: Frente) => Math.max(1, Math.floor(opts.capacidade[f]) || 1)
   const soUteis = opts.soDiasUteis ?? true
-  const hojeMs = inicioDoDia(hoje.getTime())
   const proximoUtil = (ms: number) => { let d = ms; while (soUteis && ehFimDeSemana(d)) d = inicioDoDia(d + DIA_MS); return d }
+  const hojeMs = proximoUtil(inicioDoDia(hoje.getTime()))
 
   const prioridade = (st?: ItemState) => (st?.priority === 'alta' ? 0 : st?.priority === 'media' ? 1 : st?.priority === 'baixa' ? 3 : 2)
   const fila = itens
     .filter(it => STATUS_NA_FILA.includes((states[it.i]?.status ?? it.s) as Status))
-    // Automático não DÁ entrega a quem não tem: isso seria uma gravação em massa
-    // na fila do time sem ninguém pedir. Card novo já nasce com a dele.
-    .filter(it => modo === 'completo' || !!states[it.i]?.deliveryDate)
-    .map(it => {
-      const st = states[it.i]
-      const ideal = Math.max(hojeMs, entregaPadrao(it.dt))
-      const atual = st?.deliveryDate ? inicioDoDia(st.deliveryDate) : undefined
-      // Automático: quem já tem entrega fica nela (mesmo atrasada) e só sai se o
-      // dia lotar. O botão recomeça todos do dia ideal.
-      const inicio = modo === 'empurrar' && atual !== undefined ? atual : proximoUtil(ideal)
-      return { it, st, inicio, atual }
-    })
-    .sort((a, b) => a.inicio - b.inicio || prioridade(a.st) - prioridade(b.st)
-      || a.it.dt.getTime() - b.it.dt.getTime() || a.it.i - b.it.i)
+    // Automático não DÁ entrega a card antigo que nunca teve: seria uma gravação
+    // em massa na fila do time sem ninguém pedir. Só os recolocados entram.
+    .filter(it => modo === 'completo' || !!states[it.i]?.deliveryDate || recolocar.has(it.i))
+    .sort((a, b) => a.dt.getTime() - b.dt.getTime() || prioridade(states[a.i]) - prioridade(states[b.i]) || a.i - b.i)
 
-  const ocupacao = new Map<number, number>()
+  const ocupacao = new Map<string, number>()
   const out: EntregaNova[] = []
-  for (const f of fila) {
-    let dia = f.inicio
-    // Dia passado não tem "vaga" a disputar: fica onde está (o atraso aparece no painel).
-    if (dia >= hojeMs) while ((ocupacao.get(dia) ?? 0) >= capacidade) dia = proximoUtil(inicioDoDia(dia + DIA_MS))
-    ocupacao.set(dia, (ocupacao.get(dia) ?? 0) + 1)
-    if (f.atual !== dia) out.push({ id: f.it.i, entrega: dia, antes: f.st?.deliveryDate })
+  for (const it of fila) {
+    const st = states[it.i]
+    const atual = st?.deliveryDate ? inicioDoDia(st.deliveryDate) : undefined
+    const livre = modo === 'completo' || recolocar.has(it.i)
+    // Atrasado (entrega já passou) no automático: fica onde está — o atraso aparece
+    // no painel em vez de sumir — e não disputa vaga com quem está em dia.
+    if (!livre && atual !== undefined && atual < inicioDoDia(hoje.getTime())) continue
+    const f = frenteDo(it.tp)
+    let dia = livre || atual === undefined ? hojeMs : proximoUtil(Math.max(atual, hojeMs))
+    while ((ocupacao.get(`${f}:${dia}`) ?? 0) >= cap(f)) dia = proximoUtil(inicioDoDia(dia + DIA_MS))
+    ocupacao.set(`${f}:${dia}`, (ocupacao.get(`${f}:${dia}`) ?? 0) + 1)
+    if (atual !== dia) out.push({ id: it.i, entrega: dia, antes: st?.deliveryDate })
   }
   return out
 }
 
-/** Quantos conteúdos da fila caem em cada dia — para mostrar a carga na tela. */
-export function cargaPorDia(itens: ContentItem[], states: Record<number, ItemState>): Map<string, number> {
-  const m = new Map<string, number>()
+/** Quantos conteúdos da fila caem em cada dia, por frente — a carga na tela. */
+export function cargaPorDia(itens: ContentItem[], states: Record<number, ItemState>): Map<string, Capacidade> {
+  const m = new Map<string, Capacidade>()
   for (const it of itens) {
     const st = states[it.i]
     if (!STATUS_NA_FILA.includes((st?.status ?? it.s) as Status) || !st?.deliveryDate) continue
     const d = new Date(st.deliveryDate)
     const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
-    m.set(k, (m.get(k) ?? 0) + 1)
+    const atual = m.get(k) ?? { video: 0, design: 0 }
+    atual[frenteDo(it.tp)]++
+    m.set(k, atual)
   }
   return m
 }
@@ -113,17 +109,24 @@ export function cargaPorDia(itens: ContentItem[], states: Record<number, ItemSta
 // ── Capacidade diária (configurável, sincronizada) ──────────────────────
 
 export const CAPACIDADE_KEY = 'sm_capacidade_entrega'
-export const CAPACIDADE_PADRAO = 10
 
-export function carregarCapacidade(): number {
-  try {
-    const n = Number(JSON.parse(localStorage.getItem(CAPACIDADE_KEY) ?? 'null'))
-    return Number.isFinite(n) && n >= 1 ? Math.floor(n) : CAPACIDADE_PADRAO
-  } catch { return CAPACIDADE_PADRAO }
+/** Aceita o formato antigo (um número só, para o time todo) — vira o mesmo número nas duas frentes. */
+export function lerCapacidade(bruto: unknown): Capacidade {
+  if (typeof bruto === 'number' && Number.isFinite(bruto) && bruto >= 1) return { video: Math.floor(bruto), design: Math.floor(bruto) }
+  if (bruto && typeof bruto === 'object') {
+    const o = bruto as Partial<Capacidade>
+    const ok = (n: unknown, padrao: number) => (typeof n === 'number' && Number.isFinite(n) && n >= 1 ? Math.floor(n) : padrao)
+    return { video: ok(o.video, CAPACIDADE_PADRAO.video), design: ok(o.design, CAPACIDADE_PADRAO.design) }
+  }
+  return { ...CAPACIDADE_PADRAO }
 }
 
-export function salvarCapacidade(n: number): void {
-  const v = Math.max(1, Math.floor(n) || CAPACIDADE_PADRAO)
+export function carregarCapacidade(): Capacidade {
+  try { return lerCapacidade(JSON.parse(localStorage.getItem(CAPACIDADE_KEY) ?? 'null')) } catch { return { ...CAPACIDADE_PADRAO } }
+}
+
+export function salvarCapacidade(c: Capacidade): void {
+  const v = lerCapacidade(c)
   try { localStorage.setItem(CAPACIDADE_KEY, JSON.stringify(v)) } catch { /* sem armazenamento */ }
   syncToCloud(CAPACIDADE_KEY, v)
   window.dispatchEvent(new Event(EVENTO_PADRAO))

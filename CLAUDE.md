@@ -1241,6 +1241,24 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > (`normalizarHora` em `lib/programacao.ts`: "1437", "14h30", "9:5") com atalhos. Os campos
 > nativos do navegador saíram porque seguiam o idioma dele ("09/30/2026", AM/PM) e pintavam azul.
 > Diálogos/menus/tooltips são grafite (`rgba(16,18,23,…)`), não mais o marinho `rgba(10,17,32,…)`.
+> **Calendário — vagas por data + fila inteligente (2026-10-05) — vale sobre a nota abaixo no que diverge.**
+> - **Tipos:** Reel · Design · Feed (`ROTULO_TIPO`; internamente o Design segue `Post`). Cores
+>   por tipo em `COR_TIPO_CONTEUDO` (`theme.ts`, categoria como `BRAND`): Reel azul `#4C8DFF`,
+>   Design amarelo `#FFD400`, Feed roxo `#A78BFA` — card, vaga, filtro, contador, padrão e distribuição
+>   usam `COR_TIPO`/`corDoConteudo` (`lib/padraoEditorial.ts`). Exceção pedida pelo dono à regra sóbria.
+> - **Preferências do mês = VAGAS por data** (`Vaga {dia, tipo}`), guardadas no MESMO `sm_pref_mes`
+>   (`MesDoCliente.vagas`). Sem vagas gravadas, o mês usa `gerarVagas` (TODAS as ocorrências dos dias
+>   do padrão, sem forçar 4/6/8). Clicar no dia abre "Preferências deste dia" (+ Reel/Design/Feed,
+>   × tirar); arrastar a vaga muda o dia — só naquele mês (`comVagas`, `moverVaga`, `removerVaga`).
+>   **Vaga ocupada** (conteúdo do tipo no dia) continua salva e some da tela (`vagasLivres`).
+> - **Distribuir** (`distribuirNasVagas`): cada conteúdo vai para a próxima vaga LIVRE do tipo, em
+>   ordem de data, de hoje em diante; o que não couber volta como "sobra" (aviso). Prefixos tipo
+>   "VIDEO -" são tirados (`semPrefixo`). **Restaurar padrão** (`restaurarMes`) só substitui as vagas
+>   do mês pelas do padrão atual — não move nem apaga conteúdo (saiu o `planejarRestauracao`).
+> - **Fila de entrega sem "−12 dias"** (`lib/datasEntrega.ts`): prioridade = publicação mais próxima;
+>   começa hoje (dia útil); capacidade POR FRENTE `{video, design}` (`sm_capacidade_entrega`, formato
+>   antigo numérico vale para as duas). Automático (card novo / publicação mudada → `recolocar`) só
+>   empurra em cascata; Programado não repõe vaga; etapa final não volta. Visão Entregas mostra "V n/cap · D n/cap".
 > **Calendário = planejamento do mês (2026-10-01).** Em cima do Padrão Editorial:
 > - **Planos** 4+4 / 6+6 / 8+8 / personalizado (`PLANOS`, `lib/padraoEditorial.ts`). No **6+6** o
 >   mês alterna semana FORTE (2 dias de cada) e FRACA (1 dia), pela semana da grade (`semanaDoMes`,

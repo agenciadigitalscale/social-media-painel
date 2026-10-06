@@ -1,5 +1,13 @@
 import { createTheme, responsiveFontSizes, type ThemeOptions } from '@mui/material/styles'
 
+/**
+ * Cor de cada TIPO de conteúdo (2026-10-05, pedido do dono): Reel azul · Design
+ * amarelo · Feed roxo. É CATEGORIA (como BRAND), não marca nem status — vale só
+ * onde o tipo é a informação: card do calendário, vagas, filtros, padrão e
+ * distribuição. Fora disso o painel segue sóbrio.
+ */
+export const COR_TIPO_CONTEUDO = { Reel: '#4C8DFF', Design: '#FFD400', Feed: '#A78BFA' } as const
+
 // ── Design tokens DS HUB — identidade Digital Scale (laranja/amarelo) ────────
 // 2026-09-28: o painel voltou para a identidade da agência — a MESMA do Painel
 // de Tráfego (painel-facebook) e da capa (splash): grafite neutro, laranja

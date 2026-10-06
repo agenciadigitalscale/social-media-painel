@@ -58,7 +58,7 @@ import { MANUAIS_KEY, EXCLUIR_KEY } from './lib/producaoEditor'
 import { AJUSTE_MANUAL_KEY } from './lib/designerProducao'
 import { PADRAO_KEY, EVENTO_PADRAO } from './lib/padraoEditorial'
 import { PREF_MES_KEY, CARTEIRA_KEY, ORDEM_KEY } from './lib/planejamentoMes'
-import { CAPACIDADE_KEY, STATUS_NA_FILA, carregarCapacidade, entregaInicial, reordenarEntregas } from './lib/datasEntrega'
+import { CAPACIDADE_KEY, STATUS_NA_FILA, carregarCapacidade, reordenarEntregas, type Capacidade } from './lib/datasEntrega'
 import type { EdicaoConteudo } from './components/calendario/EditarConteudoPainel'
 import { FECHAMENTO_KEY } from './lib/designerFechamento'
 import { PESQ_CONFIG_KEY, PESQ_PUBS_KEY } from './lib/pesq/publicacoes'
@@ -2430,33 +2430,37 @@ export default function App() {
   }, [editItem])
 
   /**
-   * Fila de entrega (Calendário): publicação − 12 dias, encaixada na capacidade
-   * diária. Só conteúdo de verdade (não os semeados nunca tocados) e só o que
+   * Fila inteligente de entrega (Calendário, lib/datasEntrega): a publicação mais
+   * próxima entrega primeiro, encaixada na capacidade de cada frente (vídeo e
+   * design). Só conteúdo de verdade (não os semeados nunca tocados) e só o que
    * publica de 30 dias atrás em diante — card abandonado em "A fazer" há meses
-   * lotaria a fila de hoje.
+   * lotaria a fila de hoje. `recolocar`: cards novos ou com publicação mudada.
    */
-  const reordenarFila = useCallback((modo: 'completo' | 'empurrar', capacidade?: number): number => {
+  const reordenarFila = useCallback((modo: 'completo' | 'empurrar', capacidade?: Capacidade, recolocar?: number[]): number => {
     const st = statesRef.current
     const limite = Date.now() - 30 * 86_400_000
     const itens = allItemsRef.current.filter(it => isRealWork(it, st[it.i]) && it.dt.getTime() >= limite)
-    const lista = reordenarEntregas({ itens, states: st, capacidade: capacidade ?? carregarCapacidade(), hoje: new Date(), modo })
+    const lista = reordenarEntregas({ itens, states: st, capacidade: capacidade ?? carregarCapacidade(), hoje: new Date(), modo, recolocar: new Set(recolocar ?? []) })
     for (const x of lista) updateItem(x.id, { deliveryDate: x.entrega })
     return lista.length
   }, [updateItem])
 
-  /** Mudou a publicação: a entrega acompanha (−12 dias) enquanto o card está na produção. */
-  const entregaAcompanha = useCallback((id: number, dt: Date) => {
+  /** Mudou a publicação: a entrega se recoloca na fila pela nova prioridade (e empurra o necessário). */
+  const entregaAcompanha = useCallback((id: number, _dt: Date) => {
     const s = (statesRef.current[id]?.status ?? allItemsRef.current.find(i => i.i === id)?.s ?? 0) as Status
     if (!STATUS_NA_FILA.includes(s)) return
-    updateItem(id, { deliveryDate: entregaInicial(dt, new Date()) })
-    setTimeout(() => reordenarFila('empurrar'), 400)
-  }, [updateItem, reordenarFila])
+    // Depois que o React aplicar a data nova (os refs são atualizados no commit).
+    setTimeout(() => reordenarFila('empurrar', undefined, [id]), 400)
+  }, [reordenarFila])
 
-  /** Conteúdo novo pelo Calendário: nasce com entrega e a fila só EMPURRA o necessário. */
+  /** Conteúdo novo pelo Calendário: entra na fila pela publicação e empurra só o necessário. */
   const adicionarNoCalendario = useCallback((lista: { cliente: string; tipo: ContentType; titulo: string; data: Date; hora?: string }[]) => {
-    for (const x of lista) addItem(x.cliente, x.titulo, x.tipo, x.data, 0, undefined, undefined, undefined, undefined, entregaInicial(x.data, new Date()), x.hora)
-    // Depois que o React aplicar os cards novos (os refs são atualizados no commit).
-    setTimeout(() => reordenarFila('empurrar'), 400)
+    const ids: number[] = []
+    for (const x of lista) {
+      const id = addItem(x.cliente, x.titulo, x.tipo, x.data, 0, undefined, undefined, undefined, undefined, undefined, x.hora)
+      if (typeof id === 'number') ids.push(id)
+    }
+    setTimeout(() => reordenarFila('empurrar', undefined, ids), 400)
   }, [addItem, reordenarFila])
 
   /**

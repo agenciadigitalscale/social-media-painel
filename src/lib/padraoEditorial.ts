@@ -9,13 +9,15 @@
 
    Tudo o que decide datas é função pura (testada em __tests__/padraoEditorial);
    quem cria/apaga cards é o App, pelo mesmo caminho do resto do painel. */
-import type { Client, ContentItem, ContentType, ItemState } from '../types'
+import type { Client, ContentItem, ContentType } from '../types'
 import { syncToCloud } from './storage'
+import { COR_TIPO_CONTEUDO } from '../theme'
 
 /** Os três tipos que o padrão organiza. Post = arte do Design; Feed = foto da empresa. */
 export type TipoPadrao = 'Reel' | 'Post' | 'Feed'
 export const TIPOS_PADRAO: TipoPadrao[] = ['Reel', 'Post', 'Feed']
-export const ROTULO_TIPO: Record<TipoPadrao, string> = { Reel: 'Reel', Post: 'Post Design', Feed: 'Post Feed' }
+/** Como a equipe chama cada tipo (2026-10-05): Reel · Design · Feed. Internamente o Design segue sendo "Post". */
+export const ROTULO_TIPO: Record<TipoPadrao, string> = { Reel: 'Reel', Post: 'Design', Feed: 'Feed' }
 
 /** A que tipo do padrão um card pertence (Carrossel conta como Post Design; Story fica fora). */
 export function tipoDoPadrao(tp: ContentType): TipoPadrao | null {
@@ -23,6 +25,14 @@ export function tipoDoPadrao(tp: ContentType): TipoPadrao | null {
   if (tp === 'Post' || tp === 'Carrossel') return 'Post'
   if (tp === 'Feed') return 'Feed'
   return null
+}
+
+/** A cor do tipo — a mesma no card, na vaga, no filtro, no padrão e na distribuição. */
+export const COR_TIPO: Record<TipoPadrao, string> = { Reel: COR_TIPO_CONTEUDO.Reel, Post: COR_TIPO_CONTEUDO.Design, Feed: COR_TIPO_CONTEUDO.Feed }
+/** Cor de um card pelo tipo dele (Story e afins, fora do padrão: cinza). */
+export function corDoConteudo(tp: ContentType): string {
+  const t = tipoDoPadrao(tp)
+  return t ? COR_TIPO[t] : '#A8A09A'
 }
 
 /** Planos de conteúdo da agência: quantos Reels + quantos Posts por mês. */
@@ -83,7 +93,6 @@ export function metaDoMes(padrao: PadraoCliente, cliente: Pick<Client, 'postsPer
 }
 
 // ── Datas ──────────────────────────────────────────────────────────────
-const chaveDia = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
 const inicioDoDia = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 
 function diasDoMes(ano: number, mes: number): Date[] {
@@ -123,120 +132,70 @@ export function doClienteNoMes(items: ContentItem[], cliente: string, ano: numbe
 
 export interface Planejado { tipo: TipoPadrao; data: Date }
 
+// ── Vagas do mês (preferências por DATA) ────────────────────────────────
+//
+// Preferência é PLANEJAMENTO, não conteúdo: "neste dia sai um Reel". O padrão
+// gera as vagas iniciais do mês — TODAS as ocorrências dos dias configurados,
+// sem forçar 4/6/8 (segunda + sexta num mês com 9 delas = 9 vagas). Depois o mês
+// é independente: dá para pôr vaga em qualquer dia e arrastar de um dia para outro.
+
+export interface Vaga { dia: number; tipo: TipoPadrao }
+
+/** As vagas que o padrão dá para o mês (ordem: dia, depois Reel → Design → Feed). */
+export function gerarVagas(padrao: PadraoCliente, ano: number, mes: number): Vaga[] {
+  const out: Vaga[] = []
+  for (const tipo of TIPOS_PADRAO) for (const d of diasPreferidosNoMes(padrao, tipo, ano, mes)) out.push({ dia: d.getDate(), tipo })
+  return ordenarVagas(out)
+}
+
+export function ordenarVagas(vagas: Vaga[]): Vaga[] {
+  return [...vagas].sort((a, b) => a.dia - b.dia || TIPOS_PADRAO.indexOf(a.tipo) - TIPOS_PADRAO.indexOf(b.tipo))
+}
+
 /**
- * O que falta para bater a meta do mês, já com data — a "Distribuição".
- *
- * Para cada tipo: quantos faltam = meta − o que o cliente já tem naquele mês.
- * As datas saem dos dias preferidos do padrão (sem padrão: segunda a sexta),
- * espalhadas pelo mês, evitando dia em que o cliente já tem o mesmo tipo. Num
- * mês em curso, prefere de hoje em diante — distribuir no passado criaria card
- * nascendo atrasado; só volta ao passado se não houver dia suficiente à frente.
+ * Vaga OCUPADA continua guardada, mas some da tela: quem aparece é o conteúdo.
+ * Cada conteúdo do tipo, naquele dia, ocupa uma vaga do mesmo tipo. Tirou o
+ * conteúdo do dia, a vaga reaparece sozinha (nada é apagado).
  */
-export function planejarDistribuicao(opts: {
+export function vagasLivres(vagas: Vaga[], ocupantes: { dia: number; tipo: TipoPadrao | null }[]): Vaga[] {
+  const uso = new Map<string, number>()
+  for (const o of ocupantes) if (o.tipo) uso.set(`${o.dia}:${o.tipo}`, (uso.get(`${o.dia}:${o.tipo}`) ?? 0) + 1)
+  const livres: Vaga[] = []
+  for (const v of ordenarVagas(vagas)) {
+    const k = `${v.dia}:${v.tipo}`
+    const n = uso.get(k) ?? 0
+    if (n > 0) uso.set(k, n - 1); else livres.push(v)
+  }
+  return livres
+}
+
+/**
+ * "Distribuir conteúdos": cada conteúdo vai para a próxima vaga LIVRE do mesmo
+ * tipo, em ordem de data — só vagas compatíveis. Num mês em curso, só de hoje em
+ * diante (criar conteúdo no passado nasceria atrasado). O que não couber volta
+ * em `sobra`, para a tela avisar: falta vaga, não falta regra.
+ */
+export function distribuirNasVagas(opts: {
   ano: number
   mes: number
-  padrao: PadraoCliente
-  meta: Record<TipoPadrao, number>
-  existentes: Pick<ContentItem, 'tp' | 'dt'>[]
+  livres: Vaga[]
+  pedidos: Partial<Record<TipoPadrao, number>>
   hoje: Date
-  /** Só estes tipos (a tela deixa marcar Reel / Feed / Post). Ausente = os três. */
-  tipos?: TipoPadrao[]
-  /** Quantos criar de cada tipo, ignorando a meta — quando a pessoa informa os conteúdos. */
-  quantidade?: Partial<Record<TipoPadrao, number>>
-}): Planejado[] {
-  const { ano, mes, padrao, meta, existentes, hoje, tipos, quantidade } = opts
-  const todos = diasDoMes(ano, mes)
+}): { plano: Planejado[]; sobra: Partial<Record<TipoPadrao, number>> } {
+  const { ano, mes, livres, pedidos, hoje } = opts
   const hojeMs = inicioDoDia(hoje)
-  const out: Planejado[] = []
-
+  const plano: Planejado[] = []
+  const sobra: Partial<Record<TipoPadrao, number>> = {}
   for (const tipo of TIPOS_PADRAO) {
-    if (tipos && !tipos.includes(tipo)) continue
-    const ja = existentes.filter(e => tipoDoPadrao(e.tp) === tipo)
-    const falta = quantidade?.[tipo] ?? ((meta[tipo] ?? 0) - ja.length)
-    if (falta <= 0) continue
-
-    const ocupados = new Set(ja.map(e => chaveDia(e.dt)))
-    const doPadrao = padrao.dias[tipo]?.length
-      ? diasPreferidosNoMes(padrao, tipo, ano, mes)
-      : todos.filter(d => d.getDay() >= 1 && d.getDay() <= 5)
-    const livres = doPadrao.filter(d => !ocupados.has(chaveDia(d)))
-    const aFrente = livres.filter(d => d.getTime() >= hojeMs)
-    const base = aFrente.length >= falta ? aFrente : livres
-
-    let escolhidos: Date[]
-    if (base.length >= falta) {
-      // Espalha: o k-ésimo pega o meio da k-ésima fatia da lista.
-      escolhidos = Array.from({ length: falta }, (_, k) => base[Math.floor(((k + 0.5) * base.length) / falta)])
-    } else {
-      // Não há dia preferido livre suficiente: usa todos e repete os dias do padrão.
-      escolhidos = [...base]
-      const ciclo = doPadrao.length ? doPadrao : todos
-      for (let k = 0; escolhidos.length < falta; k++) escolhidos.push(ciclo[k % ciclo.length])
-    }
-    for (const d of escolhidos) out.push({ tipo, data: new Date(d) })
+    const n = Math.max(0, Math.floor(pedidos[tipo] ?? 0))
+    if (!n) continue
+    const datas = ordenarVagas(livres.filter(v => v.tipo === tipo))
+      .map(v => new Date(ano, mes, v.dia, 12))
+      .filter(d => d.getMonth() === mes && d.getTime() >= hojeMs)
+    datas.slice(0, n).forEach(data => plano.push({ tipo, data }))
+    if (datas.length < n) sobra[tipo] = n - datas.length
   }
-  return out.sort((a, b) => a.data.getTime() - b.data.getTime())
-}
-
-/**
- * O que o "Restaurar padrão" substitui: os conteúdos do cliente naquele mês que
- * ainda estão em "A fazer" (0) — o planejamento, automático ou manual. O que já
- * entrou em produção (1 em diante) fica: apagar trabalho começado não é
- * "restaurar preferência".
- */
-export function substituiveisNoRestaurar(itensDoMes: ContentItem[], states: Record<number, ItemState>): ContentItem[] {
-  return itensDoMes.filter(i => (states[i.i]?.status ?? i.s) === 0)
-}
-
-export interface Restauracao {
-  /** Conteúdos em "A fazer" que voltam para um dia do padrão (id → nova data). */
-  mover: { id: number; data: Date }[]
-  /** O que falta para a meta, já com data. */
-  criar: Planejado[]
-}
-
-/**
- * "Restaurar padrão": desfaz as escolhas manuais de DATA do mês e reconstrói pelo
- * padrão — sem apagar pauta de ninguém. Testado no navegador em 29/09: apagar os
- * conteúdos em "A fazer" levava junto pauta escrita ("Vídeo - Restaurante
- * polêmica"), e o que se quer desfazer é a preferência, não o trabalho.
- *
- * Por tipo: o que já entrou em produção fica onde está; os em "A fazer" são
- * redistribuídos nos dias do padrão (na ordem em que estavam); se ainda faltar
- * para a meta, cria. Nada sai do calendário. Tipos fora do padrão (Story) ficam.
- */
-export function planejarRestauracao(opts: {
-  ano: number
-  mes: number
-  padrao: PadraoCliente
-  meta: Record<TipoPadrao, number>
-  itensDoMes: ContentItem[]
-  states: Record<number, ItemState>
-  hoje: Date
-}): Restauracao {
-  const { ano, mes, padrao, meta, itensDoMes, states, hoje } = opts
-  const moviveis = substituiveisNoRestaurar(itensDoMes, states).filter(i => tipoDoPadrao(i.tp) !== null)
-  const idsMoviveis = new Set(moviveis.map(i => i.i))
-  const fixos = itensDoMes.filter(i => !idsMoviveis.has(i.i))
-  // Vagas por tipo: o suficiente para a meta E para todos os que vão ser movidos.
-  const vagas = Object.fromEntries(TIPOS_PADRAO.map(t => {
-    const nFixos = fixos.filter(i => tipoDoPadrao(i.tp) === t).length
-    const nMov = moviveis.filter(i => tipoDoPadrao(i.tp) === t).length
-    return [t, Math.max(meta[t] ?? 0, nFixos + nMov)]
-  })) as Record<TipoPadrao, number>
-  const slots = planejarDistribuicao({ ano, mes, padrao, meta: vagas, existentes: fixos, hoje })
-
-  const mover: Restauracao['mover'] = []
-  const criar: Planejado[] = []
-  for (const t of TIPOS_PADRAO) {
-    const doTipo = slots.filter(s => s.tipo === t)
-    const fila = moviveis.filter(i => tipoDoPadrao(i.tp) === t).sort((a, b) => a.dt.getTime() - b.dt.getTime())
-    doTipo.forEach((s, k) => {
-      if (k < fila.length) mover.push({ id: fila[k].i, data: s.data })
-      else criar.push(s)
-    })
-  }
-  return { mover, criar }
+  return { plano: plano.sort((a, b) => a.data.getTime() - b.data.getTime()), sobra }
 }
 
 /** Título de um conteúdo criado pela distribuição — a pauta é definida depois. */

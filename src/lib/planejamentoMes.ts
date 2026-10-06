@@ -18,13 +18,17 @@
    Tudo puro e testado; a gravação segue o caminho de sempre (localStorage +
    syncToCloud, com ramo próprio no applyRemoteSync do App). */
 import { syncToCloud } from './storage'
-import { EVENTO_PADRAO, padraoDo, type PadraoCliente, type PadroesStore } from './padraoEditorial'
+import { EVENTO_PADRAO, gerarVagas, ordenarVagas, padraoDo, type PadraoCliente, type PadroesStore, type Vaga } from './padraoEditorial'
 
 // ── Preferências do mês ─────────────────────────────────────────────────
 
 export const PREF_MES_KEY = 'sm_pref_mes'
-/** cliente → "AAAA-MM" → preferências daquele mês. */
-export type PrefMesStore = Record<string, Record<string, PadraoCliente>>
+/**
+ * cliente → "AAAA-MM" → preferências daquele mês. `vagas` (2026-10-05) são as
+ * preferências por DATA; ausentes, o mês usa as que o padrão do mês gera.
+ */
+export type MesDoCliente = PadraoCliente & { vagas?: Vaga[] }
+export type PrefMesStore = Record<string, Record<string, MesDoCliente>>
 
 export const chaveMes = (ano: number, mes: number) => `${ano}-${String(mes + 1).padStart(2, '0')}`
 
@@ -53,6 +57,41 @@ export function comPreferencias(prefs: PrefMesStore, cliente: string, ano: numbe
 /** "Criar o mês": copia o padrão para o mês só se ele ainda não tem preferências próprias. */
 export function garantirMes(prefs: PrefMesStore, padroes: PadroesStore, cliente: string, ano: number, mes: number): PrefMesStore {
   if (prefs[cliente]?.[chaveMes(ano, mes)]) return prefs
+  return comPreferencias(prefs, cliente, ano, mes, padraoDo(padroes, cliente))
+}
+
+/** As vagas (preferências por data) do mês: as gravadas, ou as que o padrão do mês gera. */
+export function vagasDoMes(prefs: PrefMesStore, padroes: PadroesStore, cliente: string, ano: number, mes: number): Vaga[] {
+  const doMes = prefs[cliente]?.[chaveMes(ano, mes)]
+  if (doMes?.vagas) return doMes.vagas.map(v => ({ ...v }))
+  return gerarVagas(preferenciasDoMes(prefs, padroes, cliente, ano, mes).padrao, ano, mes)
+}
+
+/** Grava as vagas do mês (criar, mover ou tirar vaga vale SÓ para este mês). */
+export function comVagas(prefs: PrefMesStore, padroes: PadroesStore, cliente: string, ano: number, mes: number, vagas: Vaga[]): PrefMesStore {
+  const base = garantirMes(prefs, padroes, cliente, ano, mes)
+  const k = chaveMes(ano, mes)
+  return { ...base, [cliente]: { ...base[cliente], [k]: { ...base[cliente][k], vagas: ordenarVagas(vagas) } } }
+}
+
+/** Move a vaga de um dia para outro (a primeira igual àquela). */
+export function moverVaga(vagas: Vaga[], de: Vaga, paraDia: number): Vaga[] {
+  const i = vagas.findIndex(v => v.dia === de.dia && v.tipo === de.tipo)
+  if (i < 0 || de.dia === paraDia) return vagas
+  return vagas.map((v, j) => (j === i ? { ...v, dia: paraDia } : v))
+}
+
+export function removerVaga(vagas: Vaga[], alvo: Vaga): Vaga[] {
+  const i = vagas.findIndex(v => v.dia === alvo.dia && v.tipo === alvo.tipo)
+  return i < 0 ? vagas : vagas.filter((_, j) => j !== i)
+}
+
+/**
+ * "Restaurar padrão": o mês volta a ser uma cópia do Padrão Editorial ATUAL —
+ * as vagas manuais saem e as do padrão voltam. Mexe só em preferência; nenhum
+ * conteúdo é apagado nem movido.
+ */
+export function restaurarMes(prefs: PrefMesStore, padroes: PadroesStore, cliente: string, ano: number, mes: number): PrefMesStore {
   return comPreferencias(prefs, cliente, ano, mes, padraoDo(padroes, cliente))
 }
 

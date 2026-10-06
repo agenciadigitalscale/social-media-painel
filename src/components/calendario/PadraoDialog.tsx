@@ -11,7 +11,7 @@ import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuIte
 import type { Client } from '../../types'
 import { DS } from '../../theme'
 import { clickable } from '../../shared/a11y'
-import { PLANOS, ROTULO_TIPO, TIPOS_PADRAO, type PadraoCliente, type PlanoEditorial, type TipoPadrao } from '../../lib/padraoEditorial'
+import { COR_TIPO, PLANOS, ROTULO_TIPO, TIPOS_PADRAO, type PadraoCliente, type PlanoEditorial, type TipoPadrao } from '../../lib/padraoEditorial'
 import { chaveMes, type ClienteNaCarteira, type TipoCliente } from '../../lib/planejamentoMes'
 
 const DIAS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
@@ -97,8 +97,8 @@ export default function PadraoDialog({ open, modo, cliente, nomeMes, inicial, pl
                 aria-label={`${ROTULO_TIPO[t]} às ${DIA_SEMANA[d]}s${planoSel === '6+6' ? ` (semana ${qual})` : ''}`} sx={{
                   width: { xs: 32, xl: 38 }, height: 32, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer', fontSize: '0.74rem', fontWeight: 800, transition: 'all 0.15s ease',
-                  bgcolor: on ? DS.accent : 'transparent', color: on ? DS.onAccent : DS.t2,
-                  border: `1px solid ${on ? DS.accent : DS.border}`, '&:hover': { borderColor: DS.accent },
+                  bgcolor: on ? COR_TIPO[t] : 'transparent', color: on ? DS.onAccent : DS.t2,
+                  border: `1px solid ${on ? COR_TIPO[t] : DS.border}`, '&:hover': { borderColor: COR_TIPO[t] },
                 }}>
                 {rotulo}
               </Box>
@@ -175,6 +175,7 @@ export default function PadraoDialog({ open, modo, cliente, nomeMes, inicial, pl
             {TIPOS_PADRAO.map(t => (
               <Box key={t}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
+                  <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: COR_TIPO[t] }} />
                   <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: DS.t1, flex: 1 }}>{ROTULO_TIPO[t]}</Typography>
                   <TextField size="small" type="number" label="Meta no mês" value={meta[t] ?? ''}
                     onChange={e => setMeta(m => ({ ...m, [t]: e.target.value }))}
