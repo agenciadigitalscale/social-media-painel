@@ -2,6 +2,7 @@ import { verifySession } from './_lib/session'
 import { noteAccess } from './_lib/audit'
 import { ensureColumn, ensureIndex } from './_lib/schema-guard'
 import { protectMediaLinksValue } from './_lib/drive-video-links'
+import { encolhimentoSuspeito } from './_lib/encolhimento'
 import { resolveWorkspace, scopedKey, workspaceKeyPrefix, unscopeKey } from './_lib/workspace'
 import {
   CHAVES_CONTEXTO, contextoDe, decidirEscrita, precisaContexto, usuarioDaSessao, valorVisivel,
@@ -280,6 +281,21 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
        * Sem `baseRev` a escrita passa direto, como sempre passou: é o que mantém
        * o fallback do cliente funcionando quando a reconciliação não converge.
        */
+      // Vale com ou sem `baseRev`: a última tentativa do navegador vai sem ele.
+      // O 409 leva `encolhimento` para o navegador somar em vez de substituir.
+      {
+        const atual = await env.DB.prepare('SELECT value, rev FROM app_data WHERE key = ?1')
+          .bind(dbKey).first<{ value: string; rev: number }>()
+        if (encolhimentoSuspeito(atual?.value, body.value)) {
+          console.warn(`[sync] ${body.key}: gravação recusada — encolheria de vez`)
+          return json({
+            ok: false, conflict: true, encolhimento: true,
+            value: atual?.value ?? null,
+            rev: atual?.rev ?? 0,
+          }, 409)
+        }
+      }
+
       if (body.baseRev !== undefined) {
         const row = await env.DB.prepare('SELECT rev FROM app_data WHERE key = ?1')
           .bind(dbKey).first<{ rev: number }>()

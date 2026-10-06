@@ -428,9 +428,14 @@ async function pushKey(key: string, value: string): Promise<boolean> {
 
     if (res.status === 409) {
       const conflito = await res.json().catch(() => null) as
-        { value?: string | null; rev?: number } | null
+        { value?: string | null; rev?: number; encolhimento?: boolean } | null
       const deles = conflito?.value != null ? safeParse(conflito.value) : undefined
-      const base  = _baseValue.get(key)
+      // Encolhimento: a cópia local estava vazia/incompleta. Com base vazia a
+      // reconciliação SOMA o que é meu ao que está lá, em vez de ler o que falta
+      // como exclusão.
+      const base  = conflito?.encolhimento
+        ? (Array.isArray(deles) ? [] : {})
+        : _baseValue.get(key)
 
       // Reaplica a minha intenção sobre o que está no servidor.
       meuValor = reconcile(base, meuValor, deles)
@@ -446,6 +451,7 @@ async function pushKey(key: string, value: string): Promise<boolean> {
           body: JSON.stringify({ key, value: JSON.stringify(meuValor) }),
         })
         if (ultima.status === 401) { notifySessionExpired(); return false }
+        if (ultima.status === 409) return false
         console.warn(`[sync] ${key}: gravado sem checagem de versão após ${MAX_RETRIES + 1} tentativas`)
         return ultima.ok
       }
