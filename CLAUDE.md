@@ -1277,7 +1277,7 @@ Grupos hoje: Operação `[7,22,0,4,5,9]` · Clientes `[6,30,21,23]` · Equipe `[
 > sem sobrescrever o que a carteira já tem. **Gravações**: o formulário escolhe Mensal/Freelancer e
 > só lista clientes desse tipo ativos no mês da gravação.
 > **Aba 34 "Painel de Tráfego" (2026-10-02)** — `PainelTrafegoTab.tsx` embute
-> `https://painel-facebook-nu.vercel.app/` (o site não proíbe moldura) + "Abrir em nova aba"
+> `https://relatorio.agenciadigitalscale.com/` (o site não proíbe moldura) + "Abrir em nova aba"
 > (o navegador pode isolar o login dentro da moldura). Grupo "Tráfego" na barra. Só sócios e o
 > gestor de tráfego: o Robson tem cargo Social, então a liberação é POR PESSOA
 > (`GESTORES_DE_TRAFEGO` em `roles.ts`, dentro do `getUserPerms`). **Aba 35 "Proposta"** (grupo

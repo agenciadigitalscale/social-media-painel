@@ -4,7 +4,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import { DS } from '../theme'
 
 /** Painel de Tráfego (projeto painel-facebook), hospedado à parte. */
-export const PAINEL_TRAFEGO_URL = 'https://painel-facebook-nu.vercel.app/'
+export const PAINEL_TRAFEGO_URL = 'https://relatorio.agenciadigitalscale.com/'
 /** Gerador de propostas comerciais, hospedado à parte. */
 export const PROPOSTA_URL = 'https://proposta-c1d.pages.dev/'
 
