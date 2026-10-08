@@ -61,15 +61,25 @@ export function clearManualStamps(ids: number[]): void {
  * — porque o servidor já confirmou o status, ou porque a decisão do cliente
  * assumiu, ou porque o prazo expirou.
  */
-export function reconcileRemoteStates<T extends { status: number }>(
+export function reconcileRemoteStates<T extends { status: number; statusAt?: number }>(
   remote: Record<string, T>,
   stamps: Map<number, ManualStamp>,
   now: number = Date.now(),
+  /** O que a tela tem agora: status com versão MAIS NOVA que a do servidor não volta. */
+  local?: Record<string, T>,
 ): { states: Record<string, T>; confirmed: number[] } {
   const confirmed: number[] = []
   const out: Record<string, T> = {}
 
   for (const [idStr, r] of Object.entries(remote)) {
+    // Versão (2026-10-08): o servidor trouxe um status mais VELHO que o da tela —
+    // resposta atrasada, ou a gravação ainda não chegou lá. Fica o da tela; os
+    // outros campos do servidor entram. Sem prazo: vale até o servidor alcançar.
+    const l = local?.[idStr]
+    if (l && l.status !== r.status && (l.statusAt ?? 0) > (r.statusAt ?? 0)) {
+      out[idStr] = { ...r, status: l.status, statusAt: l.statusAt }
+      continue
+    }
     const stamp = stamps.get(Number(idStr))
     if (!stamp) { out[idStr] = r; continue }
 

@@ -77,6 +77,7 @@ describe('arraste não é desfeito pela abertura de página de um colega', () =>
     // E no servidor o arraste do colega continua de pé.
     expect(srv.linha['1']).toEqual({ status: 5 })
     expect(srv.linha['2']).toEqual({ status: 5 })
-    expect(srv.linha['3']).toEqual({ status: 2 })
+    // O status mudou: vai com a versão dele (statusAt), que o servidor usa para recusar status velho.
+    expect(srv.linha['3']).toMatchObject({ status: 2 })
   })
 })

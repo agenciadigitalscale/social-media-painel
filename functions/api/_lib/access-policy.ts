@@ -13,6 +13,7 @@
 //
 // Tudo aqui é função pura (sem D1): o sync.ts carrega o contexto e chama.
 
+import { mesclarEntrada } from './mergeStates'
 import {
   CHAVES_MAPA_POR_AUTOR, CHAVES_POR_AUTOR, CHAVES_POR_CARD, CHAVE_CARDS_CRIADOS,
   chaveSoDeSocio, donoDoCard, isIsolado, isSocio,
@@ -137,6 +138,8 @@ export function decidirEscrita(
   entrada: string,
   atual: string | null,
   ctx: ContextoPosse | null,
+  /** Entradas com só os campos que mudaram (painel novo) — ver _lib/mergeStates. */
+  parcial = false,
 ): DecisaoEscrita {
   if (!user || isSocio(user)) return { tipo: 'normal' }
   if (chaveSoDeSocio(key)) return { tipo: 'ignorar' }
@@ -159,9 +162,16 @@ export function decidirEscrita(
       // status fica o que o banco tinha.
       if (key === 'sm_states' && isObj(e) && typeof e.status === 'number') {
         const antes = isObj(base[id]) ? (base[id] as { status?: number }).status ?? 0 : 0
-        if (!podeMover(user, antes as Status, e.status as Status)) { base[id] = { ...e, status: antes }; continue }
+        if (!podeMover(user, antes as Status, e.status as Status)) {
+          // Status proibido: o resto da entrada grava, o status fica o do banco.
+          const { status: _s, statusAt: _a, ...semStatus } = e
+          base[id] = mesclarEntrada(isObj(base[id]) ? base[id] as Record<string, unknown> : undefined, semStatus, parcial, Date.now())
+          continue
+        }
       }
-      base[id] = e
+      base[id] = key === 'sm_states' && isObj(e)
+        ? mesclarEntrada(isObj(base[id]) ? base[id] as Record<string, unknown> : undefined, e, parcial, Date.now())
+        : e
     }
     return { tipo: 'mesclado', valor: JSON.stringify(base) }
   }

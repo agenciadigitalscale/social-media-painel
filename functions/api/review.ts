@@ -186,6 +186,9 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
       // Ajuste (6), não de volta para Em produção — o card precisa mostrar que
       // voltou da revisão. Quem produz leva de 6 para 1 ou direto para 2.
       state.status = body.approved ? 3 : 6
+      // Versão do status (ver _lib/mergeStates): sem ela a decisão da revisão
+      // poderia ser recusada como "mais velha" que o último movimento no painel.
+      state.statusAt = Date.now()
       if (!body.approved && body.text) {
         state.rejectionText = body.text
       } else {

@@ -3,6 +3,7 @@ import { noteAccess } from './_lib/audit'
 import { ensureColumn, ensureIndex } from './_lib/schema-guard'
 import { protectMediaLinksValue } from './_lib/drive-video-links'
 import { encolhimentoSuspeito } from './_lib/encolhimento'
+import { mesclarEstados } from './_lib/mergeStates'
 import { resolveWorkspace, scopedKey, workspaceKeyPrefix, unscopeKey } from './_lib/workspace'
 import {
   CHAVES_CONTEXTO, contextoDe, decidirEscrita, precisaContexto, usuarioDaSessao, valorVisivel,
@@ -182,7 +183,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
   // POST /api/sync — upsert de um par chave/valor, ou merge de um patch
   if (request.method === 'POST') {
     try {
-      const body = await request.json() as { key: string; value?: string; patch?: string; baseRev?: number }
+      const body = await request.json() as { key: string; value?: string; patch?: string; baseRev?: number; campos?: boolean }
       if (!body.key) return json({ ok: false, error: 'Missing key' }, 400)
 
       // Cargo restrito: a gravação passa pela política ANTES de tocar no banco.
@@ -191,7 +192,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
         const dbKeyP = scopedKey(ws, body.key)
         const atualRow = await env.DB.prepare('SELECT value, rev FROM app_data WHERE key = ?1')
           .bind(dbKeyP).first<{ value: string; rev: number }>()
-        const decisao = decidirEscrita(user, body.key, entrada, atualRow?.value ?? null, await contexto())
+        const decisao = decidirEscrita(user, body.key, entrada, atualRow?.value ?? null, await contexto(), body.campos === true)
         if (decisao.tipo === 'ignorar') {
           // Aceita e descarta: a fila do navegador esvazia e nada alheio muda.
           return json({ ok: true, ignorado: true, rev: atualRow?.rev ?? 0 })
@@ -235,32 +236,53 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
         if (Object.keys(incoming).length === 0) return json({ ok: true, merged: 0 })
 
         const dbKey = scopedKey(ws, body.key)
-        const row = await env.DB.prepare('SELECT value FROM app_data WHERE key = ?1')
-          .bind(dbKey).first<{ value: string }>()
-        let current: Record<string, unknown> = {}
-        if (row?.value) {
-          try {
-            const parsed = JSON.parse(row.value) as unknown
-            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-              current = parsed as Record<string, unknown>
-            }
-          } catch { /* valor corrompido: o patch reconstrói o que importa */ }
-        }
+        // `campos` = cada entrada traz só os campos que mudaram (painel novo).
+        // Sem ele, a entrada é o card inteiro (painel aberto com código antigo).
+        const parcial = body.campos === true
 
-        const rawMerged = JSON.stringify({ ...current, ...incoming })
-        const merged = body.key === 'sm_media_links'
-          ? protectMediaLinksValue(rawMerged)
-          : rawMerged
-        const after = await env.DB.prepare(`
-          INSERT INTO app_data (key, value, rev)
-          VALUES (?1, ?2, 1)
-          ON CONFLICT(key) DO UPDATE SET
-            value   = excluded.value,
-            rev     = app_data.rev + 1,
-            updated = CURRENT_TIMESTAMP
-          RETURNING rev
-        `).bind(dbKey, merged).first<{ rev: number }>()
-        return json({ ok: true, merged: Object.keys(incoming).length, rev: after?.rev ?? 0 })
+        /*
+         * Ler → mesclar → gravar SÓ se ninguém gravou no meio (rev igual ao lido).
+         * Antes a gravação era incondicional: duas gravações chegando juntas liam
+         * o mesmo mapa e a segunda apagava a primeira — o "card volta" por corrida
+         * no próprio servidor. Perdeu a corrida? Relê e mescla de novo.
+         */
+        for (let tentativa = 0; tentativa < 6; tentativa++) {
+          const row = await env.DB.prepare('SELECT value, rev FROM app_data WHERE key = ?1')
+            .bind(dbKey).first<{ value: string; rev: number }>()
+          let current: Record<string, unknown> = {}
+          if (row?.value) {
+            try {
+              const parsed = JSON.parse(row.value) as unknown
+              if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                current = parsed as Record<string, unknown>
+              }
+            } catch { /* valor corrompido: o patch reconstrói o que importa */ }
+          }
+
+          // sm_states: campo a campo, e status mais velho que o gravado não entra.
+          const mergedObj = body.key === 'sm_states'
+            ? mesclarEstados(current, incoming, parcial)
+            : { ...current, ...incoming }
+          const rawMerged = JSON.stringify(mergedObj)
+          const merged = body.key === 'sm_media_links'
+            ? protectMediaLinksValue(rawMerged)
+            : rawMerged
+
+          const after = row
+            ? await env.DB.prepare(`
+                UPDATE app_data SET value = ?2, rev = rev + 1, updated = CURRENT_TIMESTAMP
+                 WHERE key = ?1 AND rev = ?3
+                RETURNING rev
+              `).bind(dbKey, merged, row.rev).first<{ rev: number }>()
+            : await env.DB.prepare(`
+                INSERT INTO app_data (key, value, rev) VALUES (?1, ?2, 1)
+                ON CONFLICT(key) DO NOTHING
+                RETURNING rev
+              `).bind(dbKey, merged).first<{ rev: number }>()
+          if (after) return json({ ok: true, merged: Object.keys(incoming).length, rev: after.rev })
+        }
+        // Concorrência alta demais agora: a gravação fica na fila do painel e volta.
+        return json({ ok: false, error: 'Concorrência — tente de novo' }, 503)
       }
 
       if (body.value === undefined) return json({ ok: false, error: 'Missing value' }, 400)

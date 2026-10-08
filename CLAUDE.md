@@ -1908,6 +1908,33 @@ já havia um rodando, e `forceSync`/`beforeunload` achavam ter terminado sem ter
 > alerta falso. Isto é a mesma classe de bug que `seedSnapshotsFromDisk` já
 > tratava na SUBIDA — o "card volta para a coluna de origem" tem as duas pontas.
 
+> ⚠️ **"Movi o card e ele voltou sozinho minutos depois" — corrigido em 2026-10-08.**
+> Reproduzido no painel local: um 2º aparelho/aba com a cópia VELHA do card editava
+> QUALQUER campo (a observação bastava) e o servidor trocava o card INTEIRO — o status
+> antigo voltava; a tela de quem moveu só segurava por 90s (`MANUAL_MOVE_TTL_MS`) e depois
+> aceitava o servidor. Quatro defesas, todas testadas (`syncRollback.test.ts`,
+> `functions/api/_lib/__tests__/mergeStates.test.ts`):
+> 1. **Campo a campo:** `diffCampos` (storage.ts) manda só os campos que mudaram de cada
+>    card (`null` = removido), com `campos: true` no corpo; o servidor mescla por campo.
+> 2. **Versão do status (`ItemState.statusAt`):** carimbada no `updateItem` (e no envio,
+>    se faltar). O servidor (`_lib/mergeStates.ts`, no `/api/sync` e na mescla do
+>    isolado) **recusa status mais velho** que o gravado — inclusive de painel com código
+>    antigo mandando o card inteiro sem versão. Card sem versão dos dois lados (dado antigo)
+>    aceita como antes. Relógio adiantado > 5 min vira "agora". Quem muda status no
+>    servidor carimba `statusAt` também: `patchItemStatus`, `markStudioDelivery`,
+>    `patchItemFields`, `review.ts`. **Novo escritor de status no servidor tem de carimbar.**
+> 3. **Gravação condicional no servidor:** o patch do `/api/sync` lê → mescla → grava só se
+>    o `rev` não mudou (senão relê). Antes duas gravações simultâneas se apagavam.
+> 4. **Fila por aba:** a fila (`sm_sync_queue`) é compartilhada pelo localStorage, mas a base
+>    da diferença é de cada aba — uma aba enviava a cópia velha da outra. Cada entrada leva a
+>    aba dona (`tab`); a aba só envia as próprias e herda as de aba fechada (sem batimento em
+>    `sm_sync_tabs` há 3 min). Gravar o MESMO valor não enfileira (fim do "Salvando…" sozinho).
+> Na tela, `reconcileRemoteStates(remoto, carimbos, agora, local)` não aceita do servidor um
+> status mais velho que o da tela (sem prazo). **Diagnóstico:** `localStorage.ds_debug_sync='1'`
+> + F5 → console mostra `[STATUS]`, `[QUEUE]` (com a origem), `[SAVE START/OK]`,
+> `[REMOTE/SYNC]`, e expõe `window.__ds` para testes. Limites: `review.ts` ainda grava o mapa
+> inteiro (raro, com versão) e a mescla do isolado não é condicional.
+
 **Para adicionar dado novo persistente:**
 1. Grave em `localStorage` (fonte imediata) **e** chame `syncToCloud('sm_minha_chave', valor)`.
 2. Se precisar que ele **volte do servidor entre sessões/aparelhos**, adicione a chave em `SYNC_KEYS` (`storage.ts`). Chaves dinâmicas (ex.: financeiro por mês) sincronizam direto via `syncToCloud`, sem estar em `SYNC_KEYS`.

@@ -98,7 +98,8 @@ describe('envio ao servidor', () => {
     await forceSync()
 
     expect(sent[0].value).toBeUndefined()
-    expect(JSON.parse(sent[0].patch!)).toEqual({ 2: { ...CARD_B, status: 7 } })
+    // Campo a campo (2026-10-08): só o que mudou no card — o status e a versão dele.
+    expect(JSON.parse(sent[0].patch!)).toEqual({ 2: { status: 7, statusAt: expect.any(Number) } })
   })
 
   it('o card intocado NÃO viaja — é isso que preserva o trabalho alheio', async () => {

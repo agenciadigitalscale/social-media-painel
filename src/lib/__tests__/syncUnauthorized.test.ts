@@ -90,7 +90,9 @@ describe('401 no /api/sync — o dia em que a porta fechar', () => {
   })
 
   it('gravação confirmada continua saindo da fila normalmente', async () => {
-    syncToCloud('sm_states', { 1: { status: 2 } })
+    // Valor diferente do já confirmado acima: gravar o MESMO valor não enfileira
+    // nada (é o que evita o "Salvando…" aparecer sozinho).
+    syncToCloud('sm_states', { 1: { status: 3 } })
     await forceSync()
 
     expect(srv.gravacoes).toHaveLength(1)

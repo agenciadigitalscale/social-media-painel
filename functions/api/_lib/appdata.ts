@@ -222,13 +222,15 @@ export async function patchItemStatus(
                          THEN json_set(value, ?2, json('{"status":0,"title":"","link":"","caption":"","notes":""}'))
                          ELSE value END`
 
-  const setStatus = `json_set(${withItem}, ?3, ?4)`
+  const statusAtPath = jsonPath(itemId, 'statusAt')
+  if (!statusAtPath) return false
+  // Status + a versão dele (statusAt): a decisão do cliente é a mudança mais nova.
+  const setStatus = `json_set(json_set(${withItem}, ?3, ?4), ?7, ?8)`
   const body = rejectionText
     ? `json_set(${setStatus}, ?5, ?6)`
     : `json_remove(${setStatus}, ?5)`
 
-  const binds: (string | number)[] = [itemPath, statusPath, status, rejectPath]
-  if (rejectionText) binds.push(rejectionText)
+  const binds: (string | number)[] = [itemPath, statusPath, status, rejectPath, rejectionText ?? '', statusAtPath, Date.now()]
 
   try {
     const res = await db.prepare(`
@@ -261,13 +263,15 @@ export async function markStudioDelivery(
   const withItem = `CASE WHEN json_type(value, ?2) IS NULL
                          THEN json_set(value, ?2, json('{"status":0,"title":"","link":"","caption":"","notes":""}'))
                          ELSE value END`
-  const expr = `json_set(json_set(json_set(json_set(${withItem}, ?3, ?4), ?5, ?6), ?7, ?6), ?8, ?9)`
+  const statusAtPath = jsonPath(itemId, 'statusAt')
+  if (!statusAtPath) return false
+  const expr = `json_set(json_set(json_set(json_set(json_set(${withItem}, ?3, ?4), ?5, ?6), ?7, ?6), ?8, ?9), ?10, ?9)`
   try {
     const res = await db.prepare(`
       UPDATE app_data
          SET value = ${expr}, rev = rev + 1, updated = CURRENT_TIMESTAMP
        WHERE key = ?1
-    `).bind('sm_states', itemPath, statusPath, status, linkPath, link, footagePath, tsPath, Date.now()).run()
+    `).bind('sm_states', itemPath, statusPath, status, linkPath, link, footagePath, tsPath, Date.now(), statusAtPath).run()
     return (res.meta?.changes ?? 0) > 0
   } catch {
     return false
@@ -372,6 +376,8 @@ export async function patchItemFields(
   db: D1Database, itemId: number, campos: Record<string, string | number>,
 ): Promise<boolean> {
   const itemPath = jsonPath(itemId)
+  // Mudou o status? Vai junto a versão dele (ver _lib/mergeStates).
+  if ('status' in campos && !('statusAt' in campos)) campos = { ...campos, statusAt: Date.now() }
   const nomes = Object.keys(campos)
   if (!itemPath || nomes.length === 0) return false
   if (nomes.some(n => !/^[A-Za-z][A-Za-z0-9]*$/.test(n))) return false

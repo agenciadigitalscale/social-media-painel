@@ -147,7 +147,11 @@ describe('patchItemStatus', () => {
     // Sem o incremento, o painel de quem estava com a aba aberta regrava por
     // cima da decisão do cliente na sincronização seguinte.
     expect(sql).toContain('rev = rev + 1')
-    expect(binds).toEqual(['sm_states', '$."2007"', '$."2007"."status"', 5, '$."2007"."rejectionText"'])
+    expect(binds.slice(0, 5)).toEqual(['sm_states', '$."2007"', '$."2007"."status"', 5, '$."2007"."rejectionText"'])
+    // A decisão do cliente leva a versão do status (statusAt = agora): sem ela, a
+    // regra "status mais velho não entra" poderia recusar a aprovação.
+    expect(binds[6]).toBe('$."2007"."statusAt"')
+    expect(typeof binds[7]).toBe('number')
   })
 
   it('aprovação apaga o motivo de recusa anterior', async () => {

@@ -91,7 +91,7 @@ describe('primeira gravação depois do F5 não apaga trabalho alheio', () => {
     srv.linha = { 1: { status: 5 } }
     syncToCloud('sm_states', { 10: { status: 2 } })
     await forceSync()
-    expect(srv.linha['10']).toEqual({ status: 2 })
+    expect(srv.linha['10']).toMatchObject({ status: 2 })
   })
 
   it('chave não-patchável continua indo inteira (lista precisa substituir)', async () => {

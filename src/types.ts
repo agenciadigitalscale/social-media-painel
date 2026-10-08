@@ -182,6 +182,8 @@ export interface ItemState {
   whatsappOpenedAt?: number           // revisão já foi para o WhatsApp — não abrir de novo
   reviewAutomationCompletedAt?: number // automação Pronto → Revisão já concluída neste card
   tags?: string[]            // etiquetas personalizadas
+  /** Versão do status: quando ele mudou (ms). Status mais velho que este nunca o substitui. */
+  statusAt?: number
   creative?: string          // direção criativa gerada no Creative Engine (não é a legenda)
 }
 

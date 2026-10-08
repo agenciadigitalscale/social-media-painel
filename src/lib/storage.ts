@@ -171,7 +171,66 @@ export type SyncKey = (typeof SYNC_KEYS)[number]
 // Se offline, as entradas ficam na fila até a conexão ser restaurada.
 
 const QUEUE_KEY     = 'sm_sync_queue'
+
+// ── Diagnóstico de sincronização (opt-in) ──────────────────────────────────
+// Liga com localStorage.ds_debug_sync = '1' e F5. Escreve no console cada
+// passo do status de um card: fila, envio, confirmação e o que chega do
+// servidor. Desligado, não custa nada.
+let _reqSeq = 0
+export function debugSyncOn(): boolean {
+  try { return localStorage.getItem('ds_debug_sync') === '1' } catch { return false }
+}
+export function debugSync(tag: string, data: Record<string, unknown>): void {
+  if (!debugSyncOn()) return
+  console.info(`[${tag}]`, new Date().toISOString().slice(11, 23), data)
+}
+/** id → status das entradas de um patch/valor de sm_states (só para o log). */
+function statusDasEntradas(raw: string): Record<string, unknown> {
+  const m = parseMap(raw); const out: Record<string, unknown> = {}
+  if (!m) return out
+  for (const [id, e] of Object.entries(m)) out[id] = (e as { status?: unknown })?.status
+  return out
+}
 let   _pendingCount = 0
+
+/*
+ * FILA POR ABA (2026-10-08). A fila mora no localStorage, que é COMPARTILHADO
+ * entre as abas do mesmo navegador — mas a base de comparação de cada chave
+ * (`_sentSnapshot`) é de cada aba. Uma aba enviava a gravação da outra
+ * comparando com a base errada: subia a cópia velha da outra aba como se fosse
+ * mudança, e mostrava "Salvando…" por um trabalho que não era dela. Agora cada
+ * entrada leva a aba dona; a aba só envia as próprias, e herda as de uma aba que
+ * fechou (sem batimento há mais de VIVA_MS) — trabalho de aba fechada não se perde.
+ */
+type EntradaFila = { key: string; value: string; at?: number; tab?: string }
+const TAB_ID   = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `tab-${Date.now()}-${Math.random()}`
+const TABS_KEY = 'sm_sync_tabs'
+const VIVA_MS  = 3 * 60_000
+
+function abasVivas(): Record<string, number> {
+  try { return JSON.parse(localStorage.getItem(TABS_KEY) ?? '{}') as Record<string, number> } catch { return {} }
+}
+function batimento(): void {
+  try {
+    const m = abasVivas(); const agora = Date.now()
+    m[TAB_ID] = agora
+    for (const [k, t] of Object.entries(m)) if (agora - t > 10 * VIVA_MS) delete m[k]
+    localStorage.setItem(TABS_KEY, JSON.stringify(m))
+  } catch { /* sem armazenamento */ }
+}
+/** A entrada é desta aba — ou de uma aba que já fechou (herança). */
+function ehMinha(e: EntradaFila, vivas: Record<string, number> = abasVivas()): boolean {
+  if (!e.tab || e.tab === TAB_ID) return true
+  const visto = vivas[e.tab]
+  return !visto || Date.now() - visto > VIVA_MS
+}
+if (typeof window !== 'undefined') {
+  batimento()
+  setInterval(batimento, 30_000)
+  window.addEventListener('pagehide', () => {
+    try { const m = abasVivas(); delete m[TAB_ID]; localStorage.setItem(TABS_KEY, JSON.stringify(m)) } catch { /* nada */ }
+  })
+}
 
 /**
  * Chaves cujo valor é um mapa `id → objeto` e que **nunca perdem chave**
@@ -207,8 +266,8 @@ const _sentSnapshot = new Map<string, Record<string, unknown>>()
  */
 function seedSnapshotsFromDisk(): void {
   try {
-    const fila = JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]') as Array<{ key: string }>
-    const pendentes = new Set(fila.map(e => e.key))
+    const fila = JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]') as EntradaFila[]
+    const pendentes = new Set(fila.filter(e => ehMinha(e)).map(e => e.key))
     for (const key of PATCHABLE_KEYS) {
       if (pendentes.has(key)) continue
       const bruto = localStorage.getItem(key)
@@ -264,8 +323,11 @@ function safeParse(raw: string): unknown {
 /** O servidor mandou a versão dele — passa a ser a base do próximo envio. */
 export function noteServerRev(key: string, rev: number, value?: unknown): void {
   _baseRev.set(key, rev)
-  if (value !== undefined) _baseValue.set(key, value)
+  if (value !== undefined) { _baseValue.set(key, value); _ultimoConfirmado.set(key, JSON.stringify(value)) }
 }
+
+/** O que o servidor tem de cada chave (texto), para não enfileirar gravação que não muda nada. */
+const _ultimoConfirmado = new Map<string, string>()
 
 type EntryMap = Record<string, unknown>
 
@@ -291,6 +353,34 @@ export function diffEntries(previous: EntryMap, next: EntryMap): EntryMap {
     if (before === undefined || JSON.stringify(before) !== JSON.stringify(value)) {
       patch[id] = value
     }
+  }
+  return patch
+}
+
+/**
+ * Diferença CAMPO A CAMPO (2026-10-08): de cada card que mudou, só os campos que
+ * mudaram (`null` = campo removido). Antes ia o card inteiro, e o servidor
+ * trocava o card todo — uma aba/aparelho com a cópia velha que editasse só a
+ * observação devolvia junto o status ANTIGO, e o card "voltava sozinho"
+ * (reproduzido). Mudou o status sem trazer a versão? Carimba `statusAt` agora:
+ * é ela que o servidor usa para recusar status mais velho (_lib/mergeStates).
+ */
+export function diffCampos(previous: EntryMap, next: EntryMap, agora: number = Date.now()): EntryMap {
+  const ehObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
+  const patch: EntryMap = {}
+  for (const [id, value] of Object.entries(next)) {
+    const before = previous[id]
+    if (!ehObj(before) || !ehObj(value)) {
+      if (JSON.stringify(before) === JSON.stringify(value)) continue
+      patch[id] = ehObj(value) && 'status' in value && !('statusAt' in value) ? { ...value, statusAt: agora } : value
+      continue
+    }
+    const campos: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(value)) if (JSON.stringify(before[k]) !== JSON.stringify(v)) campos[k] = v
+    for (const k of Object.keys(before)) if (!(k in value)) campos[k] = null
+    if (!Object.keys(campos).length) continue
+    if ('status' in campos && !('statusAt' in campos)) campos.statusAt = agora
+    patch[id] = campos
   }
   return patch
 }
@@ -329,8 +419,10 @@ function buildSyncBody(key: string, value: string): string {
   if (!current) return JSON.stringify({ key, value })
 
   const snapshot = _sentSnapshot.get(key)
-  const patch = snapshot ? diffEntries(snapshot, current) : current
-  return JSON.stringify({ key, patch: JSON.stringify(patch) })
+  // Com base: só os campos que mudaram. Sem base (primeiro envio depois de F5 com
+  // fila antiga): os cards inteiros — o servidor ainda recusa status mais velho.
+  if (!snapshot) return JSON.stringify({ key, patch: JSON.stringify(current) })
+  return JSON.stringify({ key, patch: JSON.stringify(diffCampos(snapshot, current)), campos: true })
 }
 
 // Roda na importação, antes de qualquer gravação: é o que faz o primeiro envio
@@ -352,13 +444,20 @@ function emit(s: SyncStatus) {
   _listeners.forEach(fn => fn(s, _pendingCount))
 }
 
-function loadQueue(): Array<{ key: string; value: string; at?: number }> {
+function loadQueue(): EntradaFila[] {
   try { return JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]') } catch { return [] }
 }
 
-function saveQueue(q: Array<{ key: string; value: string; at?: number }>) {
+/** Só as entradas desta aba (ou herdadas de aba fechada). */
+function minhaFila(): EntradaFila[] {
+  const vivas = abasVivas()
+  return loadQueue().filter(e => ehMinha(e, vivas))
+}
+
+function saveQueue(q: EntradaFila[]) {
   localStorage.setItem(QUEUE_KEY, JSON.stringify(q))
-  _pendingCount = q.length
+  const vivas = abasVivas()
+  _pendingCount = q.filter(e => ehMinha(e, vivas)).length
 }
 
 /**
@@ -417,6 +516,11 @@ async function pushKey(key: string, value: string): Promise<boolean> {
       ? enviarCom({ baseRev: rev })
       : corpo
 
+    const requestId = `req-${++_reqSeq}`
+    if (key === 'sm_states' && debugSyncOn()) {
+      const p = JSON.parse(body) as { patch?: string; value?: string }
+      debugSync('SAVE START', { requestId, key, cards: statusDasEntradas(p.patch ?? p.value ?? '{}') })
+    }
     const res = await fetch('/api/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -462,8 +566,10 @@ async function pushKey(key: string, value: string): Promise<boolean> {
 
     if (res.ok) {
       const ok = await res.json().catch(() => null) as { rev?: number } | null
+      if (key === 'sm_states') debugSync('SAVE OK', { requestId, key, rev: ok?.rev })
       if (ok?.rev !== undefined) _baseRev.set(key, ok.rev)
       _baseValue.set(key, meuValor)
+      _ultimoConfirmado.set(key, value)
       // Só avança o snapshot com confirmação do servidor: marcar antes faria a
       // próxima diferença omitir justamente o que não chegou lá.
       noteSyncedValue(key, parseMap(value))
@@ -487,10 +593,11 @@ let _houveProgresso = false
 
 function flushQueue(): Promise<void> {
   if (_flushPromise) return _flushPromise
-  const queue = loadQueue()
+  const queue = minhaFila()
   if (!queue.length) { emit('synced'); return Promise.resolve() }
 
   emit('syncing')
+  debugSync('FLUSH', { keys: queue.map(e => e.key) })
 
   _flushPromise = (async () => {
     try {
@@ -518,8 +625,10 @@ function flushQueue(): Promise<void> {
       // mudança ficava na fila, o `saveQueue([])` a apagava e ela nunca chegava
       // ao servidor. Removo só as entradas cujo valor é o que EU acabei de subir;
       // o que mudou no meio-tempo fica para o próximo flush.
-      const restante = loadQueue().filter(e => confirmados.get(e.key) !== e.value)
-      saveQueue(restante)
+      const vivas = abasVivas()
+      const fila = loadQueue().filter(e => !(ehMinha(e, vivas) && confirmados.get(e.key) === e.value))
+      saveQueue(fila)
+      const restante = fila.filter(e => ehMinha(e, vivas))
       _houveProgresso = confirmados.size > 0
       // Tentamos enviar e NADA subiu, estando online = o servidor está recusando
       // tudo (ex.: quota do D1 estourada, 500). Isso é ERRO, não "sincronizando".
@@ -546,19 +655,32 @@ function flushQueue(): Promise<void> {
   // o próximo gatilho natural (nova gravação, foco na aba, volta da rede) — que é
   // também quando a pessoa já terá refeito o login.
   return _flushPromise.then(() => {
-    if (_houveProgresso && loadQueue().length && !_flushPromise) return flushQueue()
+    if (_houveProgresso && minhaFila().length && !_flushPromise) return flushQueue()
   })
 }
 
 export function syncToCloud(key: string, value: unknown): void {
   const serialized = JSON.stringify(value)
+  if (debugSyncOn()) debugSync('QUEUE', { key, origem: new Error().stack?.split(String.fromCharCode(10)).slice(2, 5).map(l => l.trim()).join(' < ') })
 
   // Atualiza a entrada na fila (deduplicado por chave). Carimba a HORA: uma
   // gravação que fica presa (offline/401/quota) não pode bloquear para sempre o
   // poll de aplicar o valor do servidor — ver getFreshPendingKeys. Reenfileirar a
   // mesma chave reinicia o relógio (a pessoa está mexendo nela agora).
-  const queue = loadQueue().filter(e => e.key !== key)
-  queue.push({ key, value: serialized, at: Date.now() })
+  const tenhoPendente = minhaFila().some(e => e.key === key)
+  // Nada mudou de verdade? Não grava — era isto que fazia o "Salvando…" aparecer
+  // sozinho (rotina regravando o mesmo valor). Com algo meu na fila, grava sempre:
+  // a pessoa pode ter mudado e desfeito, e a última versão tem de valer.
+  if (!tenhoPendente) {
+    if (PATCHABLE_KEYS.has(key) && _sentSnapshot.has(key)) {
+      const atual = parseMap(serialized)
+      if (atual && !Object.keys(diffCampos(_sentSnapshot.get(key)!, atual)).length) return
+    } else if (_ultimoConfirmado.get(key) === serialized) return
+  }
+
+  const vivas = abasVivas()
+  const queue = loadQueue().filter(e => !(e.key === key && ehMinha(e, vivas)))
+  queue.push({ key, value: serialized, at: Date.now(), tab: TAB_ID })
   saveQueue(queue)
 
   // Tenta flush imediato
@@ -569,18 +691,18 @@ export function syncToCloud(key: string, value: unknown): void {
 if (typeof window !== 'undefined') {
   window.addEventListener('online', () => flushQueue())
   window.addEventListener('focus', () => {
-    if (loadQueue().length > 0) flushQueue()
+    if (minhaFila().length > 0) flushQueue()
   })
 }
 
 /** Retorna quantas mudanças ainda não foram salvas no servidor. */
 export function getPendingCount(): number {
-  return loadQueue().length
+  return minhaFila().length
 }
 
 /** Retorna o set de chaves com writes locais pendentes (não enviados ao D1 ainda). */
 export function getPendingKeys(): Set<string> {
-  return new Set(loadQueue().map(e => e.key))
+  return new Set(minhaFila().map(e => e.key))
 }
 
 /**
@@ -599,7 +721,7 @@ export function getPendingKeys(): Set<string> {
  */
 export function getFreshPendingKeys(maxAgeMs: number): Set<string> {
   const agora = Date.now()
-  return new Set(loadQueue().filter(e => typeof e.at === 'number' && agora - e.at < maxAgeMs).map(e => e.key))
+  return new Set(minhaFila().filter(e => typeof e.at === 'number' && agora - e.at < maxAgeMs).map(e => e.key))
 }
 
 /** Força um flush imediato da fila. */
@@ -612,7 +734,8 @@ export function forceSync(): Promise<void> {
  * Garante que dados pendentes chegam ao D1 mesmo no F5/Ctrl+Shift+R.
  */
 export function flushQueueBeforeUnload(): void {
-  const queue = loadQueue()
+  const vivas = abasVivas()
+  const queue = loadQueue().filter(e => ehMinha(e, vivas))
   if (!queue.length) return
 
   const deduped = new Map<string, string>()
@@ -628,5 +751,6 @@ export function flushQueueBeforeUnload(): void {
       new Blob([body], { type: 'application/json' }),
     )
   })
-  saveQueue([])
+  // Só as minhas saem: a fila das outras abas abertas continua com elas.
+  saveQueue(loadQueue().filter(e => !ehMinha(e, vivas)))
 }

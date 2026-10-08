@@ -73,8 +73,7 @@ import {
   loadRoteiros, loadClientFolders, loadExtraClients, loadHiddenClients,
   loadClientColors, loadClientHashtags, loadCaptionTemplates, loadPublishFolders,
   syncToCloud, SYNC_KEYS, forceSync, flushQueueBeforeUnload, getFreshPendingKeys, noteSyncedValue,
-  noteServerRev, onSessionExpired,
-} from './lib/storage'
+  noteServerRev, onSessionExpired, debugSync, debugSyncOn } from './lib/storage'
 import {
   markManualMove, getManualStamps, clearManualStamps, reconcileRemoteStates,
 } from './lib/statusReconcile'
@@ -502,8 +501,17 @@ export default function App() {
             // Card movido à mão não volta: o status local vence o remoto até o
             // servidor confirmar. Só decisão do cliente (5/6) passa por cima.
             const { states: reconciliado, confirmed } = reconcileRemoteStates(
-              parsed as Record<string, ItemState>, getManualStamps(), Date.now(),
+              parsed as Record<string, ItemState>, getManualStamps(), Date.now(), statesRef.current as Record<string, ItemState>,
             )
+            if (debugSyncOn()) {
+              const local = statesRef.current
+              const difs: Record<string, string> = {}
+              for (const [id, r] of Object.entries(parsed as Record<string, ItemState>)) {
+                const l = local[Number(id)]
+                if (l && l.status !== r.status) difs[id] = `local ${l.status} · servidor ${r.status} → fica ${(reconciliado as Record<string, ItemState>)[id]?.status}`
+              }
+              if (Object.keys(difs).length) debugSync('REMOTE/SYNC', { rev, difs })
+            }
             if (confirmed.length) clearManualStamps(confirmed)
             setStates(() => {
               localStorage.setItem('sm_states', JSON.stringify(reconciliado))
@@ -1333,8 +1341,12 @@ export default function App() {
         // sincronização, até o servidor confirmar este status (ou o cliente
         // decidir 5/6). É a regra "movi, ficou movido".
         markManualMove(id, patch.status)
+        debugSync('STATUS', { cardId: id, de: existing.status, para: patch.status })
         const entry: HistoryEntry = { action: `→ ${STATUS_HISTORY_LABEL[patch.status]}`, ts: Date.now() }
-        finalPatch = { ...patch, history: [...(existing.history ?? []), entry] }
+        // statusAt = a VERSÃO deste status: o servidor recusa status mais velho que
+        // ela (aba/aparelho com cópia velha não devolve mais o card), e a tela
+        // não aceita do servidor um status mais velho que o dela.
+        finalPatch = { ...patch, statusAt: Date.now(), history: [...(existing.history ?? []), entry] }
         // Voltou para produção (ajuste interno) ou o cliente pediu ajuste: o
         // ciclo recomeça. Sem limpar estas marcas, arrastar de novo para "Pronto"
         // depois da nova exportação cairia na guarda de idempotência e a esteira
@@ -1561,6 +1573,13 @@ export default function App() {
     if (de === 9 && status !== 9) cancelarNoInstagram(id)
     aplicarStatus(id, status)
   }, [states, allItems, currentUser, aplicarStatus])
+
+  // Diagnóstico de sincronização (só com localStorage.ds_debug_sync = '1'): o
+  // teste de persistência move cards e edita campos pelo mesmo caminho da tela.
+  useEffect(() => {
+    if (!debugSyncOn()) return
+    ;(window as Window & { __ds?: unknown }).__ds = { setStatus, updateItem, status: (id: number) => statesRef.current[id]?.status }
+  }, [setStatus, updateItem])
 
   /** Mudar a hora do card. Se já está programado, o horário marcado e o agendamento andam juntos. */
   const mudarHoraPostagem = useCallback((id: number, hora: string) => {
