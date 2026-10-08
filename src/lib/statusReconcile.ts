@@ -13,6 +13,8 @@
  * refletir isso mesmo que alguém tenha arrastado o card no mesmo minuto.
  */
 
+import { versaoDoStatus } from './versaoStatus'
+
 export interface ManualStamp {
   status: number
   ts: number
@@ -76,7 +78,7 @@ export function reconcileRemoteStates<T extends { status: number; statusAt?: num
     // resposta atrasada, ou a gravação ainda não chegou lá. Fica o da tela; os
     // outros campos do servidor entram. Sem prazo: vale até o servidor alcançar.
     const l = local?.[idStr]
-    if (l && l.status !== r.status && (l.statusAt ?? 0) > (r.statusAt ?? 0)) {
+    if (l && l.status !== r.status && versaoDoStatus(l) > versaoDoStatus(r)) {
       out[idStr] = { ...r, status: l.status, statusAt: l.statusAt }
       continue
     }

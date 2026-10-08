@@ -108,3 +108,12 @@ describe('registro de movimentos manuais', () => {
     expect(getManualStamps().has(2)).toBe(true)
   })
 })
+
+describe('reconcileRemoteStates — versão pelo histórico', () => {
+  it('a tela não aceita do servidor um status mais velho que o seu, mesmo sem statusAt', () => {
+    const local = { 1: { status: 4, title: '', link: '', caption: '', notes: '', history: [{ user: 'a', action: '→ Enviado', ts: NOW - 1000 }] } }
+    const remoto = { 1: { status: 3, title: '', link: '', caption: '', notes: '', history: [{ user: 'a', action: '→ Aprovado', ts: NOW - 900_000 }] } }
+    const { states } = reconcileRemoteStates(remoto as never, new Map(), NOW, local as never)
+    expect(states[1].status).toBe(4)
+  })
+})

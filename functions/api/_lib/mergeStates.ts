@@ -15,9 +15,12 @@
  *    aberto com código antigo, envio sem base): o status dele só passa se for
  *    mais novo.
  *
- * Sem `statusAt` dos dois lados (dados de antes desta regra) vale o que vier,
- * como sempre foi — senão nenhum card antigo poderia ser movido.
+ * Sem `statusAt`, a versão é o horário do último movimento do histórico
+ * (src/lib/versaoStatus): o movimento real de uma aba antiga vale, a cópia velha
+ * não. Sem versão nenhuma dos dois lados, vale o que vier, como sempre foi.
  */
+
+import { versaoDoStatus } from '../../../src/lib/versaoStatus'
 
 type Entrada = Record<string, unknown>
 
@@ -34,7 +37,7 @@ const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0
  */
 export function statusPodeEntrar(atual: Entrada | undefined, chegando: Entrada): boolean {
   if (!atual || !('status' in chegando) || chegando.status === atual.status) return true
-  const a = num(atual.statusAt), c = num(chegando.statusAt)
+  const a = versaoDoStatus(atual), c = versaoDoStatus(chegando)
   if (!a) return true
   return c > a
 }
@@ -43,6 +46,9 @@ export function statusPodeEntrar(atual: Entrada | undefined, chegando: Entrada):
 export function mesclarEntrada(atual: Entrada | undefined, chegando: Entrada, parcial: boolean, agora: number): Entrada {
   const entrada: Entrada = { ...chegando }
   if (num(entrada.statusAt) > agora + FOLGA_FUTURO_MS) entrada.statusAt = agora
+
+  // Aceito sem carimbo (aba com código antigo): grava a versão que o histórico prova.
+  if ('status' in entrada && !num(entrada.statusAt) && versaoDoStatus(entrada)) entrada.statusAt = versaoDoStatus(entrada)
 
   if (!statusPodeEntrar(atual, entrada)) {
     delete entrada.status

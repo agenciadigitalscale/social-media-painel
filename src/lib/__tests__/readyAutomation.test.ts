@@ -252,6 +252,8 @@ describe('a trava da revarredura não vai ao servidor', () => {
 
     const { base } = deps({ fetchFiles: async () => ({ ok: true, folderId: 'F', files: [] }) })
     await runReadyAutomation(base)
+    // Relógio andou entre as varreduras, como na vida real (90s).
+    await new Promise(r => setTimeout(r, 5))
     await runReadyAutomation(base)
     await new Promise(r => setTimeout(r, 0))
 

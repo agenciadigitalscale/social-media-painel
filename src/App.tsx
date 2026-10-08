@@ -1578,7 +1578,8 @@ export default function App() {
   // teste de persistência move cards e edita campos pelo mesmo caminho da tela.
   useEffect(() => {
     if (!debugSyncOn()) return
-    ;(window as Window & { __ds?: unknown }).__ds = { setStatus, updateItem, status: (id: number) => statesRef.current[id]?.status }
+    const w = window as Window & { __ds?: Record<string, unknown> }
+    w.__ds = { ...(w.__ds ?? {}), setStatus, updateItem, status: (id: number) => statesRef.current[id]?.status }
   }, [setStatus, updateItem])
 
   /** Mudar a hora do card. Se já está programado, o horário marcado e o agendamento andam juntos. */
@@ -2496,6 +2497,12 @@ export default function App() {
       if (naFila.length) reordenarFila('empurrar', undefined, naFila)
     }, 400)
   }, [addItem, reordenarFila, reatribuir])
+
+  useEffect(() => {
+    if (!debugSyncOn()) return
+    const w = window as Window & { __ds?: Record<string, unknown> }
+    w.__ds = { ...(w.__ds ?? {}), adicionar: adicionarNoCalendario }
+  }, [adicionarNoCalendario])
 
   /** Arquivados → de volta ao trabalho (sai da lista de arquivados, nada mais muda). */
   const restaurarItem = useCallback((id: number) => {

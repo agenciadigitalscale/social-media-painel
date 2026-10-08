@@ -47,3 +47,27 @@ describe('sm_states: gravação antiga nunca vence a mais nova', () => {
     expect(e.statusAt).toBe(T + 50)
   })
 })
+
+describe('aba com código antigo (sem statusAt): vale o histórico', () => {
+  it('versaoDoStatus: statusAt manda; sem ele, o último movimento do histórico', async () => {
+    const { versaoDoStatus } = await import('../../../../src/lib/versaoStatus')
+    expect(versaoDoStatus({ statusAt: T, history: [{ action: '→ Enviado', ts: T + 9 }] })).toBe(T)
+    expect(versaoDoStatus({ history: [{ action: '→ Revisão', ts: T + 1 }, { action: 'Comentou', ts: T + 50 }, { action: '→ Aprovado', ts: T + 7 }] })).toBe(T + 7)
+    expect(versaoDoStatus({ status: 3 })).toBe(0)
+    expect(versaoDoStatus(null)).toBe(0)
+  })
+
+  it('movimento REAL feito numa aba antiga (histórico mais novo) entra', () => {
+    const servidor = { '9': { status: 3, statusAt: T, history: [{ action: '→ Aprovado', ts: T }] } }
+    const chegando = { '9': { status: 4, history: [{ action: '→ Aprovado', ts: T }, { action: '→ Enviado ao cliente', ts: T + 60_000 }] } }
+    const out = mesclarEstados(servidor, chegando, false, T + 70_000)
+    expect(out['9']).toMatchObject({ status: 4, statusAt: T + 60_000 })
+  })
+
+  it('cópia velha de aba antiga (histórico mais velho) continua recusada', () => {
+    const servidor = { '9': { status: 4, statusAt: T + 60_000 } }
+    const chegando = { '9': { status: 3, notes: 'obs', history: [{ action: '→ Aprovado', ts: T }] } }
+    const out = mesclarEstados(servidor, chegando, false, T + 70_000)
+    expect(out['9']).toMatchObject({ status: 4, statusAt: T + 60_000, notes: 'obs' })
+  })
+})

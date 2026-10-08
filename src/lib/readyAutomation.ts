@@ -115,6 +115,13 @@ function commit(raw: ReadyAutomationMap, { sync = true }: { sync?: boolean } = {
   _listeners.forEach(fn => fn())
 }
 
+/** Última versão de cada card que subiu ao servidor (ou veio dele). */
+let _enviado: ReadyAutomationMap | null = null
+function getEnviado(): ReadyAutomationMap {
+  if (!_enviado) _enviado = { ...getReadyStates() }
+  return _enviado
+}
+
 export function getReadyStates(): ReadyAutomationMap {
   if (!_loaded) {
     _map = readStorage()
@@ -131,6 +138,7 @@ export function subscribeReadyStates(fn: () => void): () => void {
 export function reloadReadyStates(): void {
   _loaded = true
   _map = readStorage()
+  _enviado = { ..._map }
   _listeners.forEach(fn => fn())
 }
 
@@ -188,7 +196,13 @@ export function patchReadyState(itemId: number, patch: Partial<ReadyAutomationSt
   // Antes ia ao servidor — duas gravações do mapa inteiro por card, por ciclo de
   // 90s, em cada aba aberta da equipe (186 mil gravações medidas em 2026-10-08),
   // e as abas disputavam a mesma chave até cair no "gravado sem checagem".
-  const soTrava = !!current && mesmoEstado(current, { ...next, lockedAt: current.lockedAt })
+  //
+  // A comparação é com o que foi ao SERVIDOR por último, não com o mapa da tela:
+  // entre duas varreduras o card passa por `searching` (só local), e comparar com
+  // ele fazia todo "não encontrado" repetido subir de novo, com horário novo.
+  const enviado = getEnviado()[itemId]
+  const soTrava = !!enviado && mesmoEstado(enviado, { ...next, lockedAt: enviado.lockedAt })
+  if (!soTrava) _enviado = { ...getEnviado(), [itemId]: next }
   commit({ ...getReadyStates(), [itemId]: next }, { sync: !soTrava })
 }
 
@@ -197,6 +211,7 @@ export function clearReadyState(itemId: number): void {
   if (!map[itemId]) return
   const next = { ...map }
   delete next[itemId]
+  if (_enviado) { _enviado = { ..._enviado }; delete _enviado[itemId] }
   commit(next)
 }
 
