@@ -184,7 +184,12 @@ export function patchReadyState(itemId: number, patch: Partial<ReadyAutomationSt
     return
   }
 
-  commit({ ...getReadyStates(), [itemId]: next })
+  // Só a TRAVA mudou (pegar/soltar o lock da revarredura): fica neste aparelho.
+  // Antes ia ao servidor — duas gravações do mapa inteiro por card, por ciclo de
+  // 90s, em cada aba aberta da equipe (186 mil gravações medidas em 2026-10-08),
+  // e as abas disputavam a mesma chave até cair no "gravado sem checagem".
+  const soTrava = !!current && mesmoEstado(current, { ...next, lockedAt: current.lockedAt })
+  commit({ ...getReadyStates(), [itemId]: next }, { sync: !soTrava })
 }
 
 export function clearReadyState(itemId: number): void {

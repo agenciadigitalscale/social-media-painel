@@ -242,3 +242,22 @@ describe('histórico não vira log de varredura', () => {
     expect(rec.audits.filter(a => /não encontrado/i.test(a))).toHaveLength(2)
   })
 })
+
+describe('a trava da revarredura não vai ao servidor', () => {
+  it('duas varreduras sem arquivo: UMA gravação (o "não encontrado"), nenhuma da trava', async () => {
+    const f = fetch as unknown as ReturnType<typeof vi.fn>
+    f.mockClear()
+    const gravacoes = () => f.mock.calls.filter(([, init]) => (init as RequestInit | undefined)?.method === 'POST'
+      && String((init as RequestInit).body).includes('sm_ready_automation')).length
+
+    const { base } = deps({ fetchFiles: async () => ({ ok: true, folderId: 'F', files: [] }) })
+    await runReadyAutomation(base)
+    await runReadyAutomation(base)
+    await new Promise(r => setTimeout(r, 0))
+
+    // Antes: pegar a trava, "não encontrado", soltar a trava — a cada varredura, em
+    // cada aba aberta (186 mil gravações medidas). Agora só a mudança de fase sobe.
+    expect(gravacoes()).toBe(1)
+    expect(isLocked(ITEM.i)).toBe(false)
+  })
+})
