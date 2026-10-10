@@ -129,7 +129,9 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
       }
 
       if (!senha) { setLoginError('Digite sua senha.'); pwdRef.current?.focus(); return }
-      const res = await roleAuth({ action: 'verify', role: user, password: senha, user })
+      // A senha CRUA: o servidor tolera espaço nas pontas, e mandar aparada
+      // impediria bater com senha antiga que foi gravada com o espaço.
+      const res = await roleAuth({ action: 'verify', role: user, password: pwd, user })
       const data = await res.json() as { ok: boolean }
       if (data.ok) doLogin(user)
       else { setLoginError('Senha incorreta.'); setPwd(''); pwdRef.current?.focus() }

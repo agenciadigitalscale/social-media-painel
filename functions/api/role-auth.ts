@@ -30,6 +30,24 @@ async function hashPassword(password: string, role: string): Promise<string> {
 }
 
 /**
+ * Senha certa com tolerância a espaço nas PONTAS (2026-10-10).
+ *
+ * A tela de login antiga mandava a senha crua; a de 2026-09-28 manda aparada
+ * (`trim`). Senha criada antes, no celular, costuma ter levado o espaço que o
+ * teclado põe depois da palavra — e passou a dar "senha incorreta" para quem
+ * digitava certo (relato do editor). Vale também o contrário: senha gravada
+ * sem espaço e digitada com ele. O miolo da senha continua exato.
+ */
+async function senhaConfere(password: string, role: string, hash: string): Promise<boolean> {
+  const t = password.trim()
+  const variantes = new Set([password, t, `${t} `, ` ${t}`, ` ${t} `])
+  for (const v of variantes) {
+    if ((await hashPassword(v, role)) === hash) return true
+  }
+  return false
+}
+
+/**
  * Confere a senha de administrador contra os cargos que REALMENTE administram.
  *
  * Antes isto consultava `role = 'Sócio'` — uma linha que nunca existiu no banco
@@ -155,8 +173,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       if (!password)
         return new Response(JSON.stringify({ ok: false }), { headers: CORS })
 
-      const hash = await hashPassword(password, role)
-      if (hash !== row.hash) {
+      if (!(await senhaConfere(password, role, row.hash))) {
         return new Response(JSON.stringify({ ok: false }), { headers: CORS })
       }
 

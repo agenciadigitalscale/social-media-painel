@@ -71,6 +71,29 @@ describe('verify — whitelist de cargo', () => {
     expect(res.headers.get('Set-Cookie')).toContain('ds_session=')
   })
 
+  it('senha gravada COM espaço no fim (teclado do celular) entra digitada sem ele', async () => {
+    const db  = makeDB([{ role: 'kaique', hash: await hashFor('certa ', 'kaique') }])
+    const res = await post({ action: 'verify', role: 'kaique', password: 'certa' }, db)
+
+    expect((await res.json() as { ok: boolean }).ok).toBe(true)
+    expect(res.headers.get('Set-Cookie')).toContain('ds_session=')
+  })
+
+  it('senha gravada SEM espaço entra mesmo digitada com espaço nas pontas', async () => {
+    const db  = makeDB([{ role: 'kaique', hash: await hashFor('certa', 'kaique') }])
+    const res = await post({ action: 'verify', role: 'kaique', password: ' certa ' }, db)
+
+    expect((await res.json() as { ok: boolean }).ok).toBe(true)
+  })
+
+  it('a tolerância é só de espaço nas pontas — outra senha continua errada', async () => {
+    const db  = makeDB([{ role: 'kaique', hash: await hashFor('certa ', 'kaique') }])
+    const res = await post({ action: 'verify', role: 'kaique', password: 'cert' }, db)
+
+    expect((await res.json() as { ok: boolean }).ok).toBe(false)
+    expect(res.headers.get('Set-Cookie')).toBeNull()
+  })
+
   it('membro da equipe COM senha certa ganha sessão', async () => {
     const db  = makeDB([{ role: 'kaique', hash: await hashFor('certa', 'kaique') }])
     const res = await post({ action: 'verify', role: 'kaique', password: 'certa' }, db)
