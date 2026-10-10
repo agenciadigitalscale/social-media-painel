@@ -1,5 +1,5 @@
 /**
- * Backup diário do D1 → R2.
+ * Backup do D1 → R2: uma cópia por HORA (guardada 7 dias) + uma por dia (30 dias).
  *
  * Até aqui o único seguro do banco era o Time Travel do próprio D1: se a conta
  * da Cloudflare for comprometida, ou o banco apagado, ele vai junto. Este
@@ -10,9 +10,13 @@
  * legível, independe do wrangler e o `scripts/backup-restaurar.mjs` transforma
  * de volta em SQL — backup que não se sabe restaurar é só esperança.
  *
- * O cron dispara a cada 5 min; `shouldRunBackup` + o `head` do objeto do dia
- * fazem a cópia sair UMA vez, a partir das 06h UTC (03h de Brasília), e
- * tentar de novo no disparo seguinte se falhar.
+ * O cron dispara a cada 5 min; o `head` de cada objeto faz a cópia da hora
+ * sair UMA vez por hora, e a do dia uma vez a partir das 06h UTC (03h de
+ * Brasília) — falhou, tenta de novo no disparo seguinte.
+ *
+ * Por que de hora em hora (2026-10-08): só com a diária, um card criado de
+ * manhã e perdido à tarde não estava em backup nenhum. Uma cópia gzipada tem
+ * ~0,5 MB; 7 dias de horárias são ~80 MB no R2, longe da cota.
  */
 
 export interface BackupEnv {
@@ -24,6 +28,9 @@ export const BACKUP_FORMAT = 'ds-hub-d1-backup'
 export const BACKUP_VERSION = 1
 /** Dias guardados no R2. O Time Travel do D1 cobre o mesmo período por outro caminho. */
 export const KEEP_DAYS = 30
+/** Dias de cópias horárias. Depois disso sobra a diária. */
+export const KEEP_HOURLY_DAYS = 7
+export const HOURLY_PREFIX = 'd1/hora/'
 /** Hora UTC a partir da qual o backup do dia pode sair (06h UTC = 03h Brasília). */
 export const BACKUP_HOUR_UTC = 6
 /** Linhas por consulta — mantém cada resposta do D1 pequena. */
@@ -51,7 +58,11 @@ export interface BackupStatus {
   key?: string
   bytes?: number
   sha256?: string
+  /** Chaves gravadas nesta rodada (a da hora e, uma vez por dia, a diária). */
+  keys?: string[]
   rows?: Record<string, number>
+  /** Tamanho das listas de cards — a queda de uma cópia para a outra denuncia perda. */
+  cards?: CardCounts
   deleted?: string[]
   error?: string
 }
@@ -59,6 +70,11 @@ export interface BackupStatus {
 /** `d1/AAAA-MM-DD.json.gz`, na data UTC. */
 export function backupKey(now: Date): string {
   return `d1/${now.toISOString().slice(0, 10)}.json.gz`
+}
+
+/** `d1/hora/AAAA-MM-DDTHH.json.gz`, na hora UTC. */
+export function hourlyBackupKey(now: Date): string {
+  return `${HOURLY_PREFIX}${now.toISOString().slice(0, 13)}.json.gz`
 }
 
 export function shouldRunBackup(now: Date): boolean {
@@ -78,6 +94,39 @@ export function expiredKeys(keys: string[], now: Date, keepDays = KEEP_DAYS): st
     const t = Date.parse(`${m[1]}T00:00:00Z`)
     return !Number.isNaN(t) && t < cutoff
   })
+}
+
+/** Cópias horárias mais velhas que `keepDays`. Mesmo cuidado: só o padrão exato. */
+export function expiredHourlyKeys(keys: string[], now: Date, keepDays = KEEP_HOURLY_DAYS): string[] {
+  const cutoff = now.getTime() - keepDays * 86_400_000
+  return keys.filter(k => {
+    const m = /^d1\/hora\/(\d{4}-\d{2}-\d{2}T\d{2})\.json\.gz$/.exec(k)
+    if (!m) return false
+    const t = Date.parse(`${m[1]}:00:00Z`)
+    return !Number.isNaN(t) && t < cutoff
+  })
+}
+
+export interface CardCounts {
+  custom: number
+  states: number
+  deleted: number
+}
+
+/** Tamanho de `sm_custom`, `sm_states` e `sm_deleted` no dump. Valor ilegível conta -1. */
+export function countCards(dump: BackupFile): CardCounts {
+  const rows = dump.tables.find(t => t.name === 'app_data')?.rows ?? []
+  const size = (key: string): number => {
+    const row = rows.find(r => r.key === key)
+    if (!row) return 0
+    try {
+      const v = JSON.parse(String(row.value)) as unknown
+      if (Array.isArray(v)) return v.length
+      if (v && typeof v === 'object') return Object.keys(v).length
+      return 0
+    } catch { return -1 }
+  }
+  return { custom: size('sm_custom'), states: size('sm_states'), deleted: size('sm_deleted') }
 }
 
 /**
@@ -198,16 +247,22 @@ async function listAllKeys(bucket: R2Bucket, prefix: string): Promise<string[]> 
 }
 
 /**
- * Faz o backup do dia se ainda não existir. Devolve o status gravado, ou
- * `null` quando não havia nada a fazer (fora do horário, ou já feito hoje).
+ * Faz a cópia da hora (e, a partir das 06h UTC, a do dia) se ainda não
+ * existirem — um dump só serve as duas. Devolve o status gravado, ou `null`
+ * quando não havia nada a fazer.
  *
  * O status vai para `status.json` no próprio balde — e não para o `app_data`,
  * que é sincronizado com os navegadores da equipe a cada 20s.
  */
 export async function runBackup(env: BackupEnv, now = new Date()): Promise<BackupStatus | null> {
-  if (!shouldRunBackup(now)) return null
-  const key = backupKey(now)
-  if (await env.BACKUPS.head(key)) return null
+  const due: string[] = []
+  const hourly = hourlyBackupKey(now)
+  if (!(await env.BACKUPS.head(hourly))) due.push(hourly)
+  if (shouldRunBackup(now)) {
+    const daily = backupKey(now)
+    if (!(await env.BACKUPS.head(daily))) due.push(daily)
+  }
+  if (!due.length) return null
 
   let status: BackupStatus
   try {
@@ -215,20 +270,27 @@ export async function runBackup(env: BackupEnv, now = new Date()): Promise<Backu
     const body = await gzip(JSON.stringify(dump))
     const sha256 = await sha256Hex(body)
     const rows = Object.fromEntries(dump.tables.map(t => [t.name, t.rows.length]))
+    const cards = countCards(dump)
 
-    await env.BACKUPS.put(key, body, {
-      httpMetadata: { contentType: 'application/json', contentEncoding: 'gzip' },
-      customMetadata: { sha256, createdAt: dump.createdAt, tables: String(dump.tables.length) },
-    })
+    for (const key of due) {
+      await env.BACKUPS.put(key, body, {
+        httpMetadata: { contentType: 'application/json', contentEncoding: 'gzip' },
+        customMetadata: {
+          sha256, createdAt: dump.createdAt, tables: String(dump.tables.length),
+          custom: String(cards.custom), states: String(cards.states), deleted: String(cards.deleted),
+        },
+      })
+    }
 
-    // Retenção só DEPOIS de o backup de hoje estar gravado: se a cópia nova
-    // falhar, as antigas continuam lá.
-    const deleted = expiredKeys(await listAllKeys(env.BACKUPS, 'd1/'), now)
+    // Retenção só DEPOIS de a cópia nova estar gravada: se ela falhar, as
+    // antigas continuam lá.
+    const all = await listAllKeys(env.BACKUPS, 'd1/')
+    const deleted = [...expiredKeys(all, now), ...expiredHourlyKeys(all, now)]
     if (deleted.length) await env.BACKUPS.delete(deleted)
 
-    status = { ok: true, at: now.toISOString(), key, bytes: body.byteLength, sha256, rows, deleted }
+    status = { ok: true, at: now.toISOString(), key: due[0], keys: due, bytes: body.byteLength, sha256, rows, cards, deleted }
   } catch (e) {
-    status = { ok: false, at: now.toISOString(), key, error: e instanceof Error ? e.message : String(e) }
+    status = { ok: false, at: now.toISOString(), key: due[0], keys: due, error: e instanceof Error ? e.message : String(e) }
   }
 
   try {

@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { createRequire } from 'node:module'
 import { gunzipSync } from 'node:zlib'
 import {
-  backupKey, shouldRunBackup, expiredKeys, dumpDatabase, backupToSql, runBackup,
+  backupKey, hourlyBackupKey, shouldRunBackup, expiredKeys, expiredHourlyKeys, countCards,
+  dumpDatabase, backupToSql, runBackup,
   sqlLiteral, encodeValue, STATUS_KEY, type BackupFile, type BackupStatus,
 } from '../backup'
 
@@ -76,12 +77,35 @@ describe('agenda', () => {
   it('uma chave por dia', () => {
     expect(backupKey(NOW)).toBe('d1/2026-09-28.json.gz')
   })
+
+  it('uma chave por hora', () => {
+    expect(hourlyBackupKey(NOW)).toBe('d1/hora/2026-09-28T06.json.gz')
+    expect(hourlyBackupKey(new Date('2026-09-28T17:59:00Z'))).toBe('d1/hora/2026-09-28T17.json.gz')
+  })
 })
 
 describe('retenção', () => {
   it('apaga só backups com mais de 30 dias e ignora outros arquivos', () => {
-    const keys = ['d1/2026-08-28.json.gz', 'd1/2026-08-29.json.gz', 'd1/2026-09-27.json.gz', 'status.json', 'd1/manual.json.gz']
+    const keys = ['d1/2026-08-28.json.gz', 'd1/2026-08-29.json.gz', 'd1/2026-09-27.json.gz', 'status.json', 'd1/manual.json.gz', 'd1/hora/2026-08-01T10.json.gz']
     expect(expiredKeys(keys, NOW)).toEqual(['d1/2026-08-28.json.gz'])
+  })
+
+  it('cópias horárias valem 7 dias e não mexem nas diárias', () => {
+    const keys = ['d1/hora/2026-09-21T05.json.gz', 'd1/hora/2026-09-21T07.json.gz', 'd1/hora/2026-09-28T05.json.gz', 'd1/2026-09-01.json.gz', 'd1/hora/manual.json.gz']
+    expect(expiredHourlyKeys(keys, NOW)).toEqual(['d1/hora/2026-09-21T05.json.gz'])
+  })
+})
+
+describe('contagem de cards', () => {
+  it('conta sm_custom, sm_states e sm_deleted; ilegível vira -1', () => {
+    const file = {
+      tables: [{ name: 'app_data', sql: '', rows: [
+        { key: 'sm_custom', value: '[{"i":1},{"i":2},{"i":3}]' },
+        { key: 'sm_states', value: '{"1":{},"2":{}}' },
+        { key: 'sm_deleted', value: 'quebrado' },
+      ] }],
+    } as unknown as BackupFile
+    expect(countCards(file)).toEqual({ custom: 3, states: 2, deleted: -1 })
   })
 })
 
@@ -127,6 +151,9 @@ describe('runBackup', () => {
     const status = await runBackup({ DB: fakeD1(seed()), BACKUPS: r2 as unknown as R2Bucket }, NOW)
 
     expect(status?.ok).toBe(true)
+    expect(status?.keys).toEqual(['d1/hora/2026-09-28T06.json.gz', 'd1/2026-09-28.json.gz'])
+    expect(r2.store.has('d1/hora/2026-09-28T06.json.gz')).toBe(true)
+    expect(status?.cards).toEqual({ custom: 0, states: 1, deleted: 0 })
     expect(status?.rows).toEqual({ app_data: 2, items: 1203 })
     expect(status?.deleted).toEqual(['d1/2026-08-01.json.gz'])
     expect(r2.store.has('d1/2026-09-27.json.gz')).toBe(true)
@@ -139,12 +166,21 @@ describe('runBackup', () => {
     expect(saved.ok).toBe(true)
   })
 
-  it('não refaz se o backup do dia já existe, nem roda antes do horário', async () => {
+  it('não refaz se a cópia da hora e a do dia já existem', async () => {
     const r2 = fakeR2()
     r2.store.set('d1/2026-09-28.json.gz', 'já feito')
+    r2.store.set('d1/hora/2026-09-28T06.json.gz', 'já feito')
     const env = { DB: fakeD1(seed()), BACKUPS: r2 as unknown as R2Bucket }
     expect(await runBackup(env, NOW)).toBeNull()
-    expect(await runBackup(env, new Date('2026-09-29T03:00:00Z'))).toBeNull()
+  })
+
+  it('antes das 06h UTC sai só a cópia da hora; na hora seguinte, outra', async () => {
+    const r2 = fakeR2()
+    const env = { DB: fakeD1(seed()), BACKUPS: r2 as unknown as R2Bucket }
+    expect((await runBackup(env, new Date('2026-09-29T03:00:00Z')))?.keys).toEqual(['d1/hora/2026-09-29T03.json.gz'])
+    expect(await runBackup(env, new Date('2026-09-29T03:55:00Z'))).toBeNull()
+    expect((await runBackup(env, new Date('2026-09-29T04:00:00Z')))?.keys).toEqual(['d1/hora/2026-09-29T04.json.gz'])
+    expect(r2.store.has('d1/2026-09-29.json.gz')).toBe(false)
   })
 
   it('falha fica registrada no status e NÃO apaga backups antigos', async () => {

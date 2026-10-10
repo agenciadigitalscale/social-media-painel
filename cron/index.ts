@@ -95,14 +95,14 @@ async function runSweep(env: Env): Promise<void> {
   }
 }
 
-async function runDailyBackup(env: Env): Promise<void> {
+async function runBackupNow(env: Env): Promise<void> {
   if (!env.DB || !env.BACKUPS) {
     console.error('[cron] backup: bindings DB/BACKUPS ausentes — confira o cron/wrangler.toml.')
     return
   }
   const status = await runBackup(env)
   if (!status) return
-  if (status.ok) console.log(`[cron] backup ${status.key}: ${status.bytes} bytes, ${status.deleted?.length ?? 0} antigo(s) apagado(s)`)
+  if (status.ok) console.log(`[cron] backup ${status.keys?.join(' + ')}: ${status.bytes} bytes, ${status.cards?.custom} cards, ${status.deleted?.length ?? 0} antigo(s) apagado(s)`)
   else console.error(`[cron] backup FALHOU: ${status.error}`)
 }
 
@@ -144,8 +144,9 @@ export default {
     // A faxina só interessa uma vez por dia.
     if (hour === 6 && minute === 0) ctx.waitUntil(runSweep(env))
 
-    // Backup diário do D1 → R2. Roda em todo disparo, mas só age a partir das
-    // 06h UTC e se a cópia do dia ainda não existir — falhou, tenta de novo em 5 min.
-    if (minute % 5 === 0) ctx.waitUntil(runDailyBackup(env))
+    // Backup do D1 → R2: uma cópia por hora + a diária das 06h UTC. Roda de 5
+    // em 5 min, mas só age se a cópia da hora/do dia ainda não existir —
+    // falhou, tenta de novo no disparo seguinte.
+    if (minute % 5 === 0) ctx.waitUntil(runBackupNow(env))
   },
 }

@@ -58,3 +58,6 @@ token.txt
 .claude/skills/writing-skills/
 
 .dev.vars
+
+# saída do scripts/cards-sumidos.mjs
+cards-sumidos.json
