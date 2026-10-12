@@ -501,6 +501,36 @@ async function ensureBase(key: string): Promise<void> {
   } catch { /* offline: segue sem base, como antes */ }
 }
 
+/**
+ * POST no /api/sync com nova tentativa para falha PASSAGEIRA (2026-10-12).
+ *
+ * Medido nas métricas da Cloudflare: ~10–25% das chamadas morriam por limite de
+ * CPU do Worker (`exceededResources`, Error 1102 → 503) — o `sm_states` passou de
+ * 1,4 MB e ler/regravar beira o limite. Era sorte: o card arrastado dava "Não foi
+ * possível salvar o movimento" e o MESMO arraste, de novo, passava. Agora a
+ * gravação tenta de novo sozinha antes de desistir. Só 5xx e queda de rede:
+ * 401/409/400 são respostas de verdade e seguem tratadas por quem chama.
+ * Repetir é seguro: patch é idempotente e o servidor recusa status mais velho.
+ */
+const RETRY_DELAYS_MS = [400, 1200, 2500]
+
+async function postSync(body: string): Promise<Response> {
+  for (let i = 0; ; i++) {
+    try {
+      const res = await fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      })
+      if (res.status < 500 || i >= RETRY_DELAYS_MS.length) return res
+      debugSync('RETRY', { status: res.status, tentativa: i + 1 })
+    } catch (e) {
+      if (!navigator.onLine || i >= RETRY_DELAYS_MS.length) throw e
+    }
+    await new Promise(r => setTimeout(r, RETRY_DELAYS_MS[i]))
+  }
+}
+
 async function pushKey(key: string, value: string): Promise<boolean> {
   await ensureBase(key)
 
@@ -521,11 +551,7 @@ async function pushKey(key: string, value: string): Promise<boolean> {
       const p = JSON.parse(body) as { patch?: string; value?: string }
       debugSync('SAVE START', { requestId, key, cards: statusDasEntradas(p.patch ?? p.value ?? '{}') })
     }
-    const res = await fetch('/api/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-    })
+    const res = await postSync(body)
 
     // Sem sessão o servidor recusou: a gravação NÃO subiu. Devolver `false`
     // mantém a entrada na fila para depois do login — antes ela era removida
@@ -551,11 +577,7 @@ async function pushKey(key: string, value: string): Promise<boolean> {
 
       if (tentativa === MAX_RETRIES) {
         // Última tentativa: sem `baseRev`, o servidor aceita incondicionalmente.
-        const ultima = await fetch('/api/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ key, value: JSON.stringify(meuValor) }),
-        })
+        const ultima = await postSync(JSON.stringify({ key, value: JSON.stringify(meuValor) }))
         if (ultima.status === 401) { notifySessionExpired(); return false }
         if (ultima.status === 409) return false
         console.warn(`[sync] ${key}: gravado sem checagem de versão após ${MAX_RETRIES + 1} tentativas`)
@@ -590,6 +612,21 @@ let _flushPromise: Promise<void> | null = null
 
 /** Algo foi confirmado pelo servidor no último flush? Governa o reencadeamento. */
 let _houveProgresso = false
+
+/**
+ * Nada subiu: tenta de novo daqui a pouco, sozinho. Antes a fila esperava o
+ * próximo gatilho (nova gravação, foco, rede) — o card ficava "não salvo" até
+ * a pessoa mexer em outra coisa. Um timer só, e só com a rede de pé (o 401 não
+ * conta como progresso, mas a espera de 20s não martela o servidor).
+ */
+let _retryTimer: ReturnType<typeof setTimeout> | null = null
+function agendarNovaTentativa(): void {
+  if (_retryTimer || !navigator.onLine) return
+  _retryTimer = setTimeout(() => {
+    _retryTimer = null
+    if (minhaFila().length) void flushQueue()
+  }, 20_000)
+}
 
 function flushQueue(): Promise<void> {
   if (_flushPromise) return _flushPromise
@@ -637,10 +674,14 @@ function flushQueue(): Promise<void> {
       // — a mudança ficava na fila em silêncio, com cara de lentidão, não de falha.
       const nadaSubiu = deduped.size > 0 && confirmados.size === 0
       if (!restante.length) emit('synced')
-      else emit(nadaSubiu && navigator.onLine ? 'error' : 'syncing')
+      else {
+        emit(nadaSubiu && navigator.onLine ? 'error' : 'syncing')
+        if (nadaSubiu) agendarNovaTentativa()
+      }
     } catch {
       _houveProgresso = false
       emit(navigator.onLine ? 'error' : 'offline')
+      agendarNovaTentativa()
     } finally {
       _flushPromise = null
     }
