@@ -18,6 +18,7 @@ import PersonIcon from '@mui/icons-material/Person'
 import EmptyState from '../shared/ui/EmptyState'
 import { ativoNoMes, carregarCarteira, naCarteira, type TipoCliente } from '../lib/planejamentoMes'
 import { DS } from '../theme'
+import { nomeDoCliente } from '../lib/clientes'
 
 const EQUIPMENT = ['Câmera principal', 'Câmera secundária', 'Drone', 'Tripé', 'Gimbal', 'Microfone lapela', 'Microfone boom', 'Iluminação LED', 'Iluminação softbox', 'Cartão de memória', 'Bateria extra', 'HD externo']
 
@@ -434,7 +435,7 @@ export default function RecordingCenter({ allClients }: { allClients: string[] }
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
             <TextField select label="Cliente" size="small" fullWidth value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))}
               helperText={clientesDoTipo.length === 0 ? (tipoGravacao === 'mensal' ? 'Nenhum cliente mensal na carteira deste mês' : 'Nenhum cliente freelancer cadastrado') : undefined}>
-              {clientesDoTipo.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+              {clientesDoTipo.map(c => <MenuItem key={c} value={c}>{nomeDoCliente(c)}</MenuItem>)}
             </TextField>
             <TextField label="Título / Tema" size="small" fullWidth value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
             <TextField label="Data" type="date" size="small" fullWidth value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} slotProps={{ inputLabel: { shrink: true } }} />

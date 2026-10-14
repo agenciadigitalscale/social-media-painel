@@ -6,6 +6,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import type { ContentItem, ItemState, Status } from '../types'
 import { STATUS_CONFIG, STATUS_ORDER } from '../types'
 import { DS } from '../theme'
+import { nomeDoCliente } from '../lib/clientes'
 
 interface Props {
   open: boolean
@@ -226,7 +227,7 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
                         {title}
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mt: 0.15 }}>
-                        <Typography sx={{ fontSize: '0.58rem', color: DS.accent, fontWeight: 600 }}>{item.c}</Typography>
+                        <Typography sx={{ fontSize: '0.58rem', color: DS.accent, fontWeight: 600 }}>{nomeDoCliente(item.c)}</Typography>
                         <Typography sx={{ fontSize: '0.5rem', color: 'rgba(247,247,245,0.25)' }}>·</Typography>
                         <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.32)' }}>
                           {item.dt.getDate()} {MONTHS_SHORT[item.dt.getMonth()]}
@@ -271,7 +272,7 @@ export default function GlobalSearch({ open, onClose, items, states, onNavigate,
                       {item.tp}
                     </Box>
                     <Typography sx={{ fontSize: '0.62rem', color: 'rgba(247,247,245,0.32)' }}>
-                      {item.dt.getDate()} {MONTHS_SHORT[item.dt.getMonth()]} {item.dt.getFullYear()} · {item.c}
+                      {item.dt.getDate()} {MONTHS_SHORT[item.dt.getMonth()]} {item.dt.getFullYear()} · {nomeDoCliente(item.c)}
                     </Typography>
                   </Box>
 

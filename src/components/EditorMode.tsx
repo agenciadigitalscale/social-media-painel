@@ -41,6 +41,7 @@ import EditorEsteira from './EditorEsteira'
 import { destinoDaEntrega, nomeDoDestino } from '../lib/entrega'
 import { BRAND, DS, ctaGradient } from '../theme'
 import type { SavedCreative } from '../lib/creativeEngine'
+import { nomeDoCliente } from '../lib/clientes'
 
 // ── Constants ────────────────────────────────────────────
 
@@ -2627,7 +2628,7 @@ function QueueCard({ item, state, isActive, isRunning, elapsed, position, now, h
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.15 }}>
             <Typography sx={{ fontSize: '0.56rem', color: typeColor, fontWeight: 700, flexShrink: 0 }}>{item.tp}</Typography>
             {hasRecording && <Typography sx={{ fontSize: '0.6rem', lineHeight: 1 }}>🎥</Typography>}
-            <Typography sx={{ fontSize: '0.64rem', color: DS.accent, fontWeight: 700, flex: 1 }} noWrap>{item.c}</Typography>
+            <Typography sx={{ fontSize: '0.64rem', color: DS.accent, fontWeight: 700, flex: 1 }} noWrap>{nomeDoCliente(item.c)}</Typography>
             {hasAudio && <Typography sx={{ fontSize: '0.6rem', lineHeight: 1 }}>🎙</Typography>}
             <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: dotColor, flexShrink: 0, boxShadow: isRunning ? `0 0 8px ${dotColor}` : 'none' }} />
           </Box>

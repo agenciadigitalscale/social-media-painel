@@ -12,6 +12,7 @@ import { DS } from '../../theme'
 import { clickable } from '../../shared/a11y'
 import type { Anexo } from '../../lib/anexos'
 import UploadMidia from './UploadMidia'
+import { nomeDoCliente } from '../../lib/clientes'
 
 const TIPOS: { tp: ContentType; rotulo: string; dica: string }[] = [
   { tp: 'Reel', rotulo: 'Reel', dica: '1 vídeo vertical' },
@@ -59,7 +60,7 @@ export default function CriarPublicacaoDialog({ open, clientes, onClose, onConti
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.8, pt: '12px !important' }}>
         <Box sx={{ display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
           <TextField select size="small" label="Cliente" value={cliente} onChange={e => setCliente(e.target.value)} sx={{ flex: 1, minWidth: 200 }}>
-            {clientes.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{c}</MenuItem>)}
+            {clientes.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{nomeDoCliente(c)}</MenuItem>)}
           </TextField>
           <TextField size="small" label="Nome do conteúdo" value={titulo} onChange={e => setTitulo(e.target.value)}
             placeholder="Ex.: Promoção de sexta" sx={{ flex: 1, minWidth: 200 }} />

@@ -9,6 +9,7 @@ import type { ContentItem, ItemState } from '../../types'
 import { STATUS_CONFIG } from '../../types'
 import { DS } from '../../theme'
 import { corDoConteudo, rotuloDoTipo } from '../../lib/padraoEditorial'
+import { nomeDoCliente } from '../../lib/clientes'
 
 export default function ArquivadosDialog({ open, itens, states, onClose, onRestaurar, onExcluirDefinitivo }: {
   open: boolean
@@ -41,7 +42,7 @@ export default function ArquivadosDialog({ open, itens, states, onClose, onResta
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           <TextField select size="small" label="Cliente" value={cliente} onChange={e => setCliente(e.target.value)} sx={{ minWidth: 200 }} slotProps={{ inputLabel: { shrink: true } }}>
             <MenuItem value="todos" sx={{ fontSize: '0.8rem' }}>Todos</MenuItem>
-            {clientes.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{c}</MenuItem>)}
+            {clientes.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{nomeDoCliente(c)}</MenuItem>)}
           </TextField>
           <TextField size="small" label="Buscar" value={busca} onChange={e => setBusca(e.target.value)} sx={{ flex: 1, minWidth: 180 }} slotProps={{ inputLabel: { shrink: true } }} />
         </Box>
@@ -57,7 +58,7 @@ export default function ArquivadosDialog({ open, itens, states, onClose, onResta
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography noWrap sx={{ fontSize: '0.82rem', fontWeight: 700, color: DS.t1 }}>{st?.title || it.n}</Typography>
                   <Typography noWrap sx={{ fontSize: '0.68rem', color: DS.t3 }}>
-                    {it.c} · {rotuloDoTipo(it.tp)} · {it.dt.toLocaleDateString('pt-BR')} · {STATUS_CONFIG[s]?.shortLabel ?? s}
+                    {nomeDoCliente(it.c)} · {rotuloDoTipo(it.tp)} · {it.dt.toLocaleDateString('pt-BR')} · {STATUS_CONFIG[s]?.shortLabel ?? s}
                   </Typography>
                 </Box>
                 <Button size="small" onClick={() => onRestaurar(it.i)} sx={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'none', color: DS.accent }}>Restaurar</Button>

@@ -25,6 +25,7 @@ import { isStalePhase, type ReadyAutomationState } from '../../lib/readyAutomati
 import { shortPlatform, type ViewerSummary } from '../../lib/useViewerEvents'
 import type { ColDef } from './shared'
 import LinkMaterial from './LinkMaterial'
+import { nomeDoCliente } from '../../lib/clientes'
 
 /**
  * O card do kanban de Produções e a faixa de estado da esteira.
@@ -534,7 +535,7 @@ function MiniCard({ item, state, editor, onTrocarEditor, isDragging, colColor, i
           </Typography>
         </Box>
         <Typography sx={{ fontSize: '0.64rem', color: DS.t2, fontWeight: 600, flex: 1, lineHeight: 1 }} noWrap>
-          {item.c}
+          {nomeDoCliente(item.c)}
         </Typography>
         {state.priority === 'alta' && (
           <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: DS.red, flexShrink: 0, opacity: 0.9 }} />

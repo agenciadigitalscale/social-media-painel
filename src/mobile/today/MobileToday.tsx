@@ -14,6 +14,7 @@ import { DS } from '../../theme'
 import { computeTodayBuckets, daysLate } from '../../lib/todaySignals'
 import { haptic } from '../system/haptics'
 import type { QuickKey } from '../kanban/filters'
+import { nomeDoCliente } from '../../lib/clientes'
 
 /**
  * A tela que abre o app no celular.
@@ -77,7 +78,7 @@ function Linha({ item, states, color, right }: {
           {titulo}
         </Typography>
         <Typography sx={{ fontSize: '0.66rem', color: DS.t2, mt: 0.2 }} noWrap>
-          {item.c} · {item.tp}
+          {nomeDoCliente(item.c)} · {item.tp}
         </Typography>
       </Box>
       {right && (

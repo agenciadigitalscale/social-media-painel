@@ -6,6 +6,7 @@ import {
 } from '@mui/material'
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch'
 import type { ContentItem, ItemState } from '../types'
+import { nomeDoCliente } from '../lib/clientes'
 
 const CHECKLIST = [
   { id: 'drive',    label: 'Arquivo no Drive pronto',       hint: 'Vídeo ou imagem finalizado e no link correto' },
@@ -62,7 +63,7 @@ export default function PublishChecklist({ open, item, state, onConfirm, onCance
               Checklist de publicação
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {item.c} · {item.n} · {item.tp}
+              {nomeDoCliente(item.c)} · {item.n} · {item.tp}
             </Typography>
           </Box>
         </Box>

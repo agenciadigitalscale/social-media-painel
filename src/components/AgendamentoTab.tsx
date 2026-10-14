@@ -26,6 +26,7 @@ import CriarPublicacaoDialog, { type NovaPublicacao } from './calendario/CriarPu
 import { ALL_TYPES } from './producao/shared'
 import EscolherQuando from './calendario/EscolherQuando'
 import LinkDoMaterial from './calendario/LinkDoMaterial'
+import { nomeDoCliente } from '../lib/clientes'
 
 type Vista = 'aprovar' | 'agendados' | 'publicados'
 
@@ -66,7 +67,7 @@ export default function AgendamentoTab({ items, states, clients, podeConectar, o
     const q = busca.trim().toLowerCase()
     return (cliente === 'todos' || it.c === cliente)
       && (tipo === 'todos' || it.tp === tipo)
-      && (!q || `${it.c} ${states[it.i]?.title || ''} ${it.n}`.toLowerCase().includes(q))
+      && (!q || `${it.c} ${nomeDoCliente(it.c)} ${states[it.i]?.title || ''} ${it.n}`.toLowerCase().includes(q))
   }
   const status = (it: ContentItem) => states[it.i]?.status ?? it.s
   const quando = (it: ContentItem) => postagemDoCard(it, states[it.i]).quando.getTime()
@@ -135,7 +136,7 @@ export default function AgendamentoTab({ items, states, clients, podeConectar, o
       <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1.2, flexWrap: 'wrap', mb: 2 }}>
         <TextField select size="small" value={cliente} onChange={e => setCliente(e.target.value)} sx={{ width: 210, ...CAMPO }}>
           <MenuItem value="todos" sx={{ fontSize: '0.75rem' }}>Todos os clientes</MenuItem>
-          {clients.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.75rem' }}>{c}</MenuItem>)}
+          {clients.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.75rem' }}>{nomeDoCliente(c)}</MenuItem>)}
         </TextField>
         <TextField select size="small" value={tipo} onChange={e => setTipo(e.target.value as 'todos' | ContentType)} sx={{ width: 140, ...CAMPO }}>
           <MenuItem value="todos" sx={{ fontSize: '0.75rem' }}>Todos os tipos</MenuItem>
@@ -278,7 +279,7 @@ function Linha({ item, st, conta, agendamentos, vista, onProgramar, onRevisar, o
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.2, minWidth: 0 }}>
           <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: DS.t2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{item.tp}</Typography>
-          <Typography noWrap sx={{ fontSize: '0.7rem', color: DS.t3, fontWeight: 600 }}>{item.c}</Typography>
+          <Typography noWrap sx={{ fontSize: '0.7rem', color: DS.t3, fontWeight: 600 }}>{nomeDoCliente(item.c)}</Typography>
         </Box>
         <Typography noWrap sx={{ fontSize: { xs: '0.84rem', xl: '0.95rem' }, fontWeight: 800, color: DS.t1 }}>{st?.title || item.n}</Typography>
         <Typography noWrap sx={{ fontSize: '0.72rem', color: legenda ? DS.t2 : DS.amber }}>
@@ -352,7 +353,7 @@ function PubliqueiManualDialog({ item, st, onClose, onConfirm }: {
     <Dialog open={!!item} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ pb: 0.5 }}>
         <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: DS.t1 }}>Publiquei manualmente</Typography>
-        {item && <Typography sx={{ fontSize: '0.74rem', color: DS.t2 }}>{item.c} · {item.tp} — {st?.title || item.n}</Typography>}
+        {item && <Typography sx={{ fontSize: '0.74rem', color: DS.t2 }}>{nomeDoCliente(item.c)} · {item.tp} — {st?.title || item.n}</Typography>}
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.6, pt: '12px !important' }}>
         <Typography sx={{ fontSize: '0.76rem', color: DS.t2 }}>

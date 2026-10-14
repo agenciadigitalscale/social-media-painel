@@ -43,6 +43,7 @@ import InstagramIcon from '@mui/icons-material/Instagram'
 import { ClientContextStore, buildClientPrompt } from '../lib/clientContext'
 import { EventBus } from '../lib/events'
 import { isIsolado } from '../lib/access'
+import { nomeDoCliente } from '../lib/clientes'
 
 const ResolveWithAIModal = lazy(() => import('./ResolveWithAIModal'))
 
@@ -301,7 +302,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
     const STATUS_LABEL = ['Pendente','Em edição','Aprovado','Publicado']
     const text = [
       `*${state.title || item.n}*`,
-      `${item.tp} · ${item.c}`,
+      `${item.tp} · ${nomeDoCliente(item.c)}`,
       `📅 ${item.dt.toLocaleDateString('pt-BR', { day:'2-digit', month:'long' })}`,
       `Status: ${STATUS_LABEL[state.status]}`,
       materialLink ? `🔗 ${materialLink}` : '',
@@ -575,7 +576,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.3 }}>
                 <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: clientColor || 'primary.main', flexShrink: 0, boxShadow: `0 0 6px ${clientColor || DS.accent}99` }} />
                 <Typography sx={{ fontSize: { md: '0.74rem', xl: '0.8rem' }, color: clientColor || 'primary.main', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1 }} noWrap>
-                  {item.c}
+                  {nomeDoCliente(item.c)}
                 </Typography>
               </Box>
               <Typography fontWeight={800} sx={{ fontSize: { md: '0.96rem', xl: '1.05rem' }, lineHeight: 1.3,
@@ -802,7 +803,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               </Typography>
               <TextField
                 size="small" fullWidth
-                placeholder={`Ex: Post Dia dos Namorados — ${item.c}`}
+                placeholder={`Ex: Post Dia dos Namorados — ${nomeDoCliente(item.c)}`}
                 value={state.title}
                 onChange={e => onUpdate(item.i, { title: e.target.value })}
               />
@@ -1046,7 +1047,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3, flexWrap: 'wrap' }}>
               <Typography sx={{ fontSize: '0.65rem', color: 'primary.main', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                {item.c}
+                {nomeDoCliente(item.c)}
               </Typography>
               <Chip icon={typeConf(item.tp).icon} label={item.tp} size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: typeConf(item.tp).bg, color: typeConf(item.tp).color, '& .MuiChip-icon': { color: 'inherit', ml: '4px', fontSize: '10px !important' } }} />
               {item.custom && <Chip label="roteiro" size="small" sx={{ height: 16, fontSize: '0.55rem', bgcolor: 'rgba(255,122,0,0.1)', color: 'info.main' }} />}
@@ -1118,7 +1119,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
               Título do conteúdo
             </Typography>
             <TextField fullWidth
-              placeholder={`Ex: Post Dia dos Namorados — ${item.c}`}
+              placeholder={`Ex: Post Dia dos Namorados — ${nomeDoCliente(item.c)}`}
               value={state.title}
               onChange={e => onUpdate(item.i, { title: e.target.value })}
               sx={{ '& .MuiInputBase-input': { fontSize: '0.95rem' } }}
@@ -1861,7 +1862,7 @@ export default function ContentCard({ item, state, now = new Date(), onStatusCha
             <Box>
               <Typography fontWeight={700} sx={{ fontSize: '0.9rem' }}>Link do criativo</Typography>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                {state.title || item.n} · {item.c}
+                {state.title || item.n} · {nomeDoCliente(item.c)}
               </Typography>
             </Box>
           </Box>

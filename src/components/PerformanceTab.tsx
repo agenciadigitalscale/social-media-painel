@@ -12,6 +12,7 @@ import PageHero from '../shared/ui/PageHero'
 import EmptyState from '../shared/ui/EmptyState'
 import type { ContentItem, ItemState, Client } from '../types'
 import { DS } from '../theme'
+import { nomeDoCliente } from '../lib/clientes'
 
 const MonthlyReportModal = lazy(() => import('./MonthlyReportModal'))
 
@@ -239,7 +240,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
                 '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(247,247,245,0.1)' } }}>
               <MenuItem value="__all__" sx={{ fontSize: '0.8rem' }}>Todos os clientes</MenuItem>
               {clients.map(c => (
-                <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{c}</MenuItem>
+                <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{nomeDoCliente(c)}</MenuItem>
               ))}
             </Select>
           </FormControl>
@@ -382,7 +383,7 @@ export default function PerformanceTab({ items, states, allClients, clientPhones
                     {/* Cliente */}
                     <Box component="td">
                       <Typography noWrap sx={{ fontSize: '0.76rem', fontWeight: 600, maxWidth: { xs: 110, xl: 200 } }}>
-                        {item.c}
+                        {nomeDoCliente(item.c)}
                       </Typography>
                     </Box>
 

@@ -135,6 +135,8 @@ export interface ClienteNaCarteira {
   saida?: string
   /** Nome de EXIBIÇÃO. O nome original continua sendo a chave dos conteúdos — trocá-lo quebraria o vínculo. */
   nome?: string
+  /** Outros nomes pelos quais o cliente é conhecido (ex.: cadastro duplicado que foi juntado). */
+  apelidos?: string[]
   /** Nicho (sobrescreve o do cadastro original). */
   nicho?: 'gastronomico' | 'variados'
   /** Segmento livre: "Restaurante", "Pet shop"… */

@@ -19,9 +19,10 @@ import { DS } from '../theme'
 import { clickable } from '../shared/a11y'
 import { cronogramaDoMes } from '../lib/cronograma'
 import { COR_TIPO, corDoConteudo, tipoDoPadrao } from '../lib/padraoEditorial'
-import { ativoNoMes, carregarCarteira } from '../lib/planejamentoMes'
+import { carregarCarteira } from '../lib/planejamentoMes'
 import TabPills from '../shared/ui/TabPills'
 import GeralDoDia from './cronograma/GeralDoDia'
+import { clientesComConteudoNoMes, nomeDoCliente, visiveisNoMes } from '../lib/clientes'
 
 /* Qual visão abre: a última usada neste navegador (conveniência, não dado). */
 const MODO_KEY = 'sm_cronograma_modo'
@@ -58,7 +59,12 @@ export default function CronogramaTab({ items, states, clients, now }: {
   const [mes, setMes] = useState(now.getMonth())
   const [soPublicados, setSoPublicados] = useState(false)
   const carteira = useMemo(() => carregarCarteira(), [])
-  const doMes = useMemo(() => clients.filter(c => ativoNoMes(carteira, c, ano, mes)).sort((a, b) => a.localeCompare(b)), [clients, carteira, ano, mes])
+  // Regra única do painel (lib/clientes): ativo na carteira OU com conteúdo no mês.
+  const doMes = useMemo(
+    () => visiveisNoMes(clients, carteira, clientesComConteudoNoMes(items, states, ano, mes), ano, mes)
+      .map(v => v.id).sort((a, b) => nomeDoCliente(a).localeCompare(nomeDoCliente(b))),
+    [clients, carteira, items, states, ano, mes],
+  )
   const [cliente, setCliente] = useState('')
   useEffect(() => { if (!cliente && doMes.length) setCliente(doMes[0]) }, [doMes, cliente])
 
@@ -89,7 +95,7 @@ export default function CronogramaTab({ items, states, clients, now }: {
       const url = await toPng(arte.current, { pixelRatio: 1, width: LARGURA, height: alturaArte, cacheBust: true })
       const a = document.createElement('a')
       a.href = url
-      a.download = `Cronograma ${cliente} - ${MESES[mes]} ${ano}.png`
+      a.download = `Cronograma ${nomeDoCliente(cliente)} - ${MESES[mes]} ${ano}.png`
       a.click()
     } finally { setBaixando(false) }
   }
@@ -140,7 +146,7 @@ export default function CronogramaTab({ items, states, clients, now }: {
           <TextField select size="small" value={cliente} onChange={e => setCliente(e.target.value)} sx={{ width: { xs: 200, xl: 260 } }}
             slotProps={{ select: { displayEmpty: true } }}>
             {doMes.length === 0 && <MenuItem value="" sx={{ fontSize: '0.8rem' }}>Nenhum cliente na carteira</MenuItem>}
-            {[...new Set([...doMes, ...(cliente ? [cliente] : [])])].map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{c}</MenuItem>)}
+            {[...new Set([...doMes, ...(cliente ? [cliente] : [])])].map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{nomeDoCliente(c)}</MenuItem>)}
           </TextField>
         </Box>
         <Box>
@@ -185,8 +191,8 @@ export default function CronogramaTab({ items, states, clients, now }: {
               <Typography sx={{ mt: 1, fontSize: 28, letterSpacing: '0.42em', fontWeight: 400, color: '#F4F1EC', fontFamily: 'inherit' }}>RELATÓRIO DE</Typography>
               <Typography sx={{ fontFamily: DS.fontDisplay, fontSize: 118, lineHeight: 1, color: '#FFFFFF', letterSpacing: '-0.01em', mt: 0.5 }}>POSTAGENS</Typography>
               <Box sx={{ mt: 1.5, width: '100%', bgcolor: DS.accent, borderRadius: '6px', py: 1.2, textAlign: 'center' }}>
-                <Typography sx={{ fontWeight: 900, fontSize: cliente.length > 18 ? 36 : 48, color: DS.onAccent, letterSpacing: '0.02em', textTransform: 'uppercase', lineHeight: 1.1, px: 2 }}>
-                  {cliente || '—'}
+                <Typography sx={{ fontWeight: 900, fontSize: nomeDoCliente(cliente).length > 18 ? 36 : 48, color: DS.onAccent, letterSpacing: '0.02em', textTransform: 'uppercase', lineHeight: 1.1, px: 2 }}>
+                  {cliente ? nomeDoCliente(cliente) : '—'}
                 </Typography>
               </Box>
               <Typography sx={{ mt: 1.8, alignSelf: 'flex-start', fontSize: 21, lineHeight: 1.4, color: '#E8E3DC', letterSpacing: '0.04em' }}>

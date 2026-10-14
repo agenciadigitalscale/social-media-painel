@@ -15,6 +15,7 @@ import {
   type AgendamentosDoCard, type IgConta, type Rede,
 } from '../../lib/instagram'
 import { sugerirVinculos, type ContaMeta } from '../../lib/vinculoContas'
+import { nomeDoCliente } from '../../lib/clientes'
 
 const ROTULO_SECAO = { fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: DS.t3 }
 const ICONE: Record<Rede, typeof InstagramIcon> = { instagram: InstagramIcon, facebook: FacebookIcon }
@@ -189,7 +190,7 @@ export function ConexoesIG({ open, onClose, clientes, conectados, podeConectar }
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.1, p: 1.4, borderRadius: '11px', border: `1px solid ${DS.border}`, bgcolor: DS.surfaceAlt }}>
             <Typography sx={ROTULO_SECAO}>Conectar um cliente</Typography>
             <TextField select size="small" label="Cliente" value={cliente} onChange={e => setCliente(e.target.value)}>
-              {semConexao.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.78rem' }}>{c}</MenuItem>)}
+              {semConexao.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.78rem' }}>{nomeDoCliente(c)}</MenuItem>)}
             </TextField>
             <TextField size="small" label="ID da conta do Instagram" value={igId} onChange={e => setIgId(e.target.value.replace(/\D/g, ''))}
               helperText="O “Instagram Business Account ID” (só números). Deixe vazio se for só Facebook." />

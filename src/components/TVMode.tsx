@@ -5,6 +5,7 @@ import FullscreenIcon from '@mui/icons-material/Fullscreen'
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit'
 import type { Client, ContentItem, ItemState } from '../types'
 import { DS } from '../theme'
+import { nomeDoCliente } from '../lib/clientes'
 
 interface Props {
   items: ContentItem[]
@@ -221,7 +222,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
                   borderLeft: `3px solid ${DS.accent}`,
                 }}>
                   <Typography sx={{ fontSize: '0.6rem', color: DS.accent, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.3 }}>
-                    {item.c}
+                    {nomeDoCliente(item.c)}
                   </Typography>
                   <Typography sx={{ fontSize: '0.78rem', color: '#fff', fontWeight: 600, lineHeight: 1.3 }} noWrap>
                     {title}
@@ -253,7 +254,7 @@ export default function TVMode({ items, states, allClients, now, onClose }: Prop
                 .slice(0, 5)
                 .map(item => (
                   <Box key={item.i} sx={{ px: 1.5, py: 1, borderRadius: 2, mb: 0.8, bgcolor: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)', borderLeft: `3px solid ${DS.red}` }}>
-                    <Typography sx={{ fontSize: '0.6rem', color: DS.red, fontWeight: 700 }}>{item.c}</Typography>
+                    <Typography sx={{ fontSize: '0.6rem', color: DS.red, fontWeight: 700 }}>{nomeDoCliente(item.c)}</Typography>
                     <Typography sx={{ fontSize: '0.72rem', color: 'rgba(247,247,245,0.7)', lineHeight: 1.3 }} noWrap>
                       {states[item.i]?.title || item.n}
                     </Typography>

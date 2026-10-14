@@ -18,6 +18,7 @@ import { TIPOS_CRIACAO, rotuloDoTipo } from '../../lib/padraoEditorial'
 import { corDaEtiqueta, type Etiqueta } from '../../lib/etiquetas'
 import EscolherQuando, { dataInput } from './EscolherQuando'
 import { ETAPAS_CONTEUDO, RESPONSAVEIS, nomeDe } from './equipe'
+import { nomeDoCliente } from '../../lib/clientes'
 
 export interface EdicaoConteudo {
   cliente?: string
@@ -116,7 +117,7 @@ export default function EditarConteudoPainel({ item, st, clientes, podeTrocarCli
         <TextField select size="small" label="Cliente" value={cliente} onChange={e => setCliente(e.target.value)} disabled={!podeTrocarCliente}
           helperText={podeTrocarCliente ? undefined : 'Card do calendário original de jun/jul — o cliente não muda.'}
           slotProps={{ inputLabel: { shrink: true } }}>
-          {[...new Set([item.c, ...clientes])].map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{c}</MenuItem>)}
+          {[...new Set([item.c, ...clientes])].map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{nomeDoCliente(c)}</MenuItem>)}
         </TextField>
         <TextField size="small" label="Nome" value={nome} onChange={e => setNome(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.4 }}>

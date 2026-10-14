@@ -18,6 +18,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
 import { toPng } from 'html-to-image'
 import type { ContentItem, ItemState, Client } from '../types'
 import { BRAND, DS, ctaGradient } from '../theme'
+import { nomeDoCliente } from '../lib/clientes'
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -234,7 +235,7 @@ export default function WhatsAppReportCard({
             sx={{ fontSize: '0.78rem', height: 34, borderColor: 'rgba(247,247,245,0.12)' }}
           >
             {clientNames.map(c => (
-              <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{c}</MenuItem>
+              <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{nomeDoCliente(c)}</MenuItem>
             ))}
           </Select>
         </FormControl>

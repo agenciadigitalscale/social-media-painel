@@ -11,6 +11,7 @@ import { STATUS_CONFIG } from '../../types'
 import { DS } from '../../theme'
 import { geralDoDia, type SituacaoDoDia } from '../../lib/cronograma'
 import { corDoConteudo } from '../../lib/padraoEditorial'
+import { nomeDoCliente } from '../../lib/clientes'
 
 const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
@@ -103,7 +104,7 @@ export default function GeralDoDia({ items, states, now }: {
                 <Typography sx={{ fontWeight: 900, fontSize: { xs: '0.95rem', xl: '1.15rem' }, color: l.hora ? DS.t1 : DS.t4, gridRow: { xs: 'span 3', md: 'auto' } }}>
                   {l.hora ?? '—'}
                 </Typography>
-                <Typography noWrap sx={{ fontWeight: 800, fontSize: { xs: '0.82rem', xl: '0.95rem' }, color: DS.t1 }}>{l.cliente}</Typography>
+                <Typography noWrap sx={{ fontWeight: 800, fontSize: { xs: '0.82rem', xl: '0.95rem' }, color: DS.t1 }}>{nomeDoCliente(l.cliente)}</Typography>
                 <Box sx={{ display: { xs: 'none', md: 'flex' }, justifyContent: 'center', px: 1, py: 0.3, borderRadius: '7px', bgcolor: corDoConteudo(l.tp), color: '#0B0A09', fontSize: { md: '0.7rem', xl: '0.8rem' }, fontWeight: 800 }}>
                   {l.tipo}
                 </Box>

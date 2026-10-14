@@ -22,6 +22,7 @@ import { toPng } from 'html-to-image'
 import type { ContentItem, ItemState, Client } from '../types'
 import { STATUS_CONFIG } from '../types'
 import { BRAND, DS } from '../theme'
+import { nomeDoCliente } from '../lib/clientes'
 
 // ── Helpers ────────────────────────────────────────────────
 type Eng = { likes?: number; comments?: number; reach?: number; saves?: number }
@@ -347,7 +348,7 @@ Tom: profissional mas próximo, em português brasileiro. Pronto para copiar e e
             sx={{ fontSize: '0.78rem', '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(247,247,245,0.12)' } }}>
             <MenuItem value="__all__" sx={{ fontSize: '0.8rem' }}>📊 Visão geral</MenuItem>
             {clientNames.map(c => (
-              <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{c}</MenuItem>
+              <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{nomeDoCliente(c)}</MenuItem>
             ))}
           </Select>
         </FormControl>

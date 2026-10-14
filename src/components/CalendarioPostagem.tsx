@@ -19,6 +19,7 @@ import {
   carregarCarteira, salvarCarteira, ativoNoMes, naCarteira,
   type PrefMesStore, type CarteiraStore,
 } from '../lib/planejamentoMes'
+import { clientesComConteudoNoMes, nomeCliente, nomeDoCliente, visiveisNoMes } from '../lib/clientes'
 import { carregarCapacidade, salvarCapacidade, cargaPorDia, ROTULO_FRENTE, type Capacidade } from '../lib/datasEntrega'
 import PadraoDialog from './calendario/PadraoDialog'
 import DistribuirDialog from './calendario/DistribuirDialog'
@@ -172,8 +173,14 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
   const segundo = segundoTipo(padraoBase)
   const outro: TipoPadrao = segundo === 'Post' ? 'Feed' : 'Post'
   const freelancer = clienteSel ? naCarteira(carteira, clienteSel).tipo === 'freelancer' : false
-  // Carteira mensal: só quem está ativo no mês aparece na escolha de cliente.
+  // Carteira mensal: quem está ativo no mês recebe conteúdo novo (distribuir, criar).
   const clientesDoMes = useMemo(() => clients.filter(c => ativoNoMes(carteira, c, anoRef, mesRef)), [clients, carteira, anoRef, mesRef])
+  // No filtro, a regra única do painel (lib/clientes): ativo OU com conteúdo no mês —
+  // cliente com trabalho no mês não some do Calendário enquanto aparece na Produção.
+  const visiveisDoMes = useMemo(
+    () => visiveisNoMes(clients, carteira, clientesComConteudoNoMes(items, states, anoRef, mesRef), anoRef, mesRef),
+    [clients, carteira, items, states, anoRef, mesRef],
+  )
   const etiquetasBase = useMemo(() => etiquetasConhecidas(baseEtiquetas, items.flatMap(it => states[it.i]?.tags ?? [])), [baseEtiquetas, items, states])
   const usoEtiquetas = useMemo(() => {
     const m = new Map<string, number>()
@@ -205,12 +212,12 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
   // Arquivar segue a regra de antes do "excluir": sócio tudo, Social só o que está em "A fazer".
   const podeArquivar = (it: ContentItem) => podeRemarcar && (podeExcluirTudo || (states[it.i]?.status ?? it.s) === 0)
   const arquivar = (it: ContentItem) => {
-    if (!window.confirm(`Arquivar "${states[it.i]?.title || it.n}" (${it.c})? Sai do Calendário e da Produção, mas fica em Arquivados e pode ser restaurado.`)) return
+    if (!window.confirm(`Arquivar "${states[it.i]?.title || it.n}" (${nomeDoCliente(it.c)})? Sai do Calendário e da Produção, mas fica em Arquivados e pode ser restaurado.`)) return
     onArquivar(it.i); setEditando(null)
     setAviso('Conteúdo arquivado — está em "Arquivados", dá para restaurar.')
   }
   const excluirDeVez = onExcluirDefinitivo ? (it: ContentItem) => {
-    if (!window.confirm(`Excluir DEFINITIVAMENTE "${states[it.i]?.title || it.n}" (${it.c})? Não dá para desfazer. Para guardar, use Arquivar.`)) return
+    if (!window.confirm(`Excluir DEFINITIVAMENTE "${states[it.i]?.title || it.n}" (${nomeDoCliente(it.c)})? Não dá para desfazer. Para guardar, use Arquivar.`)) return
     onExcluirDefinitivo(it.i); setEditando(null)
     setAviso('Conteúdo excluído definitivamente.')
   } : undefined
@@ -224,7 +231,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
       if (cliente !== 'todos' && it.c !== cliente) return false
       if (tipo !== 'todos' && tipoDoPadrao(it.tp) !== tipo) return false
       if (permitidos.length && !permitidos.includes(s)) return false
-      if (q && !`${it.c} ${st?.title || ''} ${it.n}`.toLowerCase().includes(q)) return false
+      if (q && !`${it.c} ${nomeDoCliente(it.c)} ${st?.title || ''} ${it.n}`.toLowerCase().includes(q)) return false
       if (etiqueta !== 'todas' && !(st?.tags ?? []).some(t => t.toLowerCase() === etiqueta.toLowerCase())) return false
       return true
     })
@@ -462,9 +469,9 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
         <Filtro rotulo="Cliente" value={cliente} onChange={setCliente} largura={200}>
           <MenuItem value="todos" sx={{ fontSize: '0.75rem' }}>Todos os clientes</MenuItem>
           {/* Carteira do mês; o escolhido continua na lista mesmo fora dela, para não sumir da tela. */}
-          {[...new Set([...clientesDoMes, ...(clienteSel ? [clienteSel] : [])])].sort((a, b) => a.localeCompare(b)).map(c => (
+          {[...new Set([...visiveisDoMes.map(v => v.id), ...(clienteSel ? [clienteSel] : [])])].sort((a, b) => nomeCliente(a, carteira).localeCompare(nomeCliente(b, carteira))).map(c => (
             <MenuItem key={c} value={c} sx={{ fontSize: '0.75rem' }}>
-              {c}{naCarteira(carteira, c).tipo === 'freelancer' ? ' · freelancer' : ''}{!clientesDoMes.includes(c) ? ' · fora da carteira' : ''}
+              {nomeCliente(c, carteira)}{naCarteira(carteira, c).tipo === 'freelancer' ? ' · freelancer' : ''}{!clientesDoMes.includes(c) ? ' · fora da carteira' : ''}
             </MenuItem>
           ))}
         </Filtro>
@@ -1013,7 +1020,7 @@ function MiniConteudo({ item, st, arrastavel, onDragStart, onDragEnd, ig, onAbri
   const cor = corDoConteudo(item.tp)
   const titulo = st?.title || item.n
   return (
-    <Tooltip title={`${item.c} · ${titulo}`} placement="top" enterDelay={500}>
+    <Tooltip title={`${nomeDoCliente(item.c)} · ${titulo}`} placement="top" enterDelay={500}>
       <Box
         draggable={arrastavel}
         onDragStart={e => { e.stopPropagation(); e.dataTransfer.effectAllowed = 'move'; onDragStart() }}
@@ -1030,7 +1037,7 @@ function MiniConteudo({ item, st, arrastavel, onDragStart, onDragEnd, ig, onAbri
           <Typography sx={{ fontSize: '0.54rem', fontWeight: 800, color: cor, flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
             {rotuloDoTipo(item.tp)}
           </Typography>
-          <Typography noWrap sx={{ fontSize: '0.56rem', color: DS.t3, fontWeight: 600, minWidth: 0 }}>{item.c}</Typography>
+          <Typography noWrap sx={{ fontSize: '0.56rem', color: DS.t3, fontWeight: 600, minWidth: 0 }}>{nomeDoCliente(item.c)}</Typography>
         </Box>
         <Typography sx={{
           fontSize: { xs: '0.62rem', md: '0.68rem', xl: '0.74rem' }, fontWeight: 700, color: DS.t1, lineHeight: 1.25, mb: 0.4,
@@ -1101,7 +1108,7 @@ function DetalheConteudo({ item, st, podeRemarcar, onReschedule, onMudarTipo, on
         ) : (
           <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: cor, textTransform: 'uppercase' }}>{rotuloDoTipo(item.tp)}</Typography>
         )}
-        <Typography sx={{ fontSize: '0.7rem', color: DS.t2, fontWeight: 600 }}>{item.c}</Typography>
+        <Typography sx={{ fontSize: '0.7rem', color: DS.t2, fontWeight: 600 }}>{nomeDoCliente(item.c)}</Typography>
         <Box sx={{ flex: 1 }} />
         {onStatus ? (
           <Tooltip title="Mudar etapa">

@@ -13,6 +13,7 @@ import { DS, typeColor } from '../../theme'
 import { NAME_MAP } from '../../lib/users'
 import { shouldShowDelivery } from '../../lib/cardDate'
 import { computeGlow } from './smartCard'
+import { nomeDoCliente } from '../../lib/clientes'
 
 const TYPE_EMOJI: Record<string, string> = { Post: '🖼', Reel: '🎬', Story: '⭐', Carrossel: '🗂', Feed: '📸' }
 
@@ -126,7 +127,7 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
       </Typography>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.65, mt: 0.45, minWidth: 0 }}>
-        <Typography sx={{ fontSize: '0.61rem', fontWeight: 700, color: stripe, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.c}</Typography>
+        <Typography sx={{ fontSize: '0.61rem', fontWeight: 700, color: stripe, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeDoCliente(item.c)}</Typography>
         <Box sx={{ flex: 1 }} />
         {resp && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.35, minWidth: 0 }}>

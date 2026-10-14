@@ -25,6 +25,7 @@ import type { Anexo } from '../../lib/anexos'
 import UploadMidia from './UploadMidia'
 import LinkDoMaterial from './LinkDoMaterial'
 import EscolherQuando, { dataInput } from './EscolherQuando'
+import { nomeDoCliente } from '../../lib/clientes'
 
 const MAX_LEGENDA_IG = 2200
 const MAX_HASHTAGS_IG = 30
@@ -140,7 +141,7 @@ export default function ProgramarPostDialog({ item, state, onClose, onConfirm }:
         <Typography sx={{ fontSize: { xs: '1rem', xl: '1.15rem' }, fontWeight: 800, color: DS.t1 }}>Revisar e programar</Typography>
         {item && (
           <Typography sx={{ fontSize: '0.76rem', color: DS.t2 }}>
-            {item.c} · {item.tp} — {state?.title || item.n}
+            {nomeDoCliente(item.c)} · {item.tp} — {state?.title || item.n}
           </Typography>
         )}
       </DialogTitle>

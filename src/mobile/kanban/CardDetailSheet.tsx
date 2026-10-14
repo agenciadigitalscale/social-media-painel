@@ -17,6 +17,7 @@ import BottomSheet from '../system/BottomSheet'
 import { haptic } from '../system/haptics'
 import { deadlineInfo } from './MobileCard'
 import { getCardExpressAction } from './cardExpress'
+import { nomeDoCliente } from '../../lib/clientes'
 
 type TabKey = 'resumo' | 'criativo' | 'revisao' | 'historico'
 type ConfirmAction = 'review' | 'approve' | 'adjust'
@@ -216,7 +217,7 @@ function CardDetailSheetContent({
             <Box sx={{ px: 0.7, py: 0.18, borderRadius: 1.4, bgcolor: `${typeColor(item.tp)}16`, border: `1px solid ${typeColor(item.tp)}35` }}>
               <Typography sx={{ fontSize: '0.55rem', fontWeight: 850, color: typeColor(item.tp) }}>{item.tp}</Typography>
             </Box>
-            <Typography sx={{ fontSize: '0.64rem', fontWeight: 800, color: stripe }} noWrap>{item.c}</Typography>
+            <Typography sx={{ fontSize: '0.64rem', fontWeight: 800, color: stripe }} noWrap>{nomeDoCliente(item.c)}</Typography>
             {onToggleVip && (
               <Box data-card-action onClick={() => { haptic(vip ? 'light' : 'success'); onToggleVip() }} sx={{ width: 28, height: 28, borderRadius: '50%', display: 'grid', placeItems: 'center', cursor: 'pointer', bgcolor: vip ? 'rgba(255,181,46,0.14)' : 'rgba(247,247,245,0.04)', border: `1px solid ${vip ? 'rgba(255,181,46,0.42)' : 'rgba(146,152,165,0.13)'}` }}>
                 <span style={{ fontSize: '0.72rem', filter: vip ? 'none' : 'grayscale(1) opacity(.45)' }}>★</span>

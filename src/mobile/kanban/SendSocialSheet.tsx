@@ -6,6 +6,7 @@ import { NAME_MAP } from '../../lib/users'
 import { DS } from '../../theme'
 import BottomSheet from '../system/BottomSheet'
 import { haptic } from '../system/haptics'
+import { nomeDoCliente } from '../../lib/clientes'
 
 interface CheckDef { key: string; label: string; required: boolean; auto?: (s: ItemState) => boolean }
 const CHECKS: CheckDef[] = [
@@ -48,7 +49,7 @@ export default function SendSocialSheet({ item, state, onCancel, onConfirm }: Pr
       {item && state && (
         <Box sx={{ px: 2.2, pb: 2 }}>
           <Typography sx={{ fontSize: '0.8rem', color: DS.t2, mb: 1.6 }}>
-            <b style={{ color: DS.t1 }}>{state.title || item.n}</b> · {item.c}
+            <b style={{ color: DS.t1 }}>{state.title || item.n}</b> · {nomeDoCliente(item.c)}
           </Typography>
 
           {/* responsável do social */}

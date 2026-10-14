@@ -44,6 +44,7 @@ import { useEsteira } from './producao/useEsteira'
 import { linkDoMaterial } from '../lib/linkMaterial'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
 import { syncToCloud, forceSync, onSyncStatus } from '../lib/storage'
+import { nomeDoCliente } from '../lib/clientes'
 import { NAME_MAP } from '../lib/users'
 import { cargoDe, donoDoCard, isIsolado, isSocio, membrosDoCargo } from '../lib/access'
 import DriveVideoInbox from './DriveVideoInbox'
@@ -813,7 +814,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       }
 
       if (busca) {
-        const alvo = `${item.c} ${st.title || ''} ${item.n}`.toLowerCase()
+        const alvo = `${item.c} ${nomeDoCliente(item.c)} ${st.title || ''} ${item.n}`.toLowerCase()
         if (!alvo.includes(busca)) return false
       }
       return true
@@ -1252,7 +1253,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                   sx={{ minWidth: { md: 170, lg: 190, xl: 220 }, ...TOOLBAR_FIELD_SX, '& .MuiInputBase-root': { ...TOOLBAR_FIELD_SX['& .MuiInputBase-root'], height: 28 } }}
                 >
                   <MenuItem value="all" sx={{ fontSize: '0.7rem' }}>Todos os clientes</MenuItem>
-                  {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.7rem' }}>{c}</MenuItem>)}
+                  {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.7rem' }}>{nomeDoCliente(c)}</MenuItem>)}
                 </TextField>
               </Box>
 
@@ -2109,7 +2110,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                       <Box sx={{ width: 20, height: 20, borderRadius: '5px', bgcolor: 'rgba(255,122,0,0.12)', border: '1px solid rgba(255,122,0,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <Typography sx={{ fontSize: '0.48rem', fontWeight: 800, color: DS.accent, lineHeight: 1 }}>{item.c.slice(0, 2).toUpperCase()}</Typography>
                       </Box>
-                      <Typography sx={{ fontSize: '0.65rem', color: 'rgba(247,247,245,0.68)', fontWeight: 500 }} noWrap>{item.c}</Typography>
+                      <Typography sx={{ fontSize: '0.65rem', color: 'rgba(247,247,245,0.68)', fontWeight: 500 }} noWrap>{nomeDoCliente(item.c)}</Typography>
                     </Box>
                     {/* Tipo */}
                     <Box sx={{ px: 0.65, py: 0.22, borderRadius: '6px', bgcolor: typeColor === '#888' ? 'rgba(247,247,245,0.05)' : `${typeColor}14`, border: `1px solid ${typeColor === '#888' ? 'rgba(247,247,245,0.08)' : typeColor + '28'}`, display: 'inline-flex', width: 'fit-content' }}>
@@ -2284,7 +2285,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             label="Cliente" size="small" fullWidth select autoFocus
             value={addClient} onChange={e => setAddClient(e.target.value)}
           >
-            {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.72rem' }}>{c}</MenuItem>)}
+            {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.72rem' }}>{nomeDoCliente(c)}</MenuItem>)}
           </TextField>
 
           <Box>
@@ -2369,7 +2370,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
             label="Cliente" size="small" fullWidth select autoFocus
             value={addClient} onChange={e => setAddClient(e.target.value)}
           >
-            {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.72rem' }}>{c}</MenuItem>)}
+            {clientOptions.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.72rem' }}>{nomeDoCliente(c)}</MenuItem>)}
           </TextField>
 
           <TextField

@@ -16,6 +16,7 @@ import {
 } from '../lib/assets'
 import { extractDriveFileId } from '../lib/whatsapp'
 import { DS } from '../theme'
+import { nomeDoCliente } from '../lib/clientes'
 
 const ACCENT = DS.accent
 
@@ -117,7 +118,7 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
         {clients.length > 0 && (
           <TextField select size="small" fullWidth value={filterClient} onChange={e => setFilterClient(e.target.value)} sx={{ mb: 1.4 }}>
             <MenuItem value="__all__">Todos os clientes</MenuItem>
-            {clients.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+            {clients.map(c => <MenuItem key={c} value={c}>{nomeDoCliente(c)}</MenuItem>)}
           </TextField>
         )}
 
@@ -135,7 +136,7 @@ export default function AssetCenter({ open, onClose, clients, currentUser, legen
               </TextField>
               <TextField select size="small" label="Cliente" value={client} onChange={e => setClient(e.target.value)} sx={{ flex: 1 }}>
                 <MenuItem value="">Geral</MenuItem>
-                {clients.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+                {clients.map(c => <MenuItem key={c} value={c}>{nomeDoCliente(c)}</MenuItem>)}
               </TextField>
             </Box>
             <TextField size="small" fullWidth label="Link (Drive / URL)" value={url} onChange={e => setUrl(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAdd() }} placeholder="https://drive.google.com/..." sx={{ mb: 1.2 }} />

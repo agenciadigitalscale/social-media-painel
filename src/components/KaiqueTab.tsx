@@ -29,6 +29,7 @@ import { NAME_MAP } from '../lib/users'
 import { countRealLate } from '../lib/todaySignals'
 import { computeOnboardingSummary, loadOnboardings, ensureSteps, isLate as onboardingIsLate } from '../lib/onboarding'
 import { computeHealthSummary, loadHealth, classifyHealth, HEALTH_CLASSES } from '../lib/health'
+import { nomeDoCliente } from '../lib/clientes'
 
 const WEEKDAY_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
@@ -756,7 +757,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                     <Box key={item.i} sx={{ display: 'flex', alignItems: 'center', gap: 0.7, p: 0.6, borderRadius: 1, bgcolor: 'rgba(247,247,245,0.03)' }}>
                       <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: STATUS_CONFIG[st]?.color ?? DS.neutral, flexShrink: 0 }} />
                       <Typography sx={{ fontSize: '0.68rem', flex: 1, color: 'rgba(247,247,245,0.8)' }} noWrap>{item.n}</Typography>
-                      <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.35)', flexShrink: 0 }}>{item.c}</Typography>
+                      <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.35)', flexShrink: 0 }}>{nomeDoCliente(item.c)}</Typography>
                     </Box>
                   )
                 })}
@@ -934,7 +935,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                       <Typography sx={{ fontSize: '0.66rem', fontWeight: 700, color: 'rgba(247,247,245,0.85)' }} noWrap>
                         {states[item.i]?.title || item.n}
                       </Typography>
-                      <Typography sx={{ fontSize: '0.55rem', color: DS.t2 }}>{item.c} · {item.tp}</Typography>
+                      <Typography sx={{ fontSize: '0.55rem', color: DS.t2 }}>{nomeDoCliente(item.c)} · {item.tp}</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', gap: 0.8, flexShrink: 0 }}>
                       {likes > 0 && <Typography sx={{ fontSize: '0.55rem', color: DS.red }}>♥ {likes.toLocaleString('pt-BR')}</Typography>}
@@ -1028,7 +1029,7 @@ export default function KaiqueTab({ items, states, allClients, now, onTabChange,
                       <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: prioColor, flexShrink: 0 }} />
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography sx={{ fontSize: { xs: '0.68rem', xl: '0.78rem' }, fontWeight: 600, color: 'rgba(247,247,245,0.85)' }} noWrap>{item.n}</Typography>
-                        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.35)' }}>{item.c}</Typography>
+                        <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.35)' }}>{nomeDoCliente(item.c)}</Typography>
                       </Box>
                       <Box sx={{ flexShrink: 0, textAlign: 'right' }}>
                         <Typography sx={{ fontSize: '0.55rem', color: prioColor, fontWeight: 700 }}>{action}</Typography>

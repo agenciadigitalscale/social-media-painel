@@ -19,6 +19,7 @@ import { normalizeClientName } from '../lib/videoMatch'
 import { findSimilarClient } from '../lib/clientFolders'
 import Skeleton from '../shared/ui/Skeleton'
 import { DS, ctaGradient } from '../theme'
+import { nomeDoCliente } from '../lib/clientes'
 
 export { parseLeadingItemId } from '../lib/mediaLinks'
 
@@ -265,7 +266,7 @@ export default function DriveVideoInbox({
                   <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(247,247,245,0.8)', flex: 1 }} noWrap>
                     {states[i.i]?.title || i.n}
                   </Typography>
-                  <Typography sx={{ fontSize: '0.58rem', color: DS.accent, fontWeight: 600 }}>{i.c}</Typography>
+                  <Typography sx={{ fontSize: '0.58rem', color: DS.accent, fontWeight: 600 }}>{nomeDoCliente(i.c)}</Typography>
                   {states[i.i]?.rejectionText && (
                     <Tooltip title={states[i.i]?.rejectionText}>
                       <Typography sx={{ fontSize: '0.55rem', color: 'rgba(247,247,245,0.3)', cursor: 'help' }}>ver motivo</Typography>

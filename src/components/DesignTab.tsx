@@ -18,6 +18,7 @@ import BrushIcon from '@mui/icons-material/Brush'
 import type { ContentItem, ItemState, Status } from '../types'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { DS } from '../theme'
+import { nomeDoCliente } from '../lib/clientes'
 
 // ── Column definitions ────────────────────────────────────
 
@@ -147,7 +148,7 @@ function DesignCard({
           sx={{ fontSize: '0.62rem', fontWeight: 800, color: colCfg.color, flex: 1, lineHeight: 1 }}
           noWrap
         >
-          {item.c}
+          {nomeDoCliente(item.c)}
         </Typography>
       </Box>
 

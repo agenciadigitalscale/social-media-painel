@@ -16,6 +16,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment'
 import type { ContentItem, ItemState, Status } from '../types'
 import { ClientContextStore, buildClientPrompt } from '../lib/clientContext'
 import { DS } from '../theme'
+import { nomeDoCliente } from '../lib/clientes'
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -153,7 +154,7 @@ export default function ResolveWithAIModal({
               Resolver com IA
             </Typography>
             <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary', lineHeight: 1 }} noWrap>
-              {item.c} · {item.tp} · {item.dt.toLocaleDateString('pt-BR')}
+              {nomeDoCliente(item.c)} · {item.tp} · {item.dt.toLocaleDateString('pt-BR')}
             </Typography>
           </Box>
 

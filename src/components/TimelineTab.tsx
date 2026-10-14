@@ -5,6 +5,7 @@ import type { ContentItem, ItemState } from '../types'
 import { STATUS_CONFIG } from '../types'
 import EmptyState from '../shared/ui/EmptyState'
 import { DS } from '../theme'
+import { nomeDoCliente } from '../lib/clientes'
 
 interface Props {
   items: ContentItem[]
@@ -82,7 +83,7 @@ function Dot({
             {state?.title || item.n}
           </Typography>
           <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary', mt: 0.2 }}>
-            {item.c} · {item.tp} · {cfg.label}
+            {nomeDoCliente(item.c)} · {item.tp} · {cfg.label}
           </Typography>
           <Typography sx={{ fontSize: '0.6rem', color: 'text.disabled', mt: 0.1 }}>
             {item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}

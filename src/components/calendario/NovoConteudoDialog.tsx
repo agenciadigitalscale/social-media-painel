@@ -16,6 +16,7 @@ import { TIPOS_CRIACAO, corDoConteudo } from '../../lib/padraoEditorial'
 import { horaValida } from '../../lib/programacao'
 import EscolherQuando, { dataInput } from './EscolherQuando'
 import { ETAPAS_CONTEUDO, RESPONSAVEIS, nomeDe } from './equipe'
+import { nomeDoCliente } from '../../lib/clientes'
 
 export interface NovoConteudo {
   cliente: string
@@ -86,7 +87,7 @@ export default function NovoConteudoDialog({ open, dia, clientes, clientePadrao,
         <TextField select size="small" label="Cliente" value={cliente} onChange={e => setCliente(e.target.value)} fullWidth sx={CAMPO}
           slotProps={{ inputLabel: { shrink: true }, select: { displayEmpty: true } }}>
           <MenuItem value="" disabled sx={{ fontSize: '0.8rem' }}>Escolha o cliente</MenuItem>
-          {clientes.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{c}</MenuItem>)}
+          {clientes.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{nomeDoCliente(c)}</MenuItem>)}
         </TextField>
 
         <TextField size="small" label="Nome do conteúdo" value={titulo} onChange={e => setTitulo(e.target.value)} fullWidth sx={CAMPO}

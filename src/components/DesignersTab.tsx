@@ -29,6 +29,7 @@ import { membrosDoCargo } from '../lib/access'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { DS, ctaGradient } from '../theme'
 import { clickable } from '../shared/a11y'
+import { nomeDoCliente } from '../lib/clientes'
 
 interface Props {
   items: ContentItem[]
@@ -268,7 +269,7 @@ export default function DesignersTab({ items, states, now }: Props) {
           </TextField>
           <TextField select size="small" label="Cliente" value={clienteFiltro} onChange={e => setClienteFiltro(e.target.value)} sx={{ minWidth: 190 }}>
             <MenuItem value="todos" sx={{ fontSize: '0.8rem' }}>Todos os clientes</MenuItem>
-            {clientesDisponiveis.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{c}</MenuItem>)}
+            {clientesDisponiveis.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{nomeDoCliente(c)}</MenuItem>)}
           </TextField>
         </Box>
       </Paper>

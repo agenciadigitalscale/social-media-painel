@@ -33,6 +33,7 @@ import { loadUploadNotifications, type UploadNotification } from './EditorMode'
 import { syncToCloud } from '../lib/storage'
 import { BRAND, DS } from '../theme'
 import { isRealLate, isRealWork } from '../lib/todaySignals'
+import { nomeDoCliente } from '../lib/clientes'
 
 interface Props {
   items: ContentItem[]
@@ -157,7 +158,7 @@ function EmptyToday({ items, now }: { items: ContentItem[]; now: Date }) {
       <Box sx={{ display: 'inline-flex', gap: 0.8, flexWrap: 'wrap', justifyContent: 'center' }}>
         {nextDayItems.slice(0, 5).map(i => (
           <Paper key={i.i} sx={{ px: 1, py: 0.4, bgcolor: 'rgba(247,247,245,0.05)', borderRadius: 1, border: '1px solid rgba(247,247,245,0.08)' }}>
-            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>{i.tp === 'Reel' ? '🎬' : '📷'} {i.c}</Typography>
+            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>{i.tp === 'Reel' ? '🎬' : '📷'} {nomeDoCliente(i.c)}</Typography>
           </Paper>
         ))}
         {nextDayItems.length > 5 && (
@@ -1096,7 +1097,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
                   {/* Info */}
                   <Box sx={{ flex: 1, minWidth: 100 }}>
                     <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary', lineHeight: 1.2 }} noWrap>
-                      {item.c} · {item.tp}
+                      {nomeDoCliente(item.c)} · {item.tp}
                     </Typography>
                     <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, lineHeight: 1.3 }} noWrap>
                       {st.title || item.n}
@@ -1354,7 +1355,7 @@ export default function TodayTab({ items, states, onStatusChange, onUpdate, onDe
             onChange={e => setAddClient(e.target.value)}
           >
             {clientOptions.map(c => (
-              <MenuItem key={c} value={c}>{c}</MenuItem>
+              <MenuItem key={c} value={c}>{nomeDoCliente(c)}</MenuItem>
             ))}
           </TextField>
 

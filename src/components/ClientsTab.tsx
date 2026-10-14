@@ -42,6 +42,9 @@ import {
   ordenarClientes, moverNaOrdem, chaveMes, rotuloMes, type CarteiraStore, type ClienteNaCarteira,
 } from '../lib/planejamentoMes'
 import { EVENTO_PADRAO, carregarPadroes, salvarPadroes, padraoDo, type PadroesStore } from '../lib/padraoEditorial'
+import { clientesComConteudoNoMes, conferirClientes, nomeCliente } from '../lib/clientes'
+import { ARCHIVED_CLIENTS } from '../lib/clientRoster'
+import ConferenciaClientes from './clientes/ConferenciaClientes'
 import PadraoDialog from './calendario/PadraoDialog'
 import VisaoOperacional from './clientes/VisaoOperacional'
 import { InicialCliente, NovoClienteDialog, EditarClienteDialog, RemoverClienteDialog, type NovoCliente } from './clientes/CadastroCliente'
@@ -272,14 +275,24 @@ export default function ClientsTab({
   const hiddenThisMonth = monthHidden[monthKey] ?? []
   const hiddenClientList = allClients.filter(c => hiddenThisMonth.includes(c.name))
 
+  // Clientes com conteúdo no mês (data de postagem, a mesma do Calendário).
+  const comConteudoNoMes = useMemo(() => clientesComConteudoNoMes(items, states, viewYear, viewMonth), [items, states, viewYear, viewMonth])
+
   const visibleClients = useMemo(() => {
     return allClients.filter(c => {
       if (!showHidden && hiddenThisMonth.includes(c.name)) return false
       // Carteira mensal: entrou depois / saiu antes deste mês → fora (o histórico fica).
-      if (!showHidden && situacaoNoMes(carteira, c.name, viewYear, viewMonth) !== 'ativo') return false
+      // Exceção (regra única do painel, lib/clientes): com conteúdo no mês ele aparece,
+      // com o selo "fora da carteira" — não some daqui enquanto aparece na Produção.
+      if (!showHidden && situacaoNoMes(carteira, c.name, viewYear, viewMonth) !== 'ativo' && !comConteudoNoMes.has(c.name)) return false
       return true
     })
-  }, [allClients, showHidden, hiddenThisMonth, carteira, viewYear, viewMonth])
+  }, [allClients, showHidden, hiddenThisMonth, carteira, viewYear, viewMonth, comConteudoNoMes])
+
+  const conferencia = useMemo(
+    () => conferirClientes({ items, states, ids: clientesDoCadastro.map(c => c.name), arquivados: ARCHIVED_CLIENTS, carteira }),
+    [items, states, clientesDoCadastro, carteira],
+  )
 
   const clientStats = useMemo(() => {
     const stats = visibleClients.map(client => {
@@ -519,6 +532,8 @@ export default function ClientsTab({
 
       <HintCard text="Toque em 'Roteiros' para adicionar scripts — eles vão direto para o calendário. Cole a pasta do Drive e todos os roteiros herdam o link." />
       <Divider sx={{ borderColor: 'rgba(247,247,245,0.05)' }} />
+
+      <ConferenciaClientes conferencia={conferencia} nomeDe={id => nomeCliente(id, carteira)} />
 
       {/* ── Ações globais ─────────────────────────────── */}
       <Box sx={{ display: 'flex', gap: 1 }}>

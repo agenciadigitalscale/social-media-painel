@@ -38,6 +38,7 @@ import { isDesigner } from '../lib/roles'
 const DESIGNER = membroDoCargo('Design')
 import PageHero from '../shared/ui/PageHero'
 import { DS } from '../theme'
+import { nomeDoCliente } from '../lib/clientes'
 
 // ── Types ──────────────────────────────────────────────────
 interface Props {
@@ -309,7 +310,7 @@ function JhonesView({ items, states, clientFolders, now, onStatusChange }: {
               {/* Info */}
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography noWrap sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'rgba(247,247,245,0.9)' }}>
-                  {item.c}
+                  {nomeDoCliente(item.c)}
                 </Typography>
                 <Typography noWrap sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>
                   {item.tp} · {item.n || `ID ${item.i}`}
@@ -475,7 +476,7 @@ Retorne SOMENTE as 3 opções, separadas por uma linha em branco, numeradas (1.,
                   <Stack direction="row" alignItems="center" gap={0.8} mb={0.2}>
                     <Chip label={URGENCY_LABEL[urgency]} size="small"
                       sx={{ bgcolor: `${URGENCY_COLOR[urgency]}20`, color: URGENCY_COLOR[urgency], fontWeight: 700, fontSize: '0.58rem', height: 16, flexShrink: 0 }} />
-                    <Typography noWrap sx={{ fontSize: '0.72rem', fontWeight: 700 }}>{item.c}</Typography>
+                    <Typography noWrap sx={{ fontSize: '0.72rem', fontWeight: 700 }}>{nomeDoCliente(item.c)}</Typography>
                     <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary', flexShrink: 0 }}>
                       {item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                     </Typography>
@@ -862,7 +863,7 @@ function KaiqueView({ items, states, now, onTabChange }: {
                   <Chip label={URGENCY_LABEL[item.urgency]} size="small"
                     sx={{ bgcolor: `${URGENCY_COLOR[item.urgency]}20`, color: URGENCY_COLOR[item.urgency], fontWeight: 700, fontSize: '0.58rem', height: 16, flexShrink: 0 }} />
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography noWrap sx={{ fontSize: '0.75rem', fontWeight: 700, color: DS.t1 }}>{item.c}</Typography>
+                    <Typography noWrap sx={{ fontSize: '0.75rem', fontWeight: 700, color: DS.t1 }}>{nomeDoCliente(item.c)}</Typography>
                     <Typography noWrap sx={{ fontSize: '0.62rem', color: DS.t2 }}>
                       {st?.title || item.n} · {rotuloPrazo(prazoDe(item, states))}
                     </Typography>
@@ -906,7 +907,7 @@ function KaiqueView({ items, states, now, onTabChange }: {
           <Stack gap={0.5} mb={2}>
             {semDono.slice(0, 4).map(item => (
               <Paper key={item.i} sx={{ p: 0.9, borderRadius: 1.5, border: `1px solid ${DS.border}`, bgcolor: DS.field }}>
-                <Typography noWrap sx={{ fontSize: '0.72rem', fontWeight: 700, color: DS.t1 }}>{item.c}</Typography>
+                <Typography noWrap sx={{ fontSize: '0.72rem', fontWeight: 700, color: DS.t1 }}>{nomeDoCliente(item.c)}</Typography>
                 <Typography noWrap sx={{ fontSize: '0.6rem', color: DS.t2 }}>
                   {states[item.i]?.title || item.n} · {rotuloPrazo(prazoDe(item, states))}
                 </Typography>
@@ -1037,7 +1038,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
               border: `1px solid ${AR}22`, bgcolor: `${AR}05`, borderLeft: `3px solid ${AR}`, borderRadius: 1.5,
             }}>
               <Box flex={1} minWidth={0}>
-                <Typography noWrap sx={{ fontSize: '0.76rem', fontWeight: 700 }}>{item.c}</Typography>
+                <Typography noWrap sx={{ fontSize: '0.76rem', fontWeight: 700 }}>{nomeDoCliente(item.c)}</Typography>
                 <Typography noWrap sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>
                   {item.tp} · {item.dt.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                 </Typography>
@@ -1078,7 +1079,7 @@ function ArthurView({ now, items, states, allClients, roteiros, onStatusChange, 
               borderLeft: `3px solid ${DS.orangeDim}`, borderRadius: 1.5,
             }}>
               <Box flex={1} minWidth={0}>
-                <Typography noWrap sx={{ fontSize: '0.76rem', fontWeight: 700 }}>{item.c}</Typography>
+                <Typography noWrap sx={{ fontSize: '0.76rem', fontWeight: 700 }}>{nomeDoCliente(item.c)}</Typography>
                 <Typography noWrap sx={{ fontSize: '0.62rem', color: 'text.secondary' }}>{item.tp}</Typography>
               </Box>
               <Chip label="Enviar" size="small"
