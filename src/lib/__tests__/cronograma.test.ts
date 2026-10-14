@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cronogramaDoMes } from '../cronograma'
+import { cronogramaDoMes, geralDoDia, situacaoNoDia } from '../cronograma'
 import type { ContentItem, ItemState, Status } from '../../types'
 
 let seq = 0
@@ -41,5 +41,45 @@ describe('Cronograma de postagens', () => {
   it('"só publicados" deixa só o que foi ao ar', () => {
     const r = cronogramaDoMes({ items: its, states: { [its[0].i]: st(7) }, cliente: 'Marina', ano: 2026, mes: 9, soPublicados: true })
     expect(r.linhas.map(l => l.id)).toEqual([its[0].i])
+  })
+})
+
+describe('Geral do dia', () => {
+  const HOJE = new Date(2026, 9, 14, 10)
+  const d = (dia: number, hora?: number) => new Date(2026, 9, dia, hora ?? 12)
+  const it2 = (dia: number, tp: ContentItem['tp'], n: string, c: string): ContentItem =>
+    ({ i: ++seq, c, dt: d(dia), tp, n, s: 0, custom: true })
+  const a = it2(14, 'Reel', 'VIDEO - Abertura', 'Lareiras')
+  const b = it2(14, 'Post', 'Promo', 'ARCA')
+  const c = it2(14, 'Feed', 'Foto', 'Marina')
+  const e = it2(15, 'Reel', 'Amanhã', 'Marina')
+  const f = it2(16, 'Reel', 'Remarcado pra hoje', 'Kátia')
+  const states: Record<number, ItemState> = {
+    [a.i]: st(9, { programadoPara: d(14, 18).getTime() }),
+    [b.i]: st(5, { horaPostagem: '09:30' }),
+    [c.i]: st(1),
+    [f.i]: st(9, { programadoPara: new Date(2026, 9, 14, 7, 0).getTime() }),
+  }
+
+  const { linhas, resumo } = geralDoDia({ items: [a, b, c, e, f], states, dia: d(14), hoje: HOJE })
+
+  it('todos os clientes do dia, por horário; sem horário no fim', () => {
+    expect(linhas.map(l => l.cliente)).toEqual(['Kátia', 'ARCA', 'Lareiras', 'Marina'])
+    expect(linhas.map(l => l.hora)).toEqual(['07:00', '09:30', '18:00', null])
+  })
+  it('programado conta pelo dia programado, não pela pauta', () => {
+    expect(linhas.some(l => l.id === f.i)).toBe(true)
+    expect(linhas.some(l => l.id === e.i)).toBe(false)
+  })
+  it('situação de cada post e o resumo do dia', () => {
+    expect(linhas.find(l => l.id === b.i)!.situacao).toBe('pronto')
+    expect(linhas.find(l => l.id === c.i)!.situacao).toBe('producao')
+    expect(resumo).toMatchObject({ total: 4, clientes: 4, reels: 2, design: 1, feed: 1, programados: 2, prontos: 1, emProducao: 1, naoSairam: 0 })
+  })
+  it('dia que já passou: o que não foi ao ar aparece como "não saiu"', () => {
+    expect(situacaoNoDia(1, d(10), HOJE)).toBe('naoSaiu')
+    expect(situacaoNoDia(5, d(10), HOJE)).toBe('naoSaiu')
+    expect(situacaoNoDia(7, d(10), HOJE)).toBe('publicado')
+    expect(situacaoNoDia(1, d(14), HOJE)).toBe('producao')
   })
 })

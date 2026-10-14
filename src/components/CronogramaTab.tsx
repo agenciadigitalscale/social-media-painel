@@ -20,6 +20,15 @@ import { clickable } from '../shared/a11y'
 import { cronogramaDoMes } from '../lib/cronograma'
 import { COR_TIPO, corDoConteudo, tipoDoPadrao } from '../lib/padraoEditorial'
 import { ativoNoMes, carregarCarteira } from '../lib/planejamentoMes'
+import TabPills from '../shared/ui/TabPills'
+import GeralDoDia from './cronograma/GeralDoDia'
+
+/* Qual visão abre: a última usada neste navegador (conveniência, não dado). */
+const MODO_KEY = 'sm_cronograma_modo'
+type Modo = 'dia' | 'cliente'
+function lerModo(): Modo {
+  try { return localStorage.getItem(MODO_KEY) === 'cliente' ? 'cliente' : 'dia' } catch { return 'dia' }
+}
 
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 const LARGURA = 1600
@@ -40,6 +49,11 @@ export default function CronogramaTab({ items, states, clients, now }: {
   clients: string[]
   now: Date
 }) {
+  const [modo, setModoState] = useState<Modo>(lerModo)
+  const setModo = (m: Modo) => {
+    setModoState(m)
+    try { localStorage.setItem(MODO_KEY, m) } catch { /* só conveniência */ }
+  }
   const [ano, setAno] = useState(now.getFullYear())
   const [mes, setMes] = useState(now.getMonth())
   const [soPublicados, setSoPublicados] = useState(false)
@@ -65,7 +79,7 @@ export default function CronogramaTab({ items, states, clients, now }: {
     const ro = new ResizeObserver(medir)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [])
+  }, [modo])
 
   const [baixando, setBaixando] = useState(false)
   const baixar = async () => {
@@ -97,8 +111,28 @@ export default function CronogramaTab({ items, states, clients, now }: {
     ...(resumo.feed ? [{ rotulo: 'Feed', n: resumo.feed, cor: COR_TIPO.Feed, tp: 'Feed' as ContentType }] : []),
   ]
 
+  const seletor = (
+    <Box sx={{ mb: 2 }}>
+      <TabPills
+        tabs={[{ label: 'Geral do dia', color: DS.accent }, { label: 'Relatório do cliente', color: DS.accent }]}
+        value={modo === 'dia' ? 0 : 1}
+        onChange={i => setModo(i === 0 ? 'dia' : 'cliente')}
+      />
+    </Box>
+  )
+
+  if (modo === 'dia') {
+    return (
+      <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, width: '100%', boxSizing: 'border-box', maxWidth: { xl: 1800 }, mx: 'auto' }}>
+        {seletor}
+        <GeralDoDia items={items} states={states} now={now} />
+      </Box>
+    )
+  }
+
   return (
     <Box sx={{ p: { xs: 1.5, md: 2.5, xl: 3.5 }, width: '100%', boxSizing: 'border-box', maxWidth: { xl: 1800 }, mx: 'auto' }}>
+      {seletor}
       {/* Filtros */}
       <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1.2, flexWrap: 'wrap', mb: 2 }}>
         <Box>
