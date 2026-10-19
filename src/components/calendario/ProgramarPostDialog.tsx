@@ -26,12 +26,12 @@ import UploadMidia from './UploadMidia'
 import LinkDoMaterial from './LinkDoMaterial'
 import EscolherQuando, { dataInput } from './EscolherQuando'
 import { nomeDoCliente } from '../../lib/clientes'
+import PreviaPost from '../agendamento/PreviaPost'
 
 const MAX_LEGENDA_IG = 2200
 const MAX_HASHTAGS_IG = 30
 const MAX_COLAB = 3
 
-const ROTULO = { fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: DS.t3, mb: 0.8 }
 const pad = (n: number) => String(n).padStart(2, '0')
 const SEMANA_LONGA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado']
 
@@ -135,10 +135,15 @@ export default function ProgramarPostDialog({ item, state, onClose, onConfirm }:
   const podeConfirmar = temMidia && !enviandoMidia && previaDaMidia && !carregando
     && Number.isFinite(quando) && !passou && !legendaLonga
 
+  const quandoTexto = Number.isFinite(quando) && !passou ? `${descreverDia(quando).replace(/,$/, '')} às ${hora}` : ''
+
   return (
-    <Dialog open={!!item} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle sx={{ pb: 0.5 }}>
-        <Typography sx={{ fontSize: { xs: '1rem', xl: '1.15rem' }, fontWeight: 800, color: DS.t1 }}>Revisar e programar</Typography>
+    <Dialog open={!!item} onClose={onClose} maxWidth="lg" fullWidth
+      slotProps={{ paper: { sx: { height: { md: '92vh' }, display: 'flex', flexDirection: 'column' } } }}>
+      <DialogTitle sx={{ pb: 1, borderBottom: `1px solid ${DS.border}` }}>
+        <Typography sx={{ fontFamily: DS.fontDisplay, textTransform: 'uppercase', fontSize: { xs: '1.15rem', xl: '1.4rem' }, color: DS.t1, lineHeight: 1.1 }}>
+          {state?.status === 9 ? 'Revisar agendamento' : 'Revisar e programar'}
+        </Typography>
         {item && (
           <Typography sx={{ fontSize: '0.76rem', color: DS.t2 }}>
             {nomeDoCliente(item.c)} · {item.tp} — {state?.title || item.n}
@@ -146,24 +151,10 @@ export default function ProgramarPostDialog({ item, state, onClose, onConfirm }:
         )}
       </DialogTitle>
 
-      <DialogContent sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '260px 1fr' }, gap: 2.5, pt: '12px !important' }}>
-        {/* Coluna 1: o criativo final, anexado pelo Social */}
-        <Box>
-          <Typography sx={ROTULO}>Criativo final</Typography>
-          <Box sx={{ mb: 1 }}><LinkDoMaterial st={state} /></Box>
-          <UploadMidia value={anexos} onChange={setAnexos} onEnviando={setEnviandoMidia} compacto />
-          <Typography sx={{ fontSize: '0.66rem', color: temMidia ? DS.t3 : DS.amber, mt: 0.8 }}>
-            {temMidia
-              ? 'É exatamente isto que vai ao ar. Carrossel: a ordem acima é a ordem do post.'
-              : 'Anexe o arquivo final do post (vídeo ou arte). Sem ele não dá para programar.'}
-          </Typography>
-          {erroPrevia && <Alert severity="warning" sx={{ fontSize: '0.74rem', mt: 1 }}>{erroPrevia}</Alert>}
-        </Box>
-
-        {/* Coluna 2: onde, o quê, com quem, quando */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-          <Box>
-            <Typography sx={ROTULO}>Onde publicar</Typography>
+      <DialogContent sx={{ p: 0, display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(380px, 560px) 1fr' }, minHeight: 0, overflow: { md: 'hidden' } }}>
+        {/* Esquerda: o formulário em cartões, como o compositor da Meta */}
+        <Box sx={{ overflowY: { md: 'auto' }, p: { xs: 1.5, md: 2 }, display: 'flex', flexDirection: 'column', gap: 1.5, bgcolor: DS.bg, borderRight: { md: `1px solid ${DS.border}` } }}>
+          <Secao titulo="Postar em" subtitulo="Marque as redes. O painel publica sozinho no perfil e na Página conectados.">
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1 }}>
               {REDES.map(r => {
                 const p = previa?.[r]
@@ -172,7 +163,7 @@ export default function ProgramarPostDialog({ item, state, onClose, onConfirm }:
                 const Icone = r === 'instagram' ? InstagramIcon : FacebookIcon
                 const situacao = !previa || carregando ? '…'
                   : !p?.conectado ? 'sem conexão — publicação manual'
-                  : !temMidia ? 'anexe o criativo para ver como sai'
+                  : !temMidia ? 'anexe a mídia para ver como sai'
                   : p.ok ? `sai como ${descreverTipo(p.tipo, p.pecas)}` : p.motivo
                 return (
                   <Box key={r} {...clickable(() => pode && setRedes(v => ({ ...v, [r]: !v[r] })))}
@@ -195,16 +186,25 @@ export default function ProgramarPostDialog({ item, state, onClose, onConfirm }:
                 )
               })}
             </Box>
-          </Box>
+          </Secao>
 
-          <Box>
-            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-              <Typography sx={ROTULO}>Descrição do post</Typography>
-              <Box sx={{ flex: 1 }} />
-              <Typography sx={{ fontSize: '0.66rem', color: legendaLonga ? DS.red : DS.t3 }}>
-                {legenda.length}/{MAX_LEGENDA_IG} · {hashtags} hashtag{hashtags !== 1 ? 's' : ''}
-              </Typography>
-            </Box>
+          <Secao titulo="Mídia" subtitulo="O arquivo final do post. Os posts do Instagram não podem ter mais de 10 peças.">
+            <Box sx={{ mb: 1 }}><LinkDoMaterial st={state} /></Box>
+            <UploadMidia value={anexos} onChange={setAnexos} onEnviando={setEnviandoMidia} compacto />
+            <Typography sx={{ fontSize: '0.66rem', color: temMidia ? DS.t3 : DS.amber, mt: 0.8 }}>
+              {temMidia
+                ? 'É exatamente isto que vai ao ar. Carrossel: a ordem acima é a ordem do post.'
+                : 'Anexe o arquivo final do post (vídeo ou arte). Sem ele não dá para programar.'}
+            </Typography>
+            {erroPrevia && <Alert severity="warning" sx={{ fontSize: '0.74rem', mt: 1 }}>{erroPrevia}</Alert>}
+          </Secao>
+
+          <Secao titulo="Detalhes do post" direita={
+            <Typography sx={{ fontSize: '0.66rem', color: legendaLonga ? DS.red : DS.t3 }}>
+              {legenda.length}/{MAX_LEGENDA_IG} · {hashtags} hashtag{hashtags !== 1 ? 's' : ''}
+            </Typography>
+          }>
+            <Typography sx={{ fontSize: '0.74rem', fontWeight: 700, color: DS.t2, mb: 0.6 }}>Texto</Typography>
             <TextField multiline minRows={5} maxRows={12} fullWidth value={legenda} onChange={e => setLegenda(e.target.value)}
               placeholder={ehStory ? 'Story não tem legenda.' : 'Escreva a descrição que vai no post…'}
               disabled={ehStory}
@@ -212,46 +212,67 @@ export default function ProgramarPostDialog({ item, state, onClose, onConfirm }:
             {!legenda.trim() && !ehStory && <Typography sx={{ fontSize: '0.68rem', color: DS.amber, mt: 0.5 }}>O post vai sair sem descrição.</Typography>}
             {legendaLonga && <Typography sx={{ fontSize: '0.68rem', color: DS.red, mt: 0.5 }}>O Instagram aceita até {MAX_LEGENDA_IG} caracteres.</Typography>}
             {hashtagsDemais && <Typography sx={{ fontSize: '0.68rem', color: DS.amber, mt: 0.5 }}>Mais de {MAX_HASHTAGS_IG} hashtags — o Instagram costuma recusar.</Typography>}
-          </Box>
+          </Secao>
 
-          <Box>
-            <Typography sx={ROTULO}>Colab no Instagram (opcional)</Typography>
-            <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap', alignItems: 'center' }}>
-              {colabs.map(c => <Chip key={c} size="small" label={`@${c}`} onDelete={() => setColabs(colabs.filter(x => x !== c))} />)}
-              {colabs.length < MAX_COLAB && (
-                <TextField size="small" value={colabDigitado} placeholder="@perfil e Enter"
-                  disabled={!redes.instagram || ehStory}
-                  onChange={e => setColabDigitado(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addColab() } }}
-                  onBlur={addColab}
-                  sx={{ width: 200, '& .MuiInputBase-root': { fontSize: '0.78rem' } }} />
-              )}
-            </Box>
-            <Typography sx={{ fontSize: '0.66rem', color: DS.t3, mt: 0.5 }}>
-              {ehStory ? 'Story não aceita colab.' : `Até ${MAX_COLAB} perfis. Cada um recebe o convite e o post aparece nos dois perfis quando aceitar.`}
-            </Typography>
-          </Box>
-
-          <Box>
-            <Typography sx={ROTULO}>Quando vai ao ar</Typography>
+          <Secao titulo="Programar" subtitulo="Dia e horário em que o post vai ao ar.">
             <EscolherQuando data={data} hora={hora} onData={setData} onHora={setHora} />
             {Number.isFinite(quando) && (
               <Typography sx={{ fontSize: '0.86rem', fontWeight: 800, color: passou ? DS.red : DS.t1, mt: 1.2 }}>
                 {passou ? 'Esse horário já passou — escolha outro.' : `Vai ao ar ${descreverDia(quando)} às ${hora}`}
               </Typography>
             )}
-          </Box>
+          </Secao>
+
+          <Secao titulo="Colaborador" subtitulo={ehStory ? 'Story não aceita colab.' : `Até ${MAX_COLAB} perfis do Instagram. Cada um recebe o convite e o post aparece nos dois perfis quando aceitar.`}>
+            <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap', alignItems: 'center' }}>
+              {colabs.map(c => <Chip key={c} size="small" label={`@${c}`} onDelete={() => setColabs(colabs.filter(x => x !== c))} />)}
+              {colabs.length < MAX_COLAB && (
+                <TextField size="small" value={colabDigitado} placeholder="Insira o @perfil e Enter"
+                  disabled={!redes.instagram || ehStory}
+                  onChange={e => setColabDigitado(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addColab() } }}
+                  onBlur={addColab}
+                  sx={{ flex: 1, minWidth: 200, '& .MuiInputBase-root': { fontSize: '0.78rem' } }} />
+              )}
+            </Box>
+          </Secao>
+        </Box>
+
+        {/* Direita: a prévia do post */}
+        <Box sx={{ overflowY: { md: 'auto' }, p: { xs: 1.5, md: 3 }, bgcolor: DS.surface }}>
+          {item && (
+            <PreviaPost anexos={anexos} legenda={ehStory ? '' : legenda}
+              perfil={previa?.instagram.conectado ? previa.instagram.destino : ''}
+              pagina={previa?.facebook.conectado ? previa.facebook.destino : ''}
+              nomeCliente={nomeDoCliente(item.c)} quando={quandoTexto}
+              redesDisponiveis={escolhidas.length ? escolhidas : undefined} />
+          )}
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, pb: 2, gap: 1, flexWrap: 'wrap' }}>
+      <DialogActions sx={{ px: 3, py: 1.6, gap: 1, flexWrap: 'wrap', borderTop: `1px solid ${DS.border}` }}>
         <Typography sx={{ fontSize: '0.74rem', color: temMidia ? DS.t2 : DS.amber, flex: 1, minWidth: 220 }}>{resumo}</Typography>
-        <Button onClick={onClose} sx={{ color: DS.t2 }}>Cancelar</Button>
+        <Button variant="outlined" onClick={onClose} sx={{ color: DS.t1, borderColor: DS.border }}>Cancelar</Button>
         <Button variant="contained" disabled={!podeConfirmar}
           onClick={() => onConfirm({ quando, redes: escolhidas, legenda, colaboradores: redes.instagram && !ehStory ? colabs : [], anexos })}>
-          Programar
+          {state?.status === 9 ? 'Salvar agendamento' : 'Programar'}
         </Button>
       </DialogActions>
     </Dialog>
+  )
+}
+
+/** Um cartão do compositor — como as seções "Postar em", "Mídia", "Detalhes do post" da Meta. */
+function Secao({ titulo, subtitulo, direita, children }: { titulo: string; subtitulo?: string; direita?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <Box sx={{ p: { xs: 1.5, xl: 2 }, borderRadius: '12px', bgcolor: DS.surface, border: `1px solid ${DS.border}` }}>
+      <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: subtitulo ? 0.3 : 1 }}>
+        <Typography sx={{ fontSize: { xs: '0.92rem', xl: '1rem' }, fontWeight: 800, color: DS.t1 }}>{titulo}</Typography>
+        <Box sx={{ flex: 1 }} />
+        {direita}
+      </Box>
+      {subtitulo && <Typography sx={{ fontSize: '0.72rem', color: DS.t2, mb: 1.2 }}>{subtitulo}</Typography>}
+      {children}
+    </Box>
   )
 }
