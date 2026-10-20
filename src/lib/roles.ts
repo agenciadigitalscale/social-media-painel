@@ -31,7 +31,7 @@ export interface Permissions {
 /** Todas as abas do `navItems` do App (0–36). */
 // Ao criar aba nova no fim do navItems, aumente este número — senão ela fica
 // visível para todo cargo com lista (foi o que aconteceu com a 32).
-const TODAS_AS_ABAS = Array.from({ length: 37 }, (_, i) => i)
+const TODAS_AS_ABAS = Array.from({ length: 38 }, (_, i) => i)
 
 /**
  * Abas que cada cargo VÊ. O resto fica escondido — e bloqueado: a trava
@@ -95,11 +95,18 @@ export function getUserRole(username: string): Role {
 export const GESTORES_DE_TRAFEGO: readonly string[] = ['robson']
 export const ABA_PAINEL_TRAFEGO = 34
 
+/**
+ * 37 Roteiros (esteira do mês): sócios (têm tudo) + Kaique, Arthur e Kerges —
+ * pessoas de cargos diferentes, então a liberação é por pessoa (como o tráfego).
+ */
+export const EQUIPE_ROTEIROS: readonly string[] = ['kaique', 'arthur', 'kerges']
+export const ABA_ROTEIROS = 37
+
 export function getUserPerms(username: string): Permissions {
-  const p = permissoesDo(cargoDe(username))
-  if (GESTORES_DE_TRAFEGO.includes((username ?? '').toLowerCase().trim())) {
-    return { ...p, hiddenTabs: p.hiddenTabs.filter(i => i !== ABA_PAINEL_TRAFEGO) }
-  }
+  let p = permissoesDo(cargoDe(username))
+  const u = (username ?? '').toLowerCase().trim()
+  if (GESTORES_DE_TRAFEGO.includes(u)) p = { ...p, hiddenTabs: p.hiddenTabs.filter(i => i !== ABA_PAINEL_TRAFEGO) }
+  if (EQUIPE_ROTEIROS.includes(u)) p = { ...p, hiddenTabs: p.hiddenTabs.filter(i => i !== ABA_ROTEIROS) }
   return p
 }
 

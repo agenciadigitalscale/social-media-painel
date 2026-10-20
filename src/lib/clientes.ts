@@ -46,6 +46,33 @@ export function resolverCliente(nome: string, ids: readonly string[], carteira: 
   })
 }
 
+export interface ClienteRemovido {
+  id: string
+  nome: string
+  /** Mês em que saiu da carteira ("AAAA-MM"). */
+  saida: string
+}
+
+/**
+ * Quem foi removido da carteira (o "Remover cliente" da aba Clientes) e já está
+ * fora no mês de `hoje` — mais recente primeiro. Nada disso foi apagado.
+ */
+export function clientesRemovidos(ids: readonly string[], carteira: CarteiraStore, hoje: Date): ClienteRemovido[] {
+  const ym = chaveMes(hoje.getFullYear(), hoje.getMonth())
+  return ids
+    .filter(id => { const s = carteira[id]?.saida; return !!s && s <= ym })
+    .map(id => ({ id, nome: nomeCliente(id, carteira), saida: carteira[id]!.saida! }))
+    .sort((a, b) => b.saida.localeCompare(a.saida) || a.nome.localeCompare(b.nome))
+}
+
+/** Volta o cliente para a carteira: tira a saída e mantém o resto (nome, tipo, nicho, entrada). */
+export function voltarParaCarteira(carteira: CarteiraStore, id: string): CarteiraStore {
+  const c = carteira[id]
+  if (!c?.saida) return carteira
+  const { saida: _s, ...resto } = c
+  return { ...carteira, [id]: resto }
+}
+
 /** Clientes com conteúdo (pela data de postagem, a mesma do Calendário) no mês. */
 export function clientesComConteudoNoMes(items: readonly ContentItem[], states: Record<number, ItemState>, ano: number, mes: number): Set<string> {
   const out = new Set<string>()

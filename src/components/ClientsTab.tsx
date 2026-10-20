@@ -42,9 +42,10 @@ import {
   ordenarClientes, moverNaOrdem, chaveMes, rotuloMes, type CarteiraStore, type ClienteNaCarteira,
 } from '../lib/planejamentoMes'
 import { EVENTO_PADRAO, carregarPadroes, salvarPadroes, padraoDo, type PadroesStore } from '../lib/padraoEditorial'
-import { clientesComConteudoNoMes, conferirClientes, nomeCliente } from '../lib/clientes'
+import { clientesComConteudoNoMes, clientesRemovidos, conferirClientes, nomeCliente, voltarParaCarteira } from '../lib/clientes'
 import { ARCHIVED_CLIENTS } from '../lib/clientRoster'
 import ConferenciaClientes from './clientes/ConferenciaClientes'
+import ClientesRemovidos from './clientes/ClientesRemovidos'
 import PadraoDialog from './calendario/PadraoDialog'
 import VisaoOperacional from './clientes/VisaoOperacional'
 import { InicialCliente, NovoClienteDialog, EditarClienteDialog, RemoverClienteDialog, type NovoCliente } from './clientes/CadastroCliente'
@@ -456,6 +457,11 @@ export default function ClientsTab({
   return (
     <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 
+      {/* Valem em qualquer modo da aba (visão operacional, cards, tabela). */}
+      <ConferenciaClientes conferencia={conferencia} nomeDe={id => nomeCliente(id, carteira)} />
+      <ClientesRemovidos removidos={clientesRemovidos(clientesDoCadastro.map(c => c.name), carteira, new Date())}
+        onVoltar={id => { const next = voltarParaCarteira(carteira, id); setCarteira(next); salvarCarteira(next) }} />
+
       {layoutView === 'visao' && (<>
         <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.72rem' }, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: DS.accent }}>
           {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
@@ -533,7 +539,6 @@ export default function ClientsTab({
       <HintCard text="Toque em 'Roteiros' para adicionar scripts — eles vão direto para o calendário. Cole a pasta do Drive e todos os roteiros herdam o link." />
       <Divider sx={{ borderColor: 'rgba(247,247,245,0.05)' }} />
 
-      <ConferenciaClientes conferencia={conferencia} nomeDe={id => nomeCliente(id, carteira)} />
 
       {/* ── Ações globais ─────────────────────────────── */}
       <Box sx={{ display: 'flex', gap: 1 }}>

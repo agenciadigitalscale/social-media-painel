@@ -58,7 +58,7 @@ import { MANUAIS_KEY, EXCLUIR_KEY } from './lib/producaoEditor'
 import { AJUSTE_MANUAL_KEY } from './lib/designerProducao'
 import { PADRAO_KEY, EVENTO_PADRAO } from './lib/padraoEditorial'
 import { ETIQUETAS_KEY } from './lib/etiquetas'
-import { PREF_MES_KEY, CARTEIRA_KEY, ORDEM_KEY } from './lib/planejamentoMes'
+import { PREF_MES_KEY, CARTEIRA_KEY, ORDEM_KEY, carregarCarteira } from './lib/planejamentoMes'
 import { CAPACIDADE_KEY, STATUS_NA_FILA, carregarCapacidade, reordenarEntregas, type Capacidade } from './lib/datasEntrega'
 import type { EdicaoConteudo } from './components/calendario/EditarConteudoPainel'
 import type { NovoConteudo } from './components/calendario/NovoConteudoDialog'
@@ -115,6 +115,8 @@ import CalendarioPostagem from './components/CalendarioPostagem'
 import AgendamentoTab from './components/AgendamentoTab'
 import PainelTrafegoTab, { PropostaTab } from './components/PainelTrafegoTab'
 import CronogramaTab from './components/CronogramaTab'
+import EsteiraRoteirosTab from './components/EsteiraRoteirosTab'
+import { ESTEIRA_ROTEIROS_KEY, EVENTO_ESTEIRA_ROTEIROS, carregarEsteira, chaveDoMes, garantirCardDoCliente, preencherMes, salvarEsteira } from './lib/esteiraRoteiros'
 import ViewListIcon from '@mui/icons-material/ViewList'
 import Foguete from './shared/ui/Foguete'
 import RequestQuoteIcon from '@mui/icons-material/RequestQuote'
@@ -642,6 +644,12 @@ export default function App() {
             localStorage.setItem(key, value)
             window.dispatchEvent(new Event(EVENTO_PADRAO))
             break
+          // Esteira de roteiros do mês (aba 37): sem este ramo, o card movido num
+          // aparelho nunca chegaria ao outro.
+          case ESTEIRA_ROTEIROS_KEY:
+            localStorage.setItem(key, value)
+            window.dispatchEvent(new Event(EVENTO_ESTEIRA_ROTEIROS))
+            break
           // Vídeos que a pessoa tirou da própria lista — mesmo motivo: ramo próprio
           // para a exclusão feita num aparelho chegar no outro.
           case EXCLUIR_KEY:
@@ -759,6 +767,24 @@ export default function App() {
     return () => clearInterval(id)
   }, [applyRemoteSync])
 
+  // Esteira de Roteiros: na virada do mês, todo cliente mensal ativo já aparece em
+  // "A fazer" (lib/esteiraRoteiros). Só depois de baixar o que está no servidor —
+  // senão um navegador com cópia velha recriaria card que alguém já arquivou — e de
+  // novo a cada 30 min, para quem deixa o painel aberto na virada.
+  const [dadosDoServidor, setDadosDoServidor] = useState(false)
+  useEffect(() => {
+    if (!dadosDoServidor) return
+    const preencher = () => {
+      const hoje = new Date()
+      const atual = carregarEsteira()
+      const novo = preencherMes(atual, allClients.map(c => c.name), carregarCarteira(), hoje.getFullYear(), hoje.getMonth(), Date.now())
+      if (novo !== atual) salvarEsteira(novo)
+    }
+    preencher()
+    const t = setInterval(preencher, 30 * 60_000)
+    return () => clearInterval(t)
+  }, [dadosDoServidor, allClients])
+
   // ── Sync D1 no mount — restaura dados se cache estiver vazio ──────────────
   useEffect(() => {
     // Flush qualquer fila pendente do reload anterior (F5 no meio de um sync)
@@ -770,6 +796,7 @@ export default function App() {
         if (res.data?.length) {
           // D1 tem dados — restaura tudo (importante quando cache foi limpo)
           applyRemoteSync(res.data)
+          setDadosDoServidor(true)
           if (restoringData) {
             setSnack({ msg: '✅ Dados restaurados do servidor com sucesso!', severity: 'success' })
           }
@@ -2408,6 +2435,17 @@ export default function App() {
     createOnboardingForClient(client.name, currentUserRef.current ?? '', client.subnicho)
     initHealthForClient(client.name, currentUserRef.current ?? '')
     setOnboardingSyncVersion(v => v + 1)
+    // Cliente novo → card dele em "A fazer" na esteira de Roteiros (sem duplicar). No
+    // mês atual, ou no mês de ENTRADA se ele só entra depois — por isso depois do
+    // tick: quem cadastra grava a carteira (com a entrada) logo em seguida.
+    setTimeout(() => {
+      const hoje = new Date()
+      const atual = chaveDoMes(hoje.getFullYear(), hoje.getMonth())
+      const entrada = carregarCarteira()[client.name]?.entrada
+      const esteira = carregarEsteira()
+      const comCard = garantirCardDoCliente(esteira, client.name, entrada && entrada > atual ? entrada : atual, Date.now())
+      if (comCard !== esteira) salvarEsteira(comCard)
+    }, 0)
   }, [])
 
   // ── Excluir cliente ───────────────────────────────────
@@ -2934,6 +2972,8 @@ export default function App() {
     { label: 'Proposta', icon: <RequestQuoteIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 35
     // 36 — cronograma de postagens do cliente no mês (2026-10-06): lê os cards do Calendário.
     { label: 'Cronograma', icon: <ViewListIcon />, mobileOnly: false, hidden: false, mobileHidden: true }, // 36
+    // 37 — esteira dos roteiros do mês (2026-10-20): um card por cliente por mês, A fazer → Prontos.
+    { label: 'Roteiros', icon: <AutoStoriesIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 37
   ]
 
   // Mantém os atalhos de dígito (1–9) fora das abas ocultas e das restritas
@@ -2964,7 +3004,7 @@ export default function App() {
     // 2026-09-29: saíram Calendário (5), Editor (10) e Design (16) — o trabalho
     // deles vive em Produções (filtros Tipo/Encarregado) e na "Minha esteira".
     // Mesmo dia: saiu Onboarding (22), a pedido do dono.
-    { key: 'operacao',  label: 'Operação',     tabs: [31, 7, 0, 4, 33, 32, 36, 9] },
+    { key: 'operacao',  label: 'Operação',     tabs: [31, 7, 0, 4, 37, 33, 32, 36, 9] },
     { key: 'clientes',  label: 'Clientes',     tabs: [6, 30, 21, 23] },
     { key: 'equipe',    label: 'Equipe',       tabs: [12, 25, 26, 27, 28, 29] },
     { key: 'trafego',   label: 'Tráfego',      tabs: [34] },
@@ -3067,6 +3107,8 @@ export default function App() {
         return <PainelTrafegoTab />
       case 35:
         return <PropostaTab />
+      case 37:
+        return <EsteiraRoteirosTab clients={allClients.map(c => c.name)} now={now} />
       case 36:
         return <CronogramaTab items={allItems} states={states} clients={allClients.map(c => c.name)} now={now} />
       case 33:

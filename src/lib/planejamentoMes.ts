@@ -183,8 +183,8 @@ export function historicoDoCliente(carteira: CarteiraStore, cliente: string, ate
 /**
  * Traz para a carteira (sincronizada) o que a aba Clientes antiga guardava SÓ no
  * navegador: tipo, "removido a partir do mês" (mês 0-based, "2026-9" = outubro),
- * meses de freelancer (o primeiro vira a entrada) e nome de exibição. Só preenche
- * o que a carteira ainda não tem — o que já foi decidido nela vale mais.
+ * meses de freelancer (o primeiro vira a entrada) e nome de exibição. Só cria a
+ * entrada de quem AINDA NÃO está na carteira — o que já foi decidido nela vale mais.
  */
 export function migrarCarteiraLegada(carteira: CarteiraStore, legado: {
   tipos?: Record<string, TipoCliente>
@@ -199,15 +199,19 @@ export function migrarCarteiraLegada(carteira: CarteiraStore, legado: {
     ...Object.keys(legado.mesesFreelancer ?? {}), ...Object.keys(legado.nomes ?? {}),
   ])
   for (const n of nomes) {
-    const atual: ClienteNaCarteira = { ...(out[n] ?? { tipo: 'mensal' }) }
-    const antes = JSON.stringify(out[n] ?? null)
-    if (!out[n] && legado.tipos?.[n]) atual.tipo = legado.tipos[n]
-    if (!atual.saida && legado.removidoDesde?.[n]) atual.saida = ymDoLegado(legado.removidoDesde[n])
+    // Cliente que já está na carteira: ela manda, o legado não opina (2026-10-20).
+    // Antes o legado preenchia o que faltava — e "saída vazia" de quem foi
+    // REATIVADO contava como falta: um navegador com o "removido em julho" da tela
+    // antiga removia o Compostela de novo cada vez que abria a aba Clientes.
+    if (out[n]) continue
+    const atual: ClienteNaCarteira = { tipo: legado.tipos?.[n] ?? 'mensal' }
+    if (legado.removidoDesde?.[n]) atual.saida = ymDoLegado(legado.removidoDesde[n])
     const fl = (legado.mesesFreelancer?.[n] ?? []).map(ymDoLegado).filter((x): x is string => !!x).sort()
-    if (!atual.entrada && fl.length && atual.tipo === 'freelancer') atual.entrada = fl[0]
-    if (!atual.nome && legado.nomes?.[n] && legado.nomes[n] !== n) atual.nome = legado.nomes[n]
+    if (fl.length && atual.tipo === 'freelancer') atual.entrada = fl[0]
+    if (legado.nomes?.[n] && legado.nomes[n] !== n) atual.nome = legado.nomes[n]
     for (const k of Object.keys(atual) as (keyof ClienteNaCarteira)[]) if (atual[k] === undefined) delete atual[k]
-    if (JSON.stringify(atual) !== antes && !(antes === 'null' && JSON.stringify(atual) === JSON.stringify({ tipo: 'mensal' }))) out[n] = atual
+    // Sem nada a dizer além de "mensal" (o padrão), não cria entrada.
+    if (JSON.stringify(atual) !== JSON.stringify({ tipo: 'mensal' })) out[n] = atual
   }
   return out
 }

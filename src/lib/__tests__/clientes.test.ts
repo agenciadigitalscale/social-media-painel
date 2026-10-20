@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { nomeCliente, resolverCliente, clientesComConteudoNoMes, visiveisNoMes, conferirClientes } from '../clientes'
+import { nomeCliente, resolverCliente, clientesComConteudoNoMes, visiveisNoMes, conferirClientes, clientesRemovidos, voltarParaCarteira } from '../clientes'
 import type { ContentItem } from '../../types'
 import type { CarteiraStore } from '../planejamentoMes'
 
@@ -54,5 +54,22 @@ describe('cadastro oficial de clientes', () => {
   it('arquivado de propósito não é órfão', () => {
     const r = conferirClientes({ items, states: {}, ids, arquivados: ['LuzioPan'], carteira })
     expect(r.orfaos.map(o => o.nome)).not.toContain('LuzioPan')
+  })
+
+  it('removidos: quem já saiu no mês de hoje, mais recente primeiro; quem sai no futuro ainda não', () => {
+    const c: CarteiraStore = {
+      A: { tipo: 'mensal', saida: '2026-07' },
+      B: { tipo: 'mensal', saida: '2026-10', nome: 'Bê' },
+      C: { tipo: 'mensal', saida: '2026-11' },
+      D: { tipo: 'mensal' },
+    }
+    const r = clientesRemovidos(['A', 'B', 'C', 'D'], c, new Date(2026, 9, 20))
+    expect(r).toEqual([{ id: 'B', nome: 'Bê', saida: '2026-10' }, { id: 'A', nome: 'A', saida: '2026-07' }])
+  })
+
+  it('voltar para a carteira tira só a saída — nome, tipo e entrada ficam', () => {
+    const c: CarteiraStore = { X: { tipo: 'freelancer', nome: 'Xis', entrada: '2026-03', saida: '2026-08' } }
+    expect(voltarParaCarteira(c, 'X').X).toEqual({ tipo: 'freelancer', nome: 'Xis', entrada: '2026-03' })
+    expect(voltarParaCarteira(c, 'Y')).toBe(c)
   })
 })

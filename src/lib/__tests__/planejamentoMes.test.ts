@@ -86,6 +86,15 @@ describe('Cadastro de clientes', () => {
     expect(m.Mensal).toBeUndefined()                // nada novo a dizer
   })
 
+  it('cliente que JÁ está na carteira não é tocado pelo legado — reativar não é desfeito (caso Compostela)', () => {
+    // Reativado: está na carteira sem saída. O navegador ainda guarda "removido em julho".
+    const m = migrarCarteiraLegada({ Compostela: { tipo: 'mensal', nome: 'Compostela Grill' } }, {
+      removidoDesde: { Compostela: '2026-6' },
+      nomes: { Compostela: 'Compostela antigo' },
+    })
+    expect(m.Compostela).toEqual({ tipo: 'mensal', nome: 'Compostela Grill' })
+  })
+
   it('ordem manual, A→Z e Z→A; quem não está na ordem vai para o fim', () => {
     const lista = [{ name: 'Beta' }, { name: 'alfa' }, { name: 'Gama' }]
     expect(ordenarClientes(lista, ['Gama'], 'manual').map(c => c.name)).toEqual(['Gama', 'alfa', 'Beta'])
