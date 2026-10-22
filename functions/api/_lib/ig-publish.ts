@@ -205,8 +205,33 @@ export function separarUltimas(midias: MidiaDoPerfil[]): { video: PostagemDoPerf
 export async function midiasRecentes(g: Graph, igUserId: string): Promise<Resposta<{ data?: MidiaDoPerfil[] }>> {
   return chamar(g, 'GET', `/${igUserId}/media`, {
     fields: 'id,media_type,media_product_type,timestamp,permalink,thumbnail_url,media_url',
-    limit: '25',
+    // 50: num perfil que posta quase só vídeo, a última foto ficava fora das 25.
+    limit: '50',
   })
+}
+
+export interface PostDaPagina { created_time?: string; permalink_url?: string; full_picture?: string; attachments?: { data?: { media_type?: string }[] } }
+
+/** Facebook (cliente sem Instagram): o último vídeo e a última foto da Página. Post só de texto/link não conta. */
+export function separarUltimasFacebook(posts: PostDaPagina[]): { video: PostagemDoPerfil | null; foto: PostagemDoPerfil | null } {
+  let video: PostagemDoPerfil | null = null
+  let foto: PostagemDoPerfil | null = null
+  const ordenados = [...posts].filter(p => p.created_time).sort((a, b) => (b.created_time ?? '').localeCompare(a.created_time ?? ''))
+  for (const p of ordenados) {
+    const t = (p.attachments?.data?.[0]?.media_type ?? '').toLowerCase()
+    const ehVideo = t.includes('video')
+    const ehFoto = t === 'photo' || t === 'album'
+    if (!ehVideo && !ehFoto) continue
+    const post: PostagemDoPerfil = { quando: p.created_time!, link: p.permalink_url ?? null, capa: p.full_picture ?? null, formato: ehVideo ? 'video' : t === 'album' ? 'carrossel' : 'foto' }
+    if (ehVideo && !video) video = post
+    if (ehFoto && !foto) foto = post
+    if (video && foto) break
+  }
+  return { video, foto }
+}
+
+export async function postsDaPagina(g: Graph, pageId: string): Promise<Resposta<{ data?: PostDaPagina[] }>> {
+  return chamar(g, 'GET', `/${pageId}/published_posts`, { fields: 'created_time,permalink_url,full_picture,attachments{media_type}', limit: '50' })
 }
 
 /** Confere o token e devolve o @ do perfil. */

@@ -10,6 +10,7 @@ import { Box, Button, TextField, Tooltip, Typography } from '@mui/material'
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded'
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
 import InstagramIcon from '@mui/icons-material/Instagram'
+import FacebookIcon from '@mui/icons-material/Facebook'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import type { ContentItem, ItemState } from '../types'
 import { STATUS_CONFIG } from '../types'
@@ -18,8 +19,8 @@ import { clickable } from '../shared/a11y'
 import { nomeDoCliente, useCarteira } from '../lib/clientes'
 import { ativoNoMes, naCarteira } from '../lib/planejamentoMes'
 import {
-  buscarUltimasIG, combinar, diasDesde, nivelDoAviso, ordenarPorUrgencia, piorNivel, proximaDoCliente,
-  ultimasDoIG, ultimasDoPainel, type NivelAviso, type Postagem, type UltimasIG,
+  buscarUltimasIG, ultimasDoCliente, diasDesde, nivelDoAviso, ordenarPorUrgencia, piorNivel, proximaDoCliente,
+  ultimasDoPainel, type NivelAviso, type Postagem, type UltimasIG,
 } from '../lib/ultimaPostagem'
 
 const COR: Record<NivelAviso, string> = { ok: DS.green, atencao: DS.amber, atrasado: DS.red, nunca: DS.red }
@@ -58,7 +59,7 @@ export default function UltimaPostagemTab({ items, states, clients, now }: {
     const ativos = clients.filter(c => naCarteira(carteira, c).tipo === 'mensal' && ativoNoMes(carteira, c, now.getFullYear(), now.getMonth()))
     return ordenarPorUrgencia(ativos.map(c => {
       const conta = ig.find(x => x.clientName === c)
-      const ultimas = combinar(ultimasDoPainel(items, states, c), conta && !conta.erro ? ultimasDoIG(conta) : undefined)
+      const ultimas = ultimasDoCliente(ultimasDoPainel(items, states, c, agora), conta)
       return { id: c, nome: nomeDoCliente(c), ultimas, conta, proxima: proximaDoCliente(items, states, c, agora) }
     }), agora)
   }, [clients, carteira, ig, items, states, agora, now])
@@ -134,7 +135,9 @@ export default function UltimaPostagemTab({ items, states, clients, now }: {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.1 }}>
                 <Typography noWrap sx={{ flex: 1, fontSize: { xs: '0.95rem', xl: '1.05rem' }, fontWeight: 800, color: DS.t1 }}>{l.nome}</Typography>
                 {l.conta && !l.conta.erro && (
-                  <Tooltip title={`Lido do Instagram ${l.conta.perfil}`}><InstagramIcon sx={{ fontSize: 16, color: DS.t2 }} /></Tooltip>
+                  <Tooltip title={`Lido ${l.conta.fonte === 'facebook' ? 'da Página' : 'do Instagram'} ${l.conta.perfil}`}>
+                    {l.conta.fonte === 'facebook' ? <FacebookIcon sx={{ fontSize: 16, color: DS.t2 }} /> : <InstagramIcon sx={{ fontSize: 16, color: DS.t2 }} />}
+                  </Tooltip>
                 )}
                 <Box sx={{ px: 0.9, py: '2px', borderRadius: '999px', bgcolor: `${COR[pior]}1f`, border: `1px solid ${COR[pior]}66` }}>
                   <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: COR[pior], textTransform: 'uppercase', letterSpacing: '0.05em' }}>{ROTULO[pior]}</Typography>
@@ -167,7 +170,7 @@ export default function UltimaPostagemTab({ items, states, clients, now }: {
         </Box>
       )}
       <Typography sx={{ mt: 1.4, fontSize: '0.7rem', color: DS.t3 }}>
-        Cliente com Instagram conectado: lido direto do perfil (pega o que foi postado fora do painel). Os outros: o último card marcado como Publicado. Só clientes mensais ativos na carteira.
+        Conta conectada: lido direto do Instagram (ou da Página do Facebook, para quem não tem Instagram) — pega até o que foi postado fora do painel. Sem conta: o último card marcado como Publicado, nunca com data futura. Só clientes mensais ativos na carteira.
       </Typography>
     </Box>
   )
@@ -191,7 +194,7 @@ function BlocoPostagem({ rotulo, icone, p, agora }: { rotulo: string; icone: 'vi
         </Typography>
         {p && (
           <Typography noWrap sx={{ fontSize: '0.66rem', color: DS.t2 }}>
-            {dataCurta(p.quando)} · {p.fonte === 'instagram' ? 'Instagram' : 'painel'}
+            {dataCurta(p.quando)} · {p.fonte === 'instagram' ? 'Instagram' : p.fonte === 'facebook' ? 'Facebook' : 'painel'}
             {p.link && <> · <Box component="a" href={p.link} target="_blank" rel="noreferrer" sx={{ color: DS.accent, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>ver ↗</Box></>}
           </Typography>
         )}

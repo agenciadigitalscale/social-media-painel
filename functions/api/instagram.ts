@@ -38,7 +38,7 @@ import { dispatchNotification } from './notifications'
 import {
   ESTADO_VAZIO, chamar, normalizarColaboradores, perfilDoToken, permalinkDe, planejar, preparar, publicar,
   type ArquivoCriativo, type Graph, type IgEstado, type IgPlano,
-  midiasRecentes, separarUltimas,
+  midiasRecentes, separarUltimas, postsDaPagina, separarUltimasFacebook,
 } from './_lib/ig-publish'
 import { contasDoToken, paginaDoToken, permalinkFacebook, planejarFacebook, publicarNaPagina, type FbPlano } from './_lib/fb-publish'
 
@@ -235,14 +235,23 @@ const descricaoDoPlano = (p: PlanoRede) => !p.ok ? null
  * (token vencido) não derruba os outros: volta com o motivo.
  */
 async function ultimas(env: Env): Promise<Response> {
-  const contas = await env.DB.prepare("SELECT client_name, ig_user_id, display_name, access_token FROM ig_tokens WHERE ig_user_id <> ''")
-    .all<{ client_name: string; ig_user_id: string; display_name: string; access_token: string }>()
+  const contas = await env.DB.prepare('SELECT client_name, ig_user_id, display_name, access_token, fb_page_id, fb_page_token, fb_page_name FROM ig_tokens')
+    .all<{ client_name: string; ig_user_id: string; display_name: string; access_token: string; fb_page_id: string | null; fb_page_token: string | null; fb_page_name: string | null }>()
   const resultado = await Promise.all(contas.results.map(async c => {
-    const r = await midiasRecentes(graphDe(env, c.access_token), c.ig_user_id)
-    if (!r.ok) return { clientName: c.client_name, perfil: c.display_name, erro: r.erro }
-    return { clientName: c.client_name, perfil: c.display_name, ...separarUltimas(r.data.data ?? []) }
+    // Instagram é a fonte; sem ele, a Página do Facebook (ex.: Genitex).
+    if (c.ig_user_id) {
+      const r = await midiasRecentes(graphDe(env, c.access_token), c.ig_user_id)
+      if (!r.ok) return { clientName: c.client_name, perfil: c.display_name, fonte: 'instagram', erro: r.erro }
+      return { clientName: c.client_name, perfil: c.display_name, fonte: 'instagram', ...separarUltimas(r.data.data ?? []) }
+    }
+    if (c.fb_page_id && c.fb_page_token) {
+      const r = await postsDaPagina(graphDe(env, c.fb_page_token), c.fb_page_id)
+      if (!r.ok) return { clientName: c.client_name, perfil: c.fb_page_name ?? '', fonte: 'facebook', erro: r.erro }
+      return { clientName: c.client_name, perfil: c.fb_page_name ?? '', fonte: 'facebook', ...separarUltimasFacebook(r.data.data ?? []) }
+    }
+    return null
   }))
-  return json({ ok: true, contas: resultado })
+  return json({ ok: true, contas: resultado.filter(Boolean) })
 }
 
 async function status(env: Env): Promise<Response> {

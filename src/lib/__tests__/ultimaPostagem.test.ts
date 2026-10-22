@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ultimasDoPainel, combinar, nivelDoAviso, piorNivel, proximaDoCliente, ordenarPorUrgencia, ultimasDoIG } from '../ultimaPostagem'
+import { ultimasDoPainel, ultimasDoCliente, nivelDoAviso, piorNivel, proximaDoCliente, ordenarPorUrgencia, ultimasDoIG } from '../ultimaPostagem'
 import type { ContentItem, ItemState, Status } from '../../types'
 
 let seq = 0
@@ -24,12 +24,32 @@ describe('última postagem (aviso)', () => {
     expect(new Date(u.foto!.quando).getDate()).toBe(14)
   })
 
-  it('combinar: vale a mais recente das duas fontes', () => {
-    const painel = ultimasDoPainel(itens, states, 'Aventur')
-    const ig = ultimasDoIG({ clientName: 'Aventur', perfil: '@a', video: { quando: '2026-10-19T12:00:00Z', link: 'x', capa: null, formato: 'reel' }, foto: { quando: '2026-10-01T12:00:00Z', link: 'y', capa: null, formato: 'foto' } })
-    const c = combinar(painel, ig)
+  it('conta conectada manda SOZINHA — o painel não entra (nem para "melhorar")', () => {
+    const painel = ultimasDoPainel(itens, states, 'Aventur', AGORA)
+    const conta = { clientName: 'Aventur', perfil: '@a', video: { quando: '2026-10-19T12:00:00Z', link: 'x', capa: null, formato: 'reel' }, foto: { quando: '2026-10-01T12:00:00Z', link: 'y', capa: null, formato: 'foto' } }
+    const c = ultimasDoCliente(painel, conta)
     expect(c.video!.fonte).toBe('instagram')
-    expect(c.foto!.fonte).toBe('painel')
+    expect(c.foto!.fonte).toBe('instagram')
+    expect(new Date(c.foto!.quando).getDate()).toBe(1)
+  })
+
+  it('conta com erro (token vencido): cai para o painel', () => {
+    const painel = ultimasDoPainel(itens, states, 'Aventur', AGORA)
+    expect(ultimasDoCliente(painel, { clientName: 'Aventur', perfil: '@a', erro: 'venceu' })).toBe(painel)
+  })
+
+  it('Página do Facebook (cliente sem Instagram) aparece como Facebook', () => {
+    const u = ultimasDoIG({ clientName: 'Genitex', perfil: 'Genitex', fonte: 'facebook', foto: { quando: '2026-10-21T12:00:00Z', link: 'f', capa: null, formato: 'foto' } })
+    expect(u.foto!.fonte).toBe('facebook')
+    expect(u.video).toBeNull()
+  })
+
+  it('caso real: card "Publicado" com postagem no FUTURO não conta (Alto da Represa 09/11)', () => {
+    const futuro = card('Alto', 'Reel', 9, 10) // 09/11
+    const real = card('Alto', 'Reel', 18)
+    const s2 = { [futuro.i]: st(7), [real.i]: st(7) }
+    const u = ultimasDoPainel([futuro, real], s2, 'Alto', AGORA)
+    expect(new Date(u.video!.quando).getDate()).toBe(18)
   })
 
   it('níveis: até 7 dias em dia, 8–14 atenção, mais que isso atrasado, sem nada = nunca', () => {

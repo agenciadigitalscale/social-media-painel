@@ -2,16 +2,17 @@
    nenhum cliente ficar sem post.
 
    Para cada cliente: o último VÍDEO e a última FOTO que foram ao ar, e há quantos
-   dias. Duas fontes, vale a mais recente:
-   - Instagram conectado: a postagem REAL do perfil (/api/instagram ?action=ultimas)
-     — pega até o que foi postado direto pelo celular, fora do painel;
-   - painel: o último card em Publicado (7), pela data em que saiu.
+   dias. UMA fonte por cliente (2026-10-22 — antes as duas se misturavam e um card
+   "Publicado" com data de postagem no FUTURO passava por cima do real):
+   - conta conectada e lida: só ela — o Instagram (ou a Página do Facebook, para
+     quem não tem Instagram), pela /api/instagram ?action=ultimas;
+   - sem conta: o último card em Publicado (7), pela data em que saiu — nunca futura.
    E a próxima postagem planejada, para ver se o buraco já está coberto. */
 import type { ContentItem, ContentType, ItemState } from '../types'
 import { postagemDoCard } from './programacao'
 import { lerResposta } from './respostaApi'
 
-export type Fonte = 'instagram' | 'painel'
+export type Fonte = 'instagram' | 'facebook' | 'painel'
 export type NivelAviso = 'ok' | 'atencao' | 'atrasado' | 'nunca'
 
 export interface Postagem {
@@ -33,8 +34,12 @@ export interface UltimasDoCliente {
 const ehVideo = (tp: ContentType) => tp === 'Reel'
 const ehFoto = (tp: ContentType) => tp === 'Post' || tp === 'Feed' || tp === 'Carrossel'
 
-/** Último vídeo e última foto PUBLICADOS no painel para o cliente. */
-export function ultimasDoPainel(items: readonly ContentItem[], states: Record<number, ItemState>, cliente: string): UltimasDoCliente {
+/**
+ * Último vídeo e última foto PUBLICADOS no painel para o cliente. Data = quando
+ * foi marcado publicado; sem ela, a data de postagem — e nunca no futuro (card
+ * marcado "Publicado" com a pauta lá na frente não diz quando saiu).
+ */
+export function ultimasDoPainel(items: readonly ContentItem[], states: Record<number, ItemState>, cliente: string, agora: number = Date.now()): UltimasDoCliente {
   let video: Postagem | null = null
   let foto: Postagem | null = null
   for (const it of items) {
@@ -42,6 +47,7 @@ export function ultimasDoPainel(items: readonly ContentItem[], states: Record<nu
     const st = states[it.i]
     if ((st?.status ?? it.s) !== 7) continue
     const quando = st?.publishedAt ?? postagemDoCard(it, st).quando.getTime()
+    if (quando > agora) continue
     const p: Postagem = { quando, fonte: 'painel', link: st?.igPermalink || st?.fbPermalink || null, capa: st?.anexos?.[0]?.url ?? null, titulo: st?.title || it.n }
     if (ehVideo(it.tp) && (!video || quando > video.quando)) video = p
     if (ehFoto(it.tp) && (!foto || quando > foto.quando)) foto = p
@@ -49,10 +55,9 @@ export function ultimasDoPainel(items: readonly ContentItem[], states: Record<nu
   return { video, foto }
 }
 
-/** Das duas fontes, a postagem mais recente de cada tipo. */
-export function combinar(painel: UltimasDoCliente, ig?: UltimasDoCliente): UltimasDoCliente {
-  const maisNova = (a: Postagem | null, b: Postagem | null | undefined) => !b ? a : !a ? b : (b.quando > a.quando ? b : a)
-  return { video: maisNova(painel.video, ig?.video), foto: maisNova(painel.foto, ig?.foto) }
+/** A fonte do cliente: a conta conectada (lida sem erro) manda sozinha; sem ela, o painel. */
+export function ultimasDoCliente(painel: UltimasDoCliente, conta?: UltimasIG): UltimasDoCliente {
+  return conta && !conta.erro ? ultimasDoIG(conta) : painel
 }
 
 export function diasDesde(quando: number, agora: number): number {
@@ -106,12 +111,12 @@ export function ordenarPorUrgencia<T extends { ultimas: UltimasDoCliente; nome: 
 // ── Instagram (fonte real) ───────────────────────────────────────────────
 
 interface PostagemIG { quando: string; link: string | null; capa: string | null; formato: string }
-export interface UltimasIG { clientName: string; perfil: string; erro?: string; video?: PostagemIG | null; foto?: PostagemIG | null }
-
-const daIG = (p?: PostagemIG | null): Postagem | null => p ? { quando: Date.parse(p.quando), fonte: 'instagram', link: p.link, capa: p.capa, formato: p.formato } : null
+export interface UltimasIG { clientName: string; perfil: string; fonte?: 'instagram' | 'facebook'; erro?: string; video?: PostagemIG | null; foto?: PostagemIG | null }
 
 export function ultimasDoIG(c: UltimasIG): UltimasDoCliente {
-  return { video: daIG(c.video), foto: daIG(c.foto) }
+  const fonte: Fonte = c.fonte === 'facebook' ? 'facebook' : 'instagram'
+  const da = (p?: PostagemIG | null): Postagem | null => p ? { quando: Date.parse(p.quando), fonte, link: p.link, capa: p.capa, formato: p.formato } : null
+  return { video: da(c.video), foto: da(c.foto) }
 }
 
 /** Busca no servidor a última postagem real de cada perfil conectado (só leitura). */

@@ -23,3 +23,17 @@ describe('última postagem do perfil (vídeo e foto)', () => {
     expect(separarUltimas([])).toEqual({ video: null, foto: null })
   })
 })
+
+import { separarUltimasFacebook } from '../ig-publish'
+
+describe('última postagem da Página do Facebook', () => {
+  it('foto e vídeo pelo tipo do anexo; post só de texto não conta', () => {
+    const r = separarUltimasFacebook([
+      { created_time: '2026-10-21T12:00:00+0000', permalink_url: 'p1', full_picture: 'c1', attachments: { data: [{ media_type: 'photo' }] } },
+      { created_time: '2026-10-22T12:00:00+0000', permalink_url: 'p0' },
+      { created_time: '2026-10-10T12:00:00+0000', permalink_url: 'p2', attachments: { data: [{ media_type: 'video' }] } },
+    ])
+    expect(r.foto).toMatchObject({ quando: '2026-10-21T12:00:00+0000', formato: 'foto' })
+    expect(r.video).toMatchObject({ quando: '2026-10-10T12:00:00+0000', formato: 'video' })
+  })
+})
