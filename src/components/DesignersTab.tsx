@@ -30,6 +30,7 @@ import { NAME_MAP, getDisplayName } from '../lib/users'
 import { DS, ctaGradient } from '../theme'
 import { clickable } from '../shared/a11y'
 import { nomeDoCliente } from '../lib/clientes'
+import MetaDoMesTime from './entregas/MetaDoMesTime'
 
 interface Props {
   items: ContentItem[]
@@ -141,7 +142,7 @@ function Chip({ ativo, onClick, children }: { ativo: boolean; onClick: () => voi
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
 
-export default function DesignersTab({ items, states, now }: Props) {
+export default function DesignersTab({ items, states, allClients = [], now }: Props) {
   const [periodo, setPeriodo] = useState<PeriodoKey>('mes')
   const [de, setDe] = useState(() => inputDoDia(new Date(now.getFullYear(), now.getMonth(), 1)))
   const [ate, setAte] = useState(() => inputDoDia(now))
@@ -193,6 +194,14 @@ export default function DesignersTab({ items, states, now }: Props) {
     })
   }, [pessoaFiltro, pessoas, todasPorPessoa, janela, tipoFiltro, clienteFiltro])
 
+  // Total esperado no mês: as entregas do MÊS CORRENTE de todo o time, sem os
+  // filtros da tela (é a meta da agência, não a de uma pessoa ou cliente).
+  const feitosNoMes = useMemo(() => {
+    const ini = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+    const fim = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime() - 1
+    return pessoas.flatMap(p => (aprovadasEntre(todasPorPessoa[p] ?? [], ini, fim) as Entrega[]).map(a => ({ cliente: a.cliente, tipo: a.tipo })))
+  }, [pessoas, todasPorPessoa, now])
+
   const total = dados.reduce((s, d) => s + d.noPeriodo, 0)
   const totalVideos = dados.reduce((s, d) => s + d.videos, 0)
   const totalArtes = dados.reduce((s, d) => s + d.artesN, 0)
@@ -239,6 +248,8 @@ export default function DesignersTab({ items, states, now }: Props) {
           </Typography>
         </Box>
       </Box>
+
+      <MetaDoMesTime clientes={allClients} feitos={feitosNoMes} now={now} />
 
       {/* ── Filtros ── */}
       <Paper sx={{ p: 1.4, mb: 2, display: 'flex', flexDirection: 'column', gap: 1.2, border: `1px solid ${DS.border}`, borderRadius: 3 }}>
