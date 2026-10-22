@@ -3,13 +3,13 @@
  * precisa entregar no mês somando a meta de todos os clientes, quanto já
  * entregou, quanto falta e o ritmo por dia útil para fechar. Regra em lib/metaDoTime.
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Box, Collapse, Paper, Typography } from '@mui/material'
 import type { Client } from '../../types'
 import { DS } from '../../theme'
 import { clickable } from '../../shared/a11y'
 import { nomeDoCliente } from '../../lib/clientes'
-import { carregarPadroes } from '../../lib/padraoEditorial'
+import { carregarPadroes, EVENTO_PADRAO } from '../../lib/padraoEditorial'
 import { carregarCarteira, carregarPrefMes } from '../../lib/planejamentoMes'
 import { andamento, esperadoNoMes, type Andamento } from '../../lib/metaDoTime'
 
@@ -24,9 +24,17 @@ export default function MetaDoMesTime({ clientes, feitos, now }: {
   now: Date
 }) {
   const [aberto, setAberto] = useState(false)
+  // Meta, plano ou carteira mudaram (aqui, em outra aba ou de outro aparelho): recalcula na hora.
+  const [versao, setVersao] = useState(0)
+  useEffect(() => {
+    const reler = () => setVersao(v => v + 1)
+    window.addEventListener(EVENTO_PADRAO, reler)
+    return () => window.removeEventListener(EVENTO_PADRAO, reler)
+  }, [])
   const meta = useMemo(
     () => esperadoNoMes(clientes, carregarCarteira(), carregarPadroes(), carregarPrefMes(), now.getFullYear(), now.getMonth()),
-    [clientes, now],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- versao: sinal de que carteira/padrão/meta mudaram
+    [clientes, now, versao],
   )
   const feitoPor = useMemo(() => {
     const m = new Map<string, { videos: number; artes: number }>()
