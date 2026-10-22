@@ -55,9 +55,16 @@ export function ultimasDoPainel(items: readonly ContentItem[], states: Record<nu
   return { video, foto }
 }
 
-/** A fonte do cliente: a conta conectada (lida sem erro) manda sozinha; sem ela, o painel. */
+/**
+ * A fonte do cliente: a conta conectada (lida sem erro) manda; sem ela, o painel.
+ * Se a conta não tem NENHUM post de um tipo, esse tipo vem do painel — caso
+ * Genitex: a Página do Facebook só recebe foto, os vídeos saem no Instagram (que
+ * não está ligado), e "vídeo: nunca" seria falso.
+ */
 export function ultimasDoCliente(painel: UltimasDoCliente, conta?: UltimasIG): UltimasDoCliente {
-  return conta && !conta.erro ? ultimasDoIG(conta) : painel
+  if (!conta || conta.erro) return painel
+  const c = ultimasDoIG(conta)
+  return { video: c.video ?? painel.video, foto: c.foto ?? painel.foto }
 }
 
 export function diasDesde(quando: number, agora: number): number {

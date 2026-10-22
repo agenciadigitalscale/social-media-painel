@@ -38,6 +38,15 @@ describe('última postagem (aviso)', () => {
     expect(ultimasDoCliente(painel, { clientName: 'Aventur', perfil: '@a', erro: 'venceu' })).toBe(painel)
   })
 
+  it('conta sem nenhum post de um tipo: esse tipo vem do painel (Genitex: Página só com foto)', () => {
+    const r = card('Gen', 'Reel', 18)
+    const painel = ultimasDoPainel([r], { [r.i]: st(7) }, 'Gen', AGORA)
+    const u = ultimasDoCliente(painel, { clientName: 'Gen', perfil: 'Genitex', fonte: 'facebook', video: null, foto: { quando: '2026-10-19T12:00:00Z', link: 'f', capa: null, formato: 'foto' } })
+    expect(u.foto!.fonte).toBe('facebook')
+    expect(u.video!.fonte).toBe('painel')
+    expect(new Date(u.video!.quando).getDate()).toBe(18)
+  })
+
   it('Página do Facebook (cliente sem Instagram) aparece como Facebook', () => {
     const u = ultimasDoIG({ clientName: 'Genitex', perfil: 'Genitex', fonte: 'facebook', foto: { quando: '2026-10-21T12:00:00Z', link: 'f', capa: null, formato: 'foto' } })
     expect(u.foto!.fonte).toBe('facebook')
