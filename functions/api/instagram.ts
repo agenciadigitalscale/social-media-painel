@@ -38,6 +38,7 @@ import { dispatchNotification } from './notifications'
 import {
   ESTADO_VAZIO, chamar, normalizarColaboradores, perfilDoToken, permalinkDe, planejar, preparar, publicar,
   type ArquivoCriativo, type Graph, type IgEstado, type IgPlano,
+  midiasRecentes, separarUltimas,
 } from './_lib/ig-publish'
 import { contasDoToken, paginaDoToken, permalinkFacebook, planejarFacebook, publicarNaPagina, type FbPlano } from './_lib/fb-publish'
 
@@ -227,6 +228,22 @@ const descricaoDoPlano = (p: PlanoRede) => !p.ok ? null
   : { tipo: p.plano.tipo, pecas: p.plano.midias.length }
 
 // ── Ações do painel ──────────────────────────────────────────────────────
+
+/**
+ * Última postagem real de cada cliente com Instagram conectado: o último vídeo e
+ * a última foto do feed. Só LÊ — nada é publicado nem gravado. Um perfil com erro
+ * (token vencido) não derruba os outros: volta com o motivo.
+ */
+async function ultimas(env: Env): Promise<Response> {
+  const contas = await env.DB.prepare("SELECT client_name, ig_user_id, display_name, access_token FROM ig_tokens WHERE ig_user_id <> ''")
+    .all<{ client_name: string; ig_user_id: string; display_name: string; access_token: string }>()
+  const resultado = await Promise.all(contas.results.map(async c => {
+    const r = await midiasRecentes(graphDe(env, c.access_token), c.ig_user_id)
+    if (!r.ok) return { clientName: c.client_name, perfil: c.display_name, erro: r.erro }
+    return { clientName: c.client_name, perfil: c.display_name, ...separarUltimas(r.data.data ?? []) }
+  }))
+  return json({ ok: true, contas: resultado })
+}
 
 async function status(env: Env): Promise<Response> {
   const [contas, ags] = await Promise.all([
@@ -628,6 +645,7 @@ async function tratar(ctx: { request: Request; env: Env }): Promise<Response> {
       const url = new URL(request.url)
       const action = url.searchParams.get('action')
       if (action === 'status') return status(env)
+      if (action === 'ultimas') return ultimas(env)
       if (action === 'previa') {
         const itemId = Number(url.searchParams.get('itemId'))
         if (!Number.isInteger(itemId) || itemId <= 0) return erro('itemId obrigatório.')

@@ -14,3 +14,13 @@ describe('aba Roteiros (esteira do mês)', () => {
     expect(getUserPerms('kerges').hiddenTabs.includes(34)).toBe(true)
   })
 })
+
+describe('aba Última postagem (38)', () => {
+  const ve38 = (u: string) => !getUserPerms(u).hiddenTabs.includes(38)
+  it('sócios e Social Media veem', () => {
+    for (const u of ['pradox', 'testa', 'arthur', 'robson']) expect(ve38(u), u).toBe(true)
+  })
+  it('editor, designers e copy não veem', () => {
+    for (const u of ['kaique', 'jhones', 'julio', 'kerges']) expect(ve38(u), u).toBe(false)
+  })
+})

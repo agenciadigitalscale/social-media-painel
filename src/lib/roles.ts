@@ -31,7 +31,7 @@ export interface Permissions {
 /** Todas as abas do `navItems` do App (0–36). */
 // Ao criar aba nova no fim do navItems, aumente este número — senão ela fica
 // visível para todo cargo com lista (foi o que aconteceu com a 32).
-const TODAS_AS_ABAS = Array.from({ length: 38 }, (_, i) => i)
+const TODAS_AS_ABAS = Array.from({ length: 39 }, (_, i) => i)
 
 /**
  * Abas que cada cargo VÊ. O resto fica escondido — e bloqueado: a trava
@@ -50,7 +50,7 @@ const ABAS_DO_CARGO: Record<Cargo, number[] | 'todas'> = {
   socio:  'todas',
   // Social Media: conteúdo e clientes, sem visão de equipe (Radar, Equipe,
   // Fechamento, produção individual) e sem as filas de Editor/Design.
-  social: [0, 1, 2, 4, 6, 7, 9, 23, 30, 32, 33, 36],
+  social: [0, 1, 2, 4, 6, 7, 9, 23, 30, 32, 33, 36, 38],
   // Copy: a esteira dela é a de Roteiros; legendas no Meu Dia.
   copy:   [0, 7, 30, 31],
   // Editor: só os vídeos dele — esteira, editor, gravações, calendário.

@@ -116,6 +116,8 @@ import AgendamentoTab from './components/AgendamentoTab'
 import PainelTrafegoTab, { PropostaTab } from './components/PainelTrafegoTab'
 import CronogramaTab from './components/CronogramaTab'
 import EsteiraRoteirosTab from './components/EsteiraRoteirosTab'
+import UltimaPostagemTab from './components/UltimaPostagemTab'
+import HistoryIcon from '@mui/icons-material/History'
 import { ESTEIRA_ROTEIROS_KEY, EVENTO_ESTEIRA_ROTEIROS, carregarEsteira, chaveDoMes, garantirCardDoCliente, preencherMes, salvarEsteira } from './lib/esteiraRoteiros'
 import ViewListIcon from '@mui/icons-material/ViewList'
 import Foguete from './shared/ui/Foguete'
@@ -2974,6 +2976,8 @@ export default function App() {
     { label: 'Cronograma', icon: <ViewListIcon />, mobileOnly: false, hidden: false, mobileHidden: true }, // 36
     // 37 — esteira dos roteiros do mês (2026-10-20): um card por cliente por mês, A fazer → Prontos.
     { label: 'Roteiros', icon: <AutoStoriesIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 37
+    // 38 — última postagem de cada cliente (2026-10-20): o aviso para nenhum ficar sem post. Sócios + Social.
+    { label: 'Última postagem', icon: <HistoryIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 38
   ]
 
   // Mantém os atalhos de dígito (1–9) fora das abas ocultas e das restritas
@@ -3005,7 +3009,7 @@ export default function App() {
     // deles vive em Produções (filtros Tipo/Encarregado) e na "Minha esteira".
     // Mesmo dia: saiu Onboarding (22), a pedido do dono.
     { key: 'operacao',  label: 'Operação',     tabs: [31, 7, 0, 4, 37, 33, 32, 36, 9] },
-    { key: 'clientes',  label: 'Clientes',     tabs: [6, 30, 21, 23] },
+    { key: 'clientes',  label: 'Clientes',     tabs: [6, 38, 30, 21, 23] },
     { key: 'equipe',    label: 'Equipe',       tabs: [12, 25, 26, 27, 28, 29] },
     { key: 'trafego',   label: 'Tráfego',      tabs: [34] },
     { key: 'comercial', label: 'Comercial',    tabs: [35] },
@@ -3107,6 +3111,8 @@ export default function App() {
         return <PainelTrafegoTab />
       case 35:
         return <PropostaTab />
+      case 38:
+        return <UltimaPostagemTab items={allItems} states={states} clients={allClients.map(c => c.name)} now={now} />
       case 37:
         return <EsteiraRoteirosTab clients={allClients.map(c => c.name)} now={now} />
       case 36:

@@ -162,6 +162,53 @@ export async function chamar<T>(g: Graph, method: 'GET' | 'POST', path: string, 
   }
 }
 
+// ── Última postagem (aba "Última postagem", 2026-10-20) ──────────────────
+
+export interface MidiaDoPerfil {
+  id: string
+  media_type?: string           // IMAGE | VIDEO | CAROUSEL_ALBUM
+  media_product_type?: string   // FEED | REELS | STORY
+  timestamp?: string
+  permalink?: string
+  thumbnail_url?: string
+  media_url?: string
+}
+
+export interface PostagemDoPerfil {
+  quando: string
+  link: string | null
+  capa: string | null
+  formato: 'reel' | 'video' | 'foto' | 'carrossel'
+}
+
+/** Da lista de mídias do perfil (mais nova primeiro), o último vídeo e a última foto. */
+export function separarUltimas(midias: MidiaDoPerfil[]): { video: PostagemDoPerfil | null; foto: PostagemDoPerfil | null } {
+  let video: PostagemDoPerfil | null = null
+  let foto: PostagemDoPerfil | null = null
+  const ordenadas = [...midias].filter(m => m.timestamp).sort((a, b) => (b.timestamp ?? '').localeCompare(a.timestamp ?? ''))
+  for (const m of ordenadas) {
+    const ehVideo = m.media_type === 'VIDEO' || m.media_product_type === 'REELS'
+    const p: PostagemDoPerfil = {
+      quando: m.timestamp!,
+      link: m.permalink ?? null,
+      capa: (ehVideo ? m.thumbnail_url : m.media_url) ?? m.thumbnail_url ?? null,
+      formato: ehVideo ? (m.media_product_type === 'REELS' ? 'reel' : 'video') : m.media_type === 'CAROUSEL_ALBUM' ? 'carrossel' : 'foto',
+    }
+    if (ehVideo && !video) video = p
+    if (!ehVideo && !foto) foto = p
+    if (video && foto) break
+  }
+  return { video, foto }
+}
+
+/** As últimas mídias publicadas no feed do perfil (stories não entram — somem em 24h). */
+export async function midiasRecentes(g: Graph, igUserId: string): Promise<Resposta<{ data?: MidiaDoPerfil[] }>> {
+  return chamar(g, 'GET', `/${igUserId}/media`, {
+    fields: 'id,media_type,media_product_type,timestamp,permalink,thumbnail_url,media_url',
+    limit: '25',
+  })
+}
+
 /** Confere o token e devolve o @ do perfil. */
 export async function perfilDoToken(g: Graph, igUserId: string): Promise<Resposta<{ username?: string; name?: string }>> {
   return chamar(g, 'GET', `/${igUserId}`, { fields: 'username,name' })

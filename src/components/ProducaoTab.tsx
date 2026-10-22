@@ -45,6 +45,7 @@ import { linkDoMaterial } from '../lib/linkMaterial'
 import { loadUploadTasks, type UploadTask } from './EditorMode'
 import { syncToCloud, forceSync, onSyncStatus } from '../lib/storage'
 import { nomeDoCliente } from '../lib/clientes'
+import EntreguesDoMesDialog, { useEntreguesDoMes } from './producao/EntreguesDoMesDialog'
 import { NAME_MAP } from '../lib/users'
 import { cargoDe, donoDoCard, isIsolado, isSocio, membrosDoCargo } from '../lib/access'
 import DriveVideoInbox from './DriveVideoInbox'
@@ -374,6 +375,10 @@ function FilterOption({ active, onClick, children }: { active: boolean; onClick:
 
 export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onSendToReview, onAutoDetected, onReviewNotify, onAppendHistory, boardRequest = null, onBoardRequestDone, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, publishFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros , boardFixo, tituloEsteira, semVisaoEquipe }: Props) {
   const [subTab, setSubTab]         = useState(boardFixo ?? 0)
+  const [entreguesAberto, setEntreguesAberto] = useState(false)
+  const doQuadroFixo = useCallback((it: ContentItem) => boardFixo === 0 ? it.tp === 'Reel' : it.tp !== 'Reel', [boardFixo])
+  const hojeRef = useMemo(() => new Date(), [])
+  const entreguesAgora = useEntreguesDoMes(boardFixo === 0 || boardFixo === 1 ? items : [], states, doQuadroFixo, hojeRef)
   const [filterClient, setFilterClient] = useState('all')
   const [filterToday, setFilterToday]   = useState(false)
   const [filterOverdue, setFilterOverdue] = useState(false)
@@ -1167,6 +1172,16 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                     {BOARDS[subTab].desc} · arraste os cards entre as etapas
                   </Typography>
                 </Box>
+              )}
+
+              {/* Minha esteira de vídeo/arte: o que já saiu do quadro (foi para o cliente,
+                  programado, publicado) continua à vista de quem fez. */}
+              {(boardFixo === 0 || boardFixo === 1) && (
+                <Tooltip title="O que você entregou no mês e já saiu da sua esteira">
+                  <Button size="small" onClick={() => setEntreguesAberto(true)} sx={toolbarBtnSx(false)}>
+                    ✓ Entregues no mês · {entreguesAgora.length}
+                  </Button>
+                </Tooltip>
               )}
 
               <Box sx={{ flex: 1 }} />
@@ -2893,6 +2908,11 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           Tirar do painel
         </MenuItem>
       </Menu>
+
+      {(boardFixo === 0 || boardFixo === 1) && (
+        <EntreguesDoMesDialog open={entreguesAberto} onClose={() => setEntreguesAberto(false)}
+          items={items} states={states} doQuadro={doQuadroFixo} rotulo={boardFixo === 0 ? 'vídeos' : 'artes'} />
+      )}
     </Box>
   )
 }
