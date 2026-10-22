@@ -9,12 +9,14 @@ describe('sm_states: gravação antiga nunca vence a mais nova', () => {
     // código novo: só o campo mudado
     const parcial = mesclarEstados(servidor, { '9': { notes: 'obs' } }, true, T + 2000)
     expect(parcial['9']).toMatchObject({ status: 4, statusAt: T + 1000, notes: 'obs', title: 'X' })
-    // código antigo: card inteiro com o status velho → status recusado, observação grava
+    // card inteiro com o status velho = cópia velha: ignorado INTEIRO (2026-10-22).
+    // Antes o status era recusado e o resto gravava — foi assim que, em 20/10, uma
+    // cópia de semanas atrás apagou histórico, link e envio de 18 vídeos.
     const inteiro = mesclarEstados(servidor, { '9': { status: 3, statusAt: T, notes: 'obs', title: 'X' } }, false, T + 2000)
-    expect(inteiro['9']).toMatchObject({ status: 4, statusAt: T + 1000, notes: 'obs' })
-    // card inteiro SEM versão (painel aberto com código antigo)
+    expect(inteiro['9']).toEqual(servidor['9'])
+    // card inteiro SEM versão (painel aberto com código antigo): mesma coisa
     const legado = mesclarEstados(servidor, { '9': { status: 3, notes: 'obs', title: 'X' } }, false, T + 2000)
-    expect(legado['9']).toMatchObject({ status: 4, statusAt: T + 1000, notes: 'obs' })
+    expect(legado['9']).toEqual(servidor['9'])
   })
 
   it('a mudança mais nova entra; a última ação vence numa sequência', () => {
@@ -64,10 +66,56 @@ describe('aba com código antigo (sem statusAt): vale o histórico', () => {
     expect(out['9']).toMatchObject({ status: 4, statusAt: T + 60_000 })
   })
 
-  it('cópia velha de aba antiga (histórico mais velho) continua recusada', () => {
+  it('cópia velha de aba antiga (histórico mais velho) continua recusada — inteira', () => {
     const servidor = { '9': { status: 4, statusAt: T + 60_000 } }
     const chegando = { '9': { status: 3, notes: 'obs', history: [{ action: '→ Aprovado', ts: T }] } }
     const out = mesclarEstados(servidor, chegando, false, T + 70_000)
-    expect(out['9']).toMatchObject({ status: 4, statusAt: T + 60_000, notes: 'obs' })
+    expect(out['9']).toEqual(servidor['9'])
+  })
+})
+
+describe('cópia velha de outro computador (caso 20/10: histórico, link e envio apagados)', () => {
+  const H_NOVO = [
+    { action: '→ Em produção', ts: 100 },
+    { action: '→ Revisão', ts: 200, user: 'kaique' },
+    { action: '→ Publicado', ts: 300 },
+  ]
+  const atual = {
+    status: 7, statusAt: 300, history: H_NOVO,
+    link: 'https://drive/v', footageLink: 'https://drive/v', sentToClientAt: 250, deliveryDate: 9000,
+  }
+
+  it('card inteiro com status mais velho: ignorado inteiro — nada volta, nada some', () => {
+    const velho = { status: 1, history: [{ action: '→ Em produção', ts: 100 }], deliveryDate: 1000 }
+    expect(mesclarEstados({ '1': atual }, { '1': velho }, false, 1000)['1']).toEqual(atual)
+  })
+
+  it('card inteiro com mesmo status mas histórico mais curto e mais velho: também é cópia velha', () => {
+    const velho = { status: 7, history: H_NOVO.slice(0, 2), deliveryDate: 1000 }
+    expect(mesclarEstados({ '1': atual }, { '1': velho }, false, 1000)['1']).toEqual(atual)
+  })
+
+  it('card inteiro legítimo nunca apaga campo que ele não traz', () => {
+    const novo = { status: 7, statusAt: 300, history: [...H_NOVO, { action: 'Comentário', ts: 400 }], caption: 'legenda' }
+    const r = mesclarEstados({ '1': atual }, { '1': novo }, false, 1000)['1'] as Record<string, unknown>
+    expect(r.link).toBe('https://drive/v')
+    expect(r.sentToClientAt).toBe(250)
+    expect(r.caption).toBe('legenda')
+    expect((r.history as unknown[]).length).toBe(4)
+  })
+
+  it('histórico só cresce, até em gravação campo a campo', () => {
+    const r = mesclarEstados({ '1': atual }, { '1': { history: H_NOVO.slice(0, 1) } }, true, 1000)['1'] as Record<string, unknown>
+    expect(r.history).toEqual(H_NOVO)
+  })
+
+  it('histórico de dois lados se soma, sem repetir, em ordem', () => {
+    const r = mesclarEstados({ '1': atual }, { '1': { history: [...H_NOVO.slice(0, 2), { action: 'Nota', ts: 350 }] } }, true, 1000)['1'] as Record<string, unknown>
+    expect((r.history as { ts: number }[]).map(h => h.ts)).toEqual([100, 200, 300, 350])
+  })
+
+  it('campo a campo continua podendo remover de propósito (null)', () => {
+    const r = mesclarEstados({ '1': atual }, { '1': { footageLink: null } }, true, 1000)['1'] as Record<string, unknown>
+    expect(r.footageLink).toBeUndefined()
   })
 })

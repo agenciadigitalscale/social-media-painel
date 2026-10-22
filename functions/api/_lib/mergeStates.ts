@@ -42,8 +42,47 @@ export function statusPodeEntrar(atual: Entrada | undefined, chegando: Entrada):
   return c > a
 }
 
+type Mov = { action?: unknown; ts?: unknown }
+const ehLista = (v: unknown): v is Mov[] => Array.isArray(v)
+const ultimoTs = (h: Mov[]) => h.reduce((m, x) => Math.max(m, num(x?.ts)), 0)
+
+/**
+ * Histórico só cresce (2026-10-22): soma os dois lados, sem repetir, em ordem.
+ * Ele é um registro do que aconteceu — e é dele que sai a data da entrega que
+ * conta na produção. Uma gravação com o histórico mais curto não apaga o resto.
+ */
+export function somarHistorico(a: unknown, b: unknown): Mov[] | undefined {
+  if (!ehLista(a) && !ehLista(b)) return undefined
+  const vistos = new Set<string>()
+  const out: Mov[] = []
+  for (const h of [...(ehLista(a) ? a : []), ...(ehLista(b) ? b : [])]) {
+    if (!h || typeof h !== 'object') continue
+    const k = `${num(h.ts)}|${String(h.action)}`
+    if (vistos.has(k)) continue
+    vistos.add(k)
+    out.push(h)
+  }
+  return out.sort((x, y) => num(x.ts) - num(y.ts))
+}
+
+/**
+ * O card inteiro que chega é uma CÓPIA VELHA? (2026-10-22, caso de 20/10: um
+ * computador com dados de semanas atrás regravou 18 vídeos do editor — o status
+ * ficou, mas o histórico, o link e o "enviado ao cliente" sumiram e a entrega
+ * voltou para uma data antiga.) Velha = status mais antigo que o gravado, ou o
+ * histórico mais curto E terminando antes do gravado.
+ */
+export function ehCopiaVelha(atual: Entrada | undefined, chegando: Entrada): boolean {
+  if (!atual) return false
+  if ('status' in chegando && !statusPodeEntrar(atual, chegando)) return true
+  const ha = ehLista(atual.history) ? atual.history : [], hc = ehLista(chegando.history) ? chegando.history : []
+  return ha.length > 0 && hc.length < ha.length && ultimoTs(hc) < ultimoTs(ha)
+}
+
 /** Junta UMA entrada. `parcial` = só os campos que mudaram (null = remover o campo). */
 export function mesclarEntrada(atual: Entrada | undefined, chegando: Entrada, parcial: boolean, agora: number): Entrada {
+  // Card inteiro vindo de cópia velha: ignorado INTEIRO — não só o status.
+  if (!parcial && atual && ehCopiaVelha(atual, chegando)) return atual
   const entrada: Entrada = { ...chegando }
   if (num(entrada.statusAt) > agora + FOLGA_FUTURO_MS) entrada.statusAt = agora
 
@@ -59,20 +98,28 @@ export function mesclarEntrada(atual: Entrada | undefined, chegando: Entrada, pa
   }
 
   if (!parcial) {
-    // Card inteiro: o que chegou é o card — exceto o status recusado, que
-    // continua o do servidor.
-    const out: Entrada = { ...entrada }
+    // Card inteiro: o que chegou sobrepõe o gravado, mas NUNCA apaga campo que
+    // ele não traz (antes trocava o card todo — link e carimbos sumiam). Apagar
+    // de propósito é só pela gravação campo a campo (`null`).
+    const out: Entrada = { ...(atual ?? {}), ...entrada }
     if (atual && !('status' in entrada)) {
       out.status = atual.status
       if (atual.statusAt !== undefined) out.statusAt = atual.statusAt
     }
+    const h = somarHistorico(atual?.history, entrada.history)
+    if (h) out.history = h
     return out
   }
 
   const out: Entrada = { ...(atual ?? {}) }
   for (const [k, v] of Object.entries(entrada)) {
+    if (k === 'history') continue
     if (v === null) delete out[k]
     else out[k] = v
+  }
+  if ('history' in entrada) {
+    const h = somarHistorico(atual?.history, entrada.history)
+    if (h) out.history = h
   }
   return out
 }
