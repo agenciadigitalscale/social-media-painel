@@ -162,18 +162,22 @@ export async function broadcastPush(
   payload: PushPayload,
   privateKeyJwkStr: string,
   publicKeyB64: string,
+  /** Só estes usuários (ex.: o alarme de perda vai só para os sócios). Ausente = todos. */
+  paraUsuarios?: readonly string[],
 ): Promise<void> {
   const row = await db.prepare('SELECT value FROM app_data WHERE key = ?').bind('push_subscriptions').first<{ value: string }>()
   if (!row) return
-  const subs: StoredSubscription[] = JSON.parse(row.value)
+  const todas: StoredSubscription[] = JSON.parse(row.value)
+  const subs = paraUsuarios ? todas.filter(x => paraUsuarios.includes(x.userId)) : todas
   if (!subs.length) return
 
   const privateKeyJwk: JsonWebKey = JSON.parse(privateKeyJwkStr)
   const results = await Promise.all(subs.map(s => sendWebPush(s, payload, privateKeyJwk, publicKeyB64)))
 
   // Remove expired subscriptions
-  const active = subs.filter((_, i) => !results[i].expired)
-  if (active.length !== subs.length) {
+  const expiradas = new Set(subs.filter((_, i) => results[i].expired))
+  const active = todas.filter(x => !expiradas.has(x))
+  if (active.length !== todas.length) {
     await db.prepare(`INSERT INTO app_data (key, value) VALUES (?1,?2) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated=CURRENT_TIMESTAMP`)
       .bind('push_subscriptions', JSON.stringify(active)).run()
   }

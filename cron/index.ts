@@ -127,6 +127,26 @@ async function runInstagram(env: Env): Promise<void> {
   }
 }
 
+/**
+ * Alarme de perda de dados (2026-10-23): de hora em hora o painel compara os cards
+ * com a hora anterior e, se algo encolheu (card sumiu, histórico/link/datas
+ * perdidos), avisa os sócios no celular. Logo depois do backup da hora.
+ */
+async function runIntegridade(env: Env): Promise<void> {
+  if (!env.CRON_SECRET || !env.SCAN_URL) return
+  try {
+    const res = await fetch(env.SCAN_URL.replace('/drive-scan', '/integridade'), {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.CRON_SECRET}` },
+    })
+    const data = await res.json().catch(() => ({})) as { ok?: boolean; alarme?: boolean; resumo?: string; error?: string }
+    if (!res.ok || !data.ok) { console.error(`[cron] integridade falhou (${res.status}): ${data.error ?? ''}`); return }
+    if (data.alarme) console.error(`[cron] ALARME de perda de dados: ${data.resumo}`)
+  } catch (e) {
+    console.error('[cron] erro na verificação de integridade', e)
+  }
+}
+
 export default {
   async scheduled(
     event: { scheduledTime?: number },
@@ -148,5 +168,8 @@ export default {
     // em 5 min, mas só age se a cópia da hora/do dia ainda não existir —
     // falhou, tenta de novo no disparo seguinte.
     if (minute % 5 === 0) ctx.waitUntil(runBackupNow(env))
+
+    // Alarme de perda: uma vez por hora, depois do backup.
+    if (minute === 10) ctx.waitUntil(runIntegridade(env))
   },
 }
