@@ -118,7 +118,7 @@ import CronogramaTab from './components/CronogramaTab'
 import EsteiraRoteirosTab from './components/EsteiraRoteirosTab'
 import UltimaPostagemTab from './components/UltimaPostagemTab'
 import HistoryIcon from '@mui/icons-material/History'
-import { ESTEIRA_ROTEIROS_KEY, EVENTO_ESTEIRA_ROTEIROS, carregarEsteira, chaveDoMes, garantirCardDoCliente, preencherMes, salvarEsteira } from './lib/esteiraRoteiros'
+import { ESTEIRA_ROTEIROS_KEY, EVENTO_ESTEIRA_ROTEIROS, carregarEsteira, chaveDoMes, garantirCardDoCliente, preencherMeses, arquivarDeRemovidos, salvarEsteira } from './lib/esteiraRoteiros'
 import ViewListIcon from '@mui/icons-material/ViewList'
 import Foguete from './shared/ui/Foguete'
 import RequestQuoteIcon from '@mui/icons-material/RequestQuote'
@@ -777,14 +777,20 @@ export default function App() {
   useEffect(() => {
     if (!dadosDoServidor) return
     const preencher = () => {
-      const hoje = new Date()
+      const ids = allClients.map(c => c.name)
+      const carteira = carregarCarteira()
+      const agora = Date.now()
       const atual = carregarEsteira()
-      const novo = preencherMes(atual, allClients.map(c => c.name), carregarCarteira(), hoje.getFullYear(), hoje.getMonth(), Date.now())
+      // O mês atual e os 2 seguintes já com todos os mensais ativos (a copy adianta);
+      // cliente removido: os cards dele vão para Arquivados (e voltam se ele voltar).
+      const novo = arquivarDeRemovidos(preencherMeses(atual, ids, carteira, new Date(agora), 3, agora), ids, carteira, agora)
       if (novo !== atual) salvarEsteira(novo)
     }
     preencher()
     const t = setInterval(preencher, 30 * 60_000)
-    return () => clearInterval(t)
+    // Removeu ou trouxe de volta um cliente (aqui ou em outro aparelho): na hora.
+    window.addEventListener(EVENTO_PADRAO, preencher)
+    return () => { clearInterval(t); window.removeEventListener(EVENTO_PADRAO, preencher) }
   }, [dadosDoServidor, allClients])
 
   // ── Sync D1 no mount — restaura dados se cache estiver vazio ──────────────

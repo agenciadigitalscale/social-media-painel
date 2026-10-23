@@ -30,7 +30,7 @@ import { naCarteira } from '../lib/planejamentoMes'
 import {
   EVENTO_ESTEIRA_ROTEIROS, RESPONSAVEL_PADRAO, arquivarCard, cardsDaTela, carregarEsteira, chaveDoMes, criarCard,
   editarCard, ehFreelancer, excluirCard, linkValido, moverCard, nomeDoCard, quantidadeValida, restaurarCard,
-  salvarEsteira, type CardRoteiro, type EsteiraStore, type NovoCardRoteiro,
+  preencherMes, salvarEsteira, type CardRoteiro, type EsteiraStore, type NovoCardRoteiro,
 } from '../lib/esteiraRoteiros'
 
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
@@ -60,6 +60,14 @@ export default function EsteiraRoteirosTab({ clients, now }: { clients: string[]
   const [ano, setAno] = useState(now.getFullYear())
   const [mesIdx, setMesIdx] = useState(now.getMonth())
   const mes = chaveDoMes(ano, mesIdx)
+  // Mês do futuro aberto aqui (além dos 3 que o painel já deixa prontos): já nasce
+  // com todos os mensais ativos em "A fazer", para a copy adiantar.
+  useEffect(() => {
+    if (new Date(ano, mesIdx, 1) < new Date(now.getFullYear(), now.getMonth(), 1)) return
+    const s0 = carregarEsteira()
+    const n = preencherMes(s0, clients, carteira, ano, mesIdx, Date.now())
+    if (n !== s0) { setStore(n); salvarEsteira(n) }
+  }, [ano, mesIdx, clients, carteira, now])
   const [tipo, setTipo] = useState<'todos' | 'fixos' | 'freelancer'>('todos')
   const [busca, setBusca] = useState('')
   const [arquivados, setArquivados] = useState(false)

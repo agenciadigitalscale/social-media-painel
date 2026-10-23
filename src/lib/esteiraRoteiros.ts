@@ -38,6 +38,8 @@ export interface CardRoteiro {
   status: StatusRoteiro
   /** De onde veio o card arquivado — é para onde ele volta ao restaurar. */
   statusAntes?: 'a_fazer' | 'pronto'
+  /** Arquivado SOZINHO porque o cliente saiu da carteira — volta sozinho se ele voltar. */
+  arquivadoPorRemocao?: boolean
   link?: string
   /** Quantos roteiros o documento do mês traz. */
   quantidade?: number
@@ -96,6 +98,42 @@ export function preencherMes(store: EsteiraStore, ids: readonly string[], cartei
   return s
 }
 
+/**
+ * Os meses que a esteira já deixa prontos: o atual e os próximos (2026-10-23 —
+ * "nos meses dos próximos, deixe todos que não estão feitos lá para a copy
+ * arrastar"). A copy adianta o trabalho sem esperar a virada do mês.
+ */
+export function preencherMeses(store: EsteiraStore, ids: readonly string[], carteira: CarteiraStore, ref: Date, quantos: number, agora: number): EsteiraStore {
+  let s = store
+  for (let i = 0; i < quantos; i++) {
+    const d = new Date(ref.getFullYear(), ref.getMonth() + i, 1)
+    s = preencherMes(s, ids, carteira, d.getFullYear(), d.getMonth(), agora)
+  }
+  return s
+}
+
+/**
+ * Cliente removido (2026-10-23): os cards fixos dele de mês em que ele está fora
+ * da carteira — ou de cliente que nem está mais no cadastro — vão para Arquivados.
+ * Nada é apagado; se o cliente voltar, os que ESTA regra arquivou voltam sozinhos.
+ */
+export function arquivarDeRemovidos(store: EsteiraStore, ids: readonly string[], carteira: CarteiraStore, agora: number): EsteiraStore {
+  const noCadastro = new Set(ids)
+  let s = store
+  for (const c of Object.values(store)) {
+    if (c.tipo !== 'fixo' || !c.clienteId) continue
+    const [ano, mes] = c.mes.split('-').map(Number)
+    const fora = !noCadastro.has(c.clienteId) || !ativoNoMes(carteira, c.clienteId, ano, mes - 1)
+    if (fora && c.status !== 'arquivado') {
+      s = { ...s, [c.id]: { ...c, status: 'arquivado', statusAntes: c.status, arquivadoPorRemocao: true, atualizadoEm: agora } }
+    } else if (!fora && c.status === 'arquivado' && c.arquivadoPorRemocao) {
+      const { statusAntes, arquivadoPorRemocao: _r, ...resto } = c
+      s = { ...s, [c.id]: { ...resto, status: statusAntes ?? 'a_fazer', atualizadoEm: agora } }
+    }
+  }
+  return s
+}
+
 export interface NovoCardRoteiro {
   tipo: TipoRoteiro
   clienteId?: string
@@ -150,7 +188,7 @@ export function arquivarCard(store: EsteiraStore, id: string, agora: number): Es
 export function restaurarCard(store: EsteiraStore, id: string, agora: number): EsteiraStore {
   const c = store[id]
   if (!c || c.status !== 'arquivado') return store
-  const { statusAntes, ...resto } = c
+  const { statusAntes, arquivadoPorRemocao: _r, ...resto } = c
   return { ...store, [id]: { ...resto, status: statusAntes ?? 'a_fazer', atualizadoEm: agora } }
 }
 

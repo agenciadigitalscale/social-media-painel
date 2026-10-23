@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   garantirCardDoCliente, criarCard, moverCard, arquivarCard, restaurarCard, excluirCard,
-  cardsDaTela, jaTemCard, linkValido, ehFreelancer, quantidadeValida, editarCard, preencherMes, idAutomatico, type EsteiraStore,
+  cardsDaTela, jaTemCard, linkValido, ehFreelancer, quantidadeValida, editarCard, preencherMes, idAutomatico, preencherMeses, arquivarDeRemovidos, type EsteiraStore,
 } from '../esteiraRoteiros'
 
 const T = 1_790_000_000_000
@@ -113,5 +113,45 @@ describe('esteira de roteiros do mês', () => {
     const b = garantirCardDoCliente({}, 'Aventur', '2026-11', T + 999)
     expect(Object.keys(a)).toEqual(Object.keys(b))
     expect(Object.keys({ ...a, ...b })).toHaveLength(1)
+  })
+
+  it('meses seguintes: o atual e os próximos já nascem com todos os mensais ativos', () => {
+    const carteira = { Aventur: { tipo: 'mensal' as const }, Sai: { tipo: 'mensal' as const, saida: '2026-11' } }
+    const s = preencherMeses({}, ['Aventur', 'Sai'], carteira, new Date(2026, 9, 23), 3, T)
+    const porMes = (m: string) => Object.values(s).filter(c => c.mes === m).map(c => c.clienteId).sort()
+    expect(porMes('2026-10')).toEqual(['Aventur', 'Sai'])
+    expect(porMes('2026-11')).toEqual(['Aventur'])
+    expect(porMes('2026-12')).toEqual(['Aventur'])
+  })
+
+  it('cliente removido: os cards dele do mês de saída em diante vão para Arquivados (até os prontos)', () => {
+    let s = preencherMes({}, ['Mega', 'Aventur'], {}, 2026, 9, T)
+    s = moverCard(s, idAutomatico('Mega', '2026-10'), 'pronto', T + 1)
+    const carteira = { Mega: { tipo: 'mensal' as const, saida: '2026-10' } }
+    const r = arquivarDeRemovidos(s, ['Mega', 'Aventur'], carteira, T + 2)
+    expect(r[idAutomatico('Mega', '2026-10')]).toMatchObject({ status: 'arquivado', statusAntes: 'pronto', arquivadoPorRemocao: true })
+    expect(r[idAutomatico('Aventur', '2026-10')].status).toBe('a_fazer')
+  })
+
+  it('cliente que voltou: os cards arquivados pela remoção voltam sozinhos; o arquivado à mão não', () => {
+    let s = preencherMes({}, ['Mega', 'Aventur'], {}, 2026, 9, T)
+    s = arquivarCard(s, idAutomatico('Aventur', '2026-10'), T + 1) // à mão
+    s = arquivarDeRemovidos(s, ['Mega', 'Aventur'], { Mega: { tipo: 'mensal' as const, saida: '2026-10' } }, T + 2)
+    const volta = arquivarDeRemovidos(s, ['Mega', 'Aventur'], {}, T + 3)
+    expect(volta[idAutomatico('Mega', '2026-10')].status).toBe('a_fazer')
+    expect(volta[idAutomatico('Aventur', '2026-10')].status).toBe('arquivado')
+  })
+
+  it('cliente que saiu do cadastro (oculto/arquivado) também arquiva; freelancer avulso nunca', () => {
+    let s = preencherMes({}, ['Sumiu'], {}, 2026, 9, T)
+    s = criarCard(s, { tipo: 'freelancer', nomeLivre: 'Job', mes: '2026-10' }, T).store
+    const r = arquivarDeRemovidos(s, [], {}, T + 1)
+    expect(r[idAutomatico('Sumiu', '2026-10')].status).toBe('arquivado')
+    expect(Object.values(r).find(c => c.tipo === 'freelancer')!.status).toBe('a_fazer')
+  })
+
+  it('nada a mudar: devolve o mesmo store (não regrava à toa)', () => {
+    const s = preencherMes({}, ['Aventur'], {}, 2026, 9, T)
+    expect(arquivarDeRemovidos(s, ['Aventur'], {}, T + 1)).toBe(s)
   })
 })
