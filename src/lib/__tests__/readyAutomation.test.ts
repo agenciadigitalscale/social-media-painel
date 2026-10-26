@@ -251,6 +251,10 @@ describe('a trava da revarredura não vai ao servidor', () => {
       && String((init as RequestInit).body).includes('sm_ready_automation')).length
 
     const { base } = deps({ fetchFiles: async () => ({ ok: true, folderId: 'F', files: [] }) })
+    // O teste anterior pode ter subido este MESMO "não encontrado" no mesmo
+    // milissegundo — valor idêntico ao último confirmado não sobe de novo, e a
+    // conta daria zero. Um carimbo de hora novo separa as duas gravações.
+    await new Promise(r => setTimeout(r, 3))
     await runReadyAutomation(base)
     // Relógio andou entre as varreduras, como na vida real (90s).
     await new Promise(r => setTimeout(r, 5))
