@@ -93,7 +93,17 @@ export const GAVETAS_ANTIGAS: Readonly<Record<string, string>> = {
 export function membroDaGaveta(painelId: string, paineis: PaineisStore | undefined): string | undefined {
   const viva = paineis?.paineis?.find(p => p.id === painelId)
   if (viva?.membro) return viva.membro
-  return GAVETAS_ANTIGAS[painelId]
+  return GAVETAS_ANTIGAS[painelId] ?? membroDaGavetaAutomatica(painelId)
+}
+
+/**
+ * Gaveta automática da equipe (`pn_auto_<área>_<membro>`, lib/paineis): o próprio
+ * id diz de quem é. Assim o card atribuído a ela tem dono mesmo antes de a gaveta
+ * chegar ao `sm_paineis` do servidor — sem isto o editor não receberia o card.
+ */
+export function membroDaGavetaAutomatica(painelId: string): string | undefined {
+  const m = /^pn_auto_(?:vid|des)_([a-z0-9_]+)$/.exec(painelId)
+  return m && CARGO_DO_USUARIO[m[1]] ? m[1] : undefined
 }
 
 /**

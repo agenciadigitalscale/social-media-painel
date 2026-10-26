@@ -50,8 +50,8 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import theme, { BRAND, DS } from './theme'
 import { PESQ_LOGO } from './lib/pesq/brand'
-import { ATRIBUICOES_KEY, PAINEIS_KEY, EVENTO_ATRIBUICOES, atribuirAoMembro, carregarAtribuicoes, carregarPaineis, salvarAtribuicoes, garantirGavetasDaEquipe, salvarPaineis, type PainelArea } from './lib/paineis'
-import { cargoDe, donoDoCard, isIsolado, isSocio, membrosDoCargo, podeVerCard } from './lib/access'
+import { ATRIBUICOES_KEY, PAINEIS_KEY, EVENTO_ATRIBUICOES, atribuirAoMembro, carregarAtribuicoes, carregarPaineis, salvarAtribuicoes, paineisGravados, salvarPaineis, type PainelArea } from './lib/paineis'
+import { cargoDe, donoDoCard, isIsolado, isSocio, podeVerCard } from './lib/access'
 import { motivoDoBloqueio, podeMover } from './lib/fluxo'
 import { TextField } from '@mui/material'
 import { MANUAIS_KEY, EXCLUIR_KEY } from './lib/producaoEditor'
@@ -1508,12 +1508,10 @@ export default function App() {
   // depois de baixar o que está no servidor; o id é fixo por pessoa (não duplica).
   useEffect(() => {
     if (!isSocio(currentUser) || !dadosDoServidor) return
-    const equipe = [
-      ...membrosDoCargo('editor').map(membro => ({ membro, area: 'vid' as const })),
-      ...membrosDoCargo('design').map(membro => ({ membro, area: 'des' as const })),
-    ]
-    const { store, mudou } = garantirGavetasDaEquipe(carregarPaineis(), equipe)
-    if (!mudou) return
+    // O carregarPaineis já mostra a gaveta de quem entrou; aqui ela é GRAVADA.
+    const store = carregarPaineis()
+    const gravados = new Set(paineisGravados().map(p => p.id))
+    if (store.paineis.every(p => gravados.has(p.id))) return
     salvarPaineis(store)
     setPesqSyncVersion(v => v + 1)
     window.dispatchEvent(new Event(EVENTO_ATRIBUICOES))

@@ -19,7 +19,7 @@ import { syncToCloud } from './storage'
 import { DS } from '../theme'
 import { NAME_MAP, getDisplayName } from './users'
 import type { ItemState } from '../types'
-import { GAVETAS_ANTIGAS } from './access'
+import { GAVETAS_ANTIGAS, membrosDoCargo } from './access'
 
 export const PAINEIS_KEY    = 'sm_paineis'
 export const ATRIBUICOES_KEY = 'sm_card_painel'
@@ -288,6 +288,12 @@ export function garantirGavetasDaEquipe(
   return { store: s, mudou }
 }
 
+/** Quem produz tem gaveta: editor no Vídeo, designer no Design. */
+export const EQUIPE_COM_GAVETA = (): { membro: string; area: PainelArea }[] => [
+  ...membrosDoCargo('editor').map(membro => ({ membro, area: 'vid' as const })),
+  ...membrosDoCargo('design').map(membro => ({ membro, area: 'des' as const })),
+]
+
 // ── Persistência ──────────────────────────────────────────────────────
 export function carregarPaineis(): PaineisStore {
   try {
@@ -296,9 +302,19 @@ export function carregarPaineis(): PaineisStore {
     const limpo = { paineis: raw.paineis.filter(p => p && p.id && p.area), semeado: raw.semeado ?? {} }
     // Auto-cura: gaveta com nome de membro passa a contar para ele, sem persistir
     // (cada aparelho deriva o mesmo, pelos mesmos nomes). Quando a equipe edita a
-    // gaveta na tela, o vínculo é salvo de vez.
-    return vincularGavetasPorNome(limpo).store
+    // gaveta na tela, o vínculo é salvo de vez. Idem a gaveta de quem entrou na
+    // equipe: aparece em todo aparelho já, com id fixo (não duplica), e o sócio a
+    // grava de vez no servidor.
+    return garantirGavetasDaEquipe(limpo, EQUIPE_COM_GAVETA()).store
   } catch { return { ...PAINEIS_VAZIO } }
+}
+
+/** Só a gaveta que já está GRAVADA no `sm_paineis` (sem as derivadas). */
+export function paineisGravados(): Painel[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PAINEIS_KEY) ?? 'null') as PaineisStore | null
+    return Array.isArray(raw?.paineis) ? raw.paineis : []
+  } catch { return [] }
 }
 
 export function salvarPaineis(store: PaineisStore): void {
