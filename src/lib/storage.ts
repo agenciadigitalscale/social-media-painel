@@ -842,22 +842,50 @@ export function flushQueueBeforeUnload(): void {
 
 /*
  * Rede de segurança (2026-10-26): gravação no navegador que estoura o espaço não
- * derruba mais a tela inteira. O valor continua na memória do painel e na fila,
- * e vai ao servidor — que é quem guarda. Só a fila fica de fora: ela precisa do
- * erro para se compactar (saveQueue).
+ * derruba mais a tela inteira. Só a fila fica de fora: ela precisa do erro para
+ * se compactar (saveQueue).
+ *
+ * E a LEITURA seguinte devolve o valor novo, não a cópia velha que ficou no disco.
+ * Foi assim que os links da aba Roteiros sumiram: o valor baixado do servidor não
+ * coube, o painel releu a cópia velha (vazia), recriou os cards sem link e mandou
+ * por cima. Sem espaço, a cópia velha sai do disco e o valor fica na memória da
+ * aba — quem lê vê sempre o último valor gravado.
  */
 if (typeof Storage !== 'undefined' && typeof window !== 'undefined') {
-  const original = Storage.prototype.setItem
-  if (!(original as { __dsSeguro?: boolean }).__dsSeguro) {
+  const proto = Storage.prototype
+  const original = { set: proto.setItem, get: proto.getItem, remove: proto.removeItem, clear: proto.clear }
+  if (!(original.set as { __dsSeguro?: boolean }).__dsSeguro) {
+    const memoria = new WeakMap<Storage, Map<string, string>>()
+    const daMemoria = (st: Storage) => { let m = memoria.get(st); if (!m) { m = new Map(); memoria.set(st, m) } return m }
     const seguro = function (this: Storage, key: string, value: string): void {
-      try { original.call(this, key, value) } catch (e) {
+      try {
+        original.set.call(this, key, value)
+        memoria.get(this)?.delete(key)
+      } catch (e) {
         const semEspaco = e instanceof Error && /quota/i.test(`${e.name} ${e.message}`)
         if (key === QUEUE_KEY || !semEspaco) throw e
+        // A cópia velha não pode ficar sendo lida; tirá-la ainda libera espaço.
+        try { original.remove.call(this, key) } catch { /* nada */ }
+        try { original.set.call(this, key, value); memoria.get(this)?.delete(key); return } catch { /* segue na memória */ }
+        daMemoria(this).set(key, String(value))
         console.warn(`[storage] navegador sem espaço ao gravar ${key} — segue na memória e no servidor`)
         try { window.dispatchEvent(new Event('ds:semEspaco')) } catch { /* nada */ }
       }
     }
     ;(seguro as { __dsSeguro?: boolean }).__dsSeguro = true
-    Storage.prototype.setItem = seguro
+    proto.setItem = seguro
+    proto.getItem = function (this: Storage, key: string): string | null {
+      const m = memoria.get(this)
+      if (m?.has(key)) return m.get(key)!
+      return original.get.call(this, key)
+    }
+    proto.removeItem = function (this: Storage, key: string): void {
+      memoria.get(this)?.delete(key)
+      original.remove.call(this, key)
+    }
+    proto.clear = function (this: Storage): void {
+      memoria.get(this)?.clear()
+      original.clear.call(this)
+    }
   }
 }

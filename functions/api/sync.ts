@@ -4,6 +4,7 @@ import { ensureColumn, ensureIndex } from './_lib/schema-guard'
 import { protectMediaLinksValue } from './_lib/drive-video-links'
 import { encolhimentoSuspeito } from './_lib/encolhimento'
 import { mesclarEstados } from './_lib/mergeStates'
+import { protegerEsteira } from './_lib/esteiraGuard'
 import { resolveWorkspace, scopedKey, workspaceKeyPrefix, unscopeKey } from './_lib/workspace'
 import {
   CHAVES_CONTEXTO, contextoDe, decidirEscrita, precisaContexto, usuarioDaSessao, valorVisivel,
@@ -333,9 +334,16 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
         }
       }
 
-      const protectedValue = body.key === 'sm_media_links'
+      let protectedValue = body.key === 'sm_media_links'
         ? protectMediaLinksValue(body.value)
         : body.value
+      // Roteiros: card recriado vazio por navegador sem os dados não apaga link.
+      if (body.key === 'sm_esteira_roteiros' && typeof protectedValue === 'string') {
+        const atual = await env.DB.prepare('SELECT value FROM app_data WHERE key = ?1').bind(dbKey).first<{ value: string }>()
+        const p = protegerEsteira(atual?.value, protectedValue)
+        if (p.corrigidos) console.warn(`[sync] sm_esteira_roteiros: ${p.corrigidos} card(s) protegidos de cópia velha`)
+        protectedValue = p.value
+      }
       const after = await env.DB.prepare(`
         INSERT INTO app_data (key, value, rev)
         VALUES (?1, ?2, 1)
