@@ -203,7 +203,8 @@ let   _pendingCount = 0
  * entrada leva a aba dona; a aba só envia as próprias, e herda as de uma aba que
  * fechou (sem batimento há mais de VIVA_MS) — trabalho de aba fechada não se perde.
  */
-type EntradaFila = { key: string; value: string; at?: number; tab?: string }
+/** `ref`: o valor é o que está agora em localStorage[key] (fila compactada por falta de espaço). */
+type EntradaFila = { key: string; value: string; at?: number; tab?: string; ref?: boolean }
 const TAB_ID   = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `tab-${Date.now()}-${Math.random()}`
 const TABS_KEY = 'sm_sync_tabs'
 const VIVA_MS  = 3 * 60_000
@@ -445,8 +446,38 @@ function emit(s: SyncStatus) {
   _listeners.forEach(fn => fn(s, _pendingCount))
 }
 
+/*
+ * Falta de espaço no navegador (2026-10-26). O `sm_states` passou de 2 MB e a fila
+ * guardava OUTRA cópia inteira dele: o armazenamento (~5 MB) estourava e o painel
+ * caía na tela de erro ("…'sm_sync_queue' exceeded the quota") ao atribuir cards.
+ * Sem espaço, a fila compacta: entrada cujo valor é IGUAL ao que já está salvo na
+ * própria chave vira referência a ela. Se nem assim couber, a fila segue na
+ * memória desta aba e o envio continua — o painel não cai e nada se perde (o
+ * servidor é quem guarda). No uso normal (com espaço) nada muda.
+ */
+let _filaMemoria: EntradaFila[] | null = null
+
+function resolver(fila: EntradaFila[]): EntradaFila[] {
+  const out: EntradaFila[] = []
+  for (const e of fila) {
+    if (!e.ref) { out.push(e); continue }
+    const v = localStorage.getItem(e.key)
+    if (v != null) out.push({ ...e, value: v, ref: undefined })
+  }
+  return out
+}
+
 function loadQueue(): EntradaFila[] {
-  try { return JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]') } catch { return [] }
+  if (_filaMemoria) return _filaMemoria
+  try { return resolver(JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]') as EntradaFila[]) } catch { return [] }
+}
+
+/** Grava no navegador sem nunca derrubar a tela: sem espaço, avisa e segue (o valor continua na memória e na fila). */
+export function gravarLocal(key: string, value: string): boolean {
+  try { localStorage.setItem(key, value); return true } catch (e) {
+    console.warn(`[storage] sem espaço para gravar ${key} no navegador — segue na memória e vai ao servidor`, e)
+    return false
+  }
 }
 
 /** Só as entradas desta aba (ou herdadas de aba fechada). */
@@ -456,7 +487,19 @@ function minhaFila(): EntradaFila[] {
 }
 
 function saveQueue(q: EntradaFila[]) {
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(q))
+  try {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(q))
+    _filaMemoria = null
+  } catch {
+    const compacta = q.map(e => (!e.ref && localStorage.getItem(e.key) === e.value ? { key: e.key, value: '', at: e.at, tab: e.tab, ref: true } : e))
+    try {
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(compacta))
+      _filaMemoria = null
+    } catch {
+      console.warn('[storage] sem espaço nem para a fila compactada — ela segue na memória desta aba')
+      _filaMemoria = q
+    }
+  }
   const vivas = abasVivas()
   _pendingCount = q.filter(e => ehMinha(e, vivas)).length
 }
@@ -795,4 +838,26 @@ export function flushQueueBeforeUnload(): void {
   })
   // Só as minhas saem: a fila das outras abas abertas continua com elas.
   saveQueue(loadQueue().filter(e => !ehMinha(e, vivas)))
+}
+
+/*
+ * Rede de segurança (2026-10-26): gravação no navegador que estoura o espaço não
+ * derruba mais a tela inteira. O valor continua na memória do painel e na fila,
+ * e vai ao servidor — que é quem guarda. Só a fila fica de fora: ela precisa do
+ * erro para se compactar (saveQueue).
+ */
+if (typeof Storage !== 'undefined' && typeof window !== 'undefined') {
+  const original = Storage.prototype.setItem
+  if (!(original as { __dsSeguro?: boolean }).__dsSeguro) {
+    const seguro = function (this: Storage, key: string, value: string): void {
+      try { original.call(this, key, value) } catch (e) {
+        const semEspaco = e instanceof Error && /quota/i.test(`${e.name} ${e.message}`)
+        if (key === QUEUE_KEY || !semEspaco) throw e
+        console.warn(`[storage] navegador sem espaço ao gravar ${key} — segue na memória e no servidor`)
+        try { window.dispatchEvent(new Event('ds:semEspaco')) } catch { /* nada */ }
+      }
+    }
+    ;(seguro as { __dsSeguro?: boolean }).__dsSeguro = true
+    Storage.prototype.setItem = seguro
+  }
 }
