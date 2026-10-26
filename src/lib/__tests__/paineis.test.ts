@@ -198,3 +198,28 @@ describe('vincularGavetasPorNome', () => {
     expect(vincularGavetasPorNome(um).mudou).toBe(false)
   })
 })
+
+import { garantirGavetasDaEquipe } from '../paineis'
+
+describe('toda pessoa que produz tem gaveta (Emanuelly, 2026-10-26)', () => {
+  it('cria a gaveta de quem não tem, com o nome e o vínculo dela', () => {
+    const base = criarPainel(PAINEIS_VAZIO, 'vid', 'Kaique', 'kaique')
+    const { store, mudou } = garantirGavetasDaEquipe(base, [{ membro: 'kaique', area: 'vid' }, { membro: 'emanuelly', area: 'vid' }])
+    expect(mudou).toBe(true)
+    const vid = paineisDaArea(store, 'vid')
+    expect(vid.map(p => p.membro)).toEqual(['kaique', 'emanuelly'])
+    expect(vid[1]).toMatchObject({ id: 'pn_auto_vid_emanuelly', nome: 'Emanuelly' })
+  })
+  it('não duplica: rodar de novo ou em outro aparelho dá a mesma gaveta', () => {
+    const a = garantirGavetasDaEquipe(PAINEIS_VAZIO, [{ membro: 'emanuelly', area: 'vid' }]).store
+    const b = garantirGavetasDaEquipe(a, [{ membro: 'emanuelly', area: 'vid' }])
+    expect(b.mudou).toBe(false)
+    expect(paineisDaArea(b.store, 'vid')).toHaveLength(1)
+  })
+  it('gaveta vaga com o nome dela é ligada em vez de criar outra', () => {
+    const vaga = criarPainel(PAINEIS_VAZIO, 'vid', 'Emanuelly Souza')
+    const { store } = garantirGavetasDaEquipe(vaga, [{ membro: 'emanuelly', area: 'vid' }])
+    expect(paineisDaArea(store, 'vid')).toHaveLength(1)
+    expect(paineisDaArea(store, 'vid')[0].membro).toBe('emanuelly')
+  })
+})

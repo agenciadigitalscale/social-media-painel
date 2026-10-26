@@ -119,6 +119,7 @@ const URGENCY_LABEL: Record<Urgency, string> = {
  */
 const ALERTAS_SO_DA_AREA: Record<string, AlertType[]> = {
   kaique: [],
+  emanuelly: [],
 }
 
 const DAILY_QUOTES = [

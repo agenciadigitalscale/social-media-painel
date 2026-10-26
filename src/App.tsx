@@ -50,8 +50,8 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import theme, { BRAND, DS } from './theme'
 import { PESQ_LOGO } from './lib/pesq/brand'
-import { ATRIBUICOES_KEY, PAINEIS_KEY, EVENTO_ATRIBUICOES, atribuirAoMembro, carregarAtribuicoes, carregarPaineis, salvarAtribuicoes, type PainelArea } from './lib/paineis'
-import { cargoDe, donoDoCard, isIsolado, isSocio, podeVerCard } from './lib/access'
+import { ATRIBUICOES_KEY, PAINEIS_KEY, EVENTO_ATRIBUICOES, atribuirAoMembro, carregarAtribuicoes, carregarPaineis, salvarAtribuicoes, garantirGavetasDaEquipe, salvarPaineis, type PainelArea } from './lib/paineis'
+import { cargoDe, donoDoCard, isIsolado, isSocio, membrosDoCargo, podeVerCard } from './lib/access'
 import { motivoDoBloqueio, podeMover } from './lib/fluxo'
 import { TextField } from '@mui/material'
 import { MANUAIS_KEY, EXCLUIR_KEY } from './lib/producaoEditor'
@@ -1048,9 +1048,9 @@ export default function App() {
     let title = 'DS HUB ☀'
     let body  = ''
     const late = lateItems.length
-    if (currentUser === 'kaique') {
+    if (cargoDe(currentUser) === 'editor') {
       const reels = allItems.filter(i => i.tp === 'Reel' && [0,1].includes(states[i.i]?.status ?? i.s)).length
-      title = `${hrGt}, Kaique! 🎬`
+      title = `${hrGt}, ${(NAME_MAP[currentUser ?? '']?.fullName ?? '').split(' ')[0] || 'editor'}! 🎬`
       body = [reels > 0 ? `${reels} reel${reels !== 1 ? 's' : ''} na fila` : '', late > 0 ? `⚠ ${late} atrasado${late !== 1 ? 's' : ''}` : '', todayPend.length > 0 ? `${todayPend.length} publicação${todayPend.length !== 1 ? 'ões' : ''} hoje` : ''].filter(Boolean).join(' · ') || 'Tudo em dia! ✅'
     } else if (currentUser === 'jhones') {
       const queue = allItems.filter(i => i.tp !== 'Feed' && [0,1].includes(states[i.i]?.status ?? i.s)).length
@@ -1501,6 +1501,23 @@ export default function App() {
     for (const id of ids) updateItem(id, { assignedEditor: membro })
     window.dispatchEvent(new Event(EVENTO_ATRIBUICOES))
   }, [updateItem])
+
+  // Toda pessoa que produz tem gaveta (2026-10-26): editor no Vídeo, designer no
+  // Design. Quem entra na equipe aparece em "Quem vai editar/criar", na atribuição
+  // e na contagem sem ninguém criar gaveta à mão. Roda no aparelho de um sócio,
+  // depois de baixar o que está no servidor; o id é fixo por pessoa (não duplica).
+  useEffect(() => {
+    if (!isSocio(currentUser) || !dadosDoServidor) return
+    const equipe = [
+      ...membrosDoCargo('editor').map(membro => ({ membro, area: 'vid' as const })),
+      ...membrosDoCargo('design').map(membro => ({ membro, area: 'des' as const })),
+    ]
+    const { store, mudou } = garantirGavetasDaEquipe(carregarPaineis(), equipe)
+    if (!mudou) return
+    salvarPaineis(store)
+    setPesqSyncVersion(v => v + 1)
+    window.dispatchEvent(new Event(EVENTO_ATRIBUICOES))
+  }, [currentUser, dadosDoServidor])
 
   // Uma vez só (pedido do dono, 2026-09-29): todo Reel de trabalho real sem
   // ninguém atribuído vai para o Kaique, o editor da casa. Roda no aparelho de um
@@ -2953,7 +2970,7 @@ export default function App() {
     // 26 — produção de vídeo do Kaique em tempo real, para a liderança (sócios +
     // head). Nasce da cobrança do Pradox por "quantos vídeos foram feitos"; o
     // `hidden` dinâmico esconde a aba de todos os outros. Mostra no mobile ("Mais").
-    { label: 'Vídeos Kaique', icon: <OndemandVideoIcon />, mobileOnly: false, hidden: !canViewProducaoKaique(currentUser ?? ''), mobileHidden: false }, // 26
+    { label: 'Vídeos dos editores', icon: <OndemandVideoIcon />, mobileOnly: false, hidden: !canViewProducaoKaique(currentUser ?? ''), mobileHidden: false }, // 26
     // 27 e 28 — produção de artes por designer (Jhones, Julio), em tempo real, para
     // os sócios (Pradox e Testa). Mesmo formato da aba de vídeo do Kaique; conta
     // artes APROVADAS. `hidden` dinâmico esconde de todos os outros.

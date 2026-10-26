@@ -145,7 +145,7 @@ function membroPorNome(nome: string): string | undefined {
   const n = nome.trim().toLowerCase()
   if (!n) return undefined
   for (const user of Object.keys(NAME_MAP)) {
-    if (user === n || getDisplayName(user).toLowerCase() === n) return user
+    if (user === n || getDisplayName(user).toLowerCase() === n || NAME_MAP[user].fullName.toLowerCase() === n) return user
   }
   return undefined
 }
@@ -256,6 +256,36 @@ export function contarPorPainel(
     else semPainel += 1
   }
   return { porPainel, semPainel, total: cards.length }
+}
+
+/**
+ * Toda pessoa que produz tem a sua gaveta (2026-10-26, entrada da Emanuelly).
+ * Sem gaveta, a pessoa não aparece em "Quem vai editar/criar" e atribuir pelo
+ * menu tirava o card de gaveta. Para cada (membro, área) sem gaveta: liga uma
+ * gaveta vaga com o nome dele, ou cria uma nova com id FIXO por pessoa — dois
+ * aparelhos criando ao mesmo tempo geram a mesma, não duas.
+ */
+export function garantirGavetasDaEquipe(
+  store: PaineisStore, equipe: readonly { membro: string; area: PainelArea }[],
+): { store: PaineisStore; mudou: boolean } {
+  let s = vincularGavetasPorNome(store).store
+  let mudou = s !== store
+  for (const { membro, area } of equipe) {
+    const daArea = paineisDaArea(s, area)
+    if (daArea.some(p => p.membro === membro)) continue
+    const id = `pn_auto_${area}_${membro}`
+    if (s.paineis.some(p => p.id === id)) continue
+    const painel: Painel = {
+      id, area, membro,
+      nome: getDisplayName(membro).split(' ')[0] || membro,
+      cor: corDaVez(daArea),
+      ordem: daArea.length,
+      criadoEm: Date.now(),
+    }
+    s = { ...s, paineis: [...s.paineis, painel] }
+    mudou = true
+  }
+  return { store: s, mudou }
 }
 
 // ── Persistência ──────────────────────────────────────────────────────
