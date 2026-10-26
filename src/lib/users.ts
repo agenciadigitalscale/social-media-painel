@@ -10,6 +10,7 @@ export const NAME_MAP: Record<string, { fullName: string; initials: string; role
   'pradox':  { fullName: 'Matheus Prado', initials: 'MP', role: 'Sócio',             emoji: '👑', color: '#FF7A00', glow: 'rgba(255,122,0,0.45)' },
   'testa':   { fullName: 'Matheus Trindade', initials: 'MT', role: 'Sócio',             emoji: '👑', color: '#FF7A00', glow: 'rgba(255,122,0,0.45)' },
   'kaique':  { fullName: 'Kaique Sena', initials: 'KS', role: 'Editor de vídeo', emoji: '🎬', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
+  'emanuelly': { fullName: 'Emanuelly Souza', initials: 'ES', role: 'Editora de vídeo', emoji: '🎬', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
   'jhones':  { fullName: 'Matheus Johnny', initials: 'MJ', role: 'Design',            emoji: '🎨', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
   'julio':   { fullName: 'Julio Vicente', initials: 'JV', role: 'Design',            emoji: '🖌', color: MEMBER_GRAY,  glow: MEMBER_GLOW },
   'kerges':  { fullName: 'Geovana Kerges', initials: 'GK', role: 'Copy',              emoji: '✍', color: MEMBER_GRAY,  glow: MEMBER_GLOW },

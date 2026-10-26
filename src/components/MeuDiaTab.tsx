@@ -39,6 +39,7 @@ const DESIGNER = membroDoCargo('Design')
 import PageHero from '../shared/ui/PageHero'
 import { DS } from '../theme'
 import { nomeDoCliente } from '../lib/clientes'
+import { cargoDe } from '../lib/access'
 
 // ── Types ──────────────────────────────────────────────────
 interface Props {
@@ -735,8 +736,10 @@ function ClientQualitySection({ items, states, allClients, now, onTabChange }: {
  * legenda, financeiro, saúde, onboarding) é de vídeo, então filtrar deixaria a
  * lista vazia de qualquer jeito. Eles continuam no Dashboard.
  */
-function KaiqueView({ items, states, now, onTabChange }: {
+function KaiqueView({ items, states, now, onTabChange, editor = 'kaique' }: {
   items: ContentItem[]; states: Record<number, ItemState>; now: Date; onTabChange?: (t: number) => void
+  /** O editor dono da visão (a mesma tela para todo editor de vídeo). */
+  editor?: string
 }) {
   const today = useMemo(() => { const d = new Date(now); d.setHours(0, 0, 0, 0); return d }, [now])
 
@@ -778,7 +781,7 @@ function KaiqueView({ items, states, now, onTabChange }: {
   const meus = useMemo(() => {
     const abertos = reels.filter(i => isOpenStatus(states[i.i]?.status ?? i.s))
     return abertos
-      .filter(i => editorDoCard(i.i, states[i.i], atribuicoes, paineisVid)?.membro === 'kaique')
+      .filter(i => editorDoCard(i.i, states[i.i], atribuicoes, paineisVid)?.membro === editor)
       .map(i => ({ ...i, urgency: getUrgency(prazoDe(i, states), now) }))
       .sort((a, b) => {
         const ordem = ['overdue', 'today', 'tomorrow', 'week', 'future']
@@ -1162,7 +1165,8 @@ export default function MeuDiaTab({
       case 'testa':
         return <SocioView items={items} states={states} allClients={allClients} now={now} onTabChange={onTabChange} />
       case 'kaique':
-        return <KaiqueView items={items} states={states} now={now} onTabChange={onTabChange} />
+      case 'emanuelly':
+        return <KaiqueView items={items} states={states} now={now} onTabChange={onTabChange} editor={currentUser} />
       case 'arthur':
         return <ArthurView now={now} items={items} states={states} allClients={allClients} roteiros={roteiros} onStatusChange={onStatusChange} onTabChange={onTabChange} />
       case 'robson':
@@ -1204,7 +1208,7 @@ export default function MeuDiaTab({
         <Reveal>
           {isDesigner(currentUser)
             ? <MinhaProducaoDesigner items={itensProducao ?? items} states={states} currentUser={currentUser} now={now} perfil="design" allClients={allClients} onAddClient={onQuickAddClient} />
-            : currentUser === 'kaique'
+            : cargoDe(currentUser) === 'editor'
               ? <MinhaProducaoDesigner items={itensProducao ?? items} states={states} currentUser={currentUser} now={now} perfil="video" allClients={allClients} onAddClient={onQuickAddClient} />
               : <MinhaProducaoPanel items={itensProducao ?? items} states={states} currentUser={currentUser} now={now} allClients={allClients} onAddClient={onQuickAddClient} />}
         </Reveal>

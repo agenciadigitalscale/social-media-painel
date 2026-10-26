@@ -145,7 +145,7 @@ const BOARDS = [
 
 // Board correspondente à "área" de cada colaborador (badge "Minha área")
 const USER_AREA_BOARD: Record<string, string> = {
-  kaique: 'vid', jhones: 'des', kerges: 'rot', arthur: 'soc', robson: 'soc',
+  kaique: 'vid', emanuelly: 'vid', jhones: 'des', kerges: 'rot', arthur: 'soc', robson: 'soc',
 }
 
 // ── Props ─────────────────────────────────────────────────

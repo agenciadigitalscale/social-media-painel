@@ -13,7 +13,7 @@
 
 /** Os 8 membros da equipe. Espelha o NAME_MAP de `src/lib/users.ts`. */
 export const VALID_USERS = [
-  'pradox', 'testa', 'kaique', 'jhones', 'julio', 'kerges', 'arthur', 'robson',
+  'pradox', 'testa', 'kaique', 'emanuelly', 'jhones', 'julio', 'kerges', 'arthur', 'robson',
 ] as const
 
 /**

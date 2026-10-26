@@ -7,7 +7,7 @@ import { CAPA } from './splash/palette'
 import { DS, ctaGradient } from '../theme'
 
 // ── Ordenação dos membros na tela de login ─────────────────
-const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'arthur', 'jhones', 'julio', 'kerges', 'robson']
+const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'emanuelly', 'arthur', 'jhones', 'julio', 'kerges', 'robson']
 
 interface Props {
   showLogin: boolean

@@ -35,6 +35,7 @@ export const CARGO_DO_USUARIO: Readonly<Record<string, Cargo>> = {
   robson: 'social',
   kerges: 'copy',
   kaique: 'editor',
+  emanuelly: 'editor',
   jhones: 'design',
   julio: 'design',
 }

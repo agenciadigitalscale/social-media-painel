@@ -27,6 +27,7 @@ import { carregarPaineis, carregarAtribuicoes } from '../lib/paineis'
 import { getDisplayName, NAME_MAP } from '../lib/users'
 import { DS } from '../theme'
 import { clickable } from '../shared/a11y'
+import { cargoDe } from '../lib/access'
 
 export default function FechamentoTab({ items, states, now, currentUser }: {
   items: ContentItem[]
@@ -142,7 +143,7 @@ export default function FechamentoTab({ items, states, now, currentUser }: {
                 <Typography sx={{ fontSize: { xs: '2.2rem', md: '2.6rem' }, fontWeight: 900, lineHeight: 1, color: cor, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>
                   {total}
                 </Typography>
-                <Typography sx={{ fontSize: '0.62rem', color: DS.t3, mt: 0.3 }}>{designer === 'kaique' ? (total === 1 ? 'vídeo' : 'vídeos') : (total === 1 ? 'arte' : 'artes')}</Typography>
+                <Typography sx={{ fontSize: '0.62rem', color: DS.t3, mt: 0.3 }}>{cargoDe(designer) === 'editor' ? (total === 1 ? 'vídeo' : 'vídeos') : (total === 1 ? 'arte' : 'artes')}</Typography>
               </Box>
             )
           })}
