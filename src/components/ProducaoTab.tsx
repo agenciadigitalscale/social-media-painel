@@ -21,6 +21,7 @@ import EditItemDialog from './EditItemDialog'
 import { shouldShowDelivery } from '../lib/cardDate'
 import PlanejamentoDialog from './PlanejamentoDialog'
 import FilterListIcon from '@mui/icons-material/FilterList'
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import EditIcon from '@mui/icons-material/Edit'
 import SaveIcon from '@mui/icons-material/Save'
@@ -48,6 +49,9 @@ import { nomeDoCliente } from '../lib/clientes'
 import EntreguesDoMesDialog, { useEntreguesDoMes } from './producao/EntreguesDoMesDialog'
 import { NAME_MAP } from '../lib/users'
 import { cargoDe, donoDoCard, isIsolado, isSocio, membrosDoCargo } from '../lib/access'
+import { cardEhDoEncarregado, chaveDoEncarregado, chavesDoGrupo, encarregadoDoPerfil, EVENTO_EQUIPE, listaGrupos, nomeDoResponsavel, responsaveisDaArea } from '../lib/equipeProducao'
+import { useEquipe } from '../lib/useEquipe'
+import EquipeProducaoDialog from './producao/EquipeProducaoDialog'
 import DriveVideoInbox from './DriveVideoInbox'
 import DriveInboxDrawer from './DriveInboxDrawer'
 import AutomationHealthPanel from './AutomationHealthPanel'
@@ -195,6 +199,10 @@ interface Props {
   boardFixo?: number
   /** Título no lugar do nome do board, quando fixo ("Minha esteira"). */
   tituloEsteira?: string
+  /** Minha esteira de quem é editor E designer no cadastro: todos os tipos juntos. */
+  esteiraTodosTipos?: boolean
+  /** Minha esteira de quem NÃO é isolado no servidor: filtra aqui pelos cards da pessoa. */
+  esteiraDe?: string
   /**
    * Sem visão de equipe: some carga, capacidade, contagem por pessoa e o filtro
    * por responsável. Só sócio compara/quantifica o trabalho dos outros.
@@ -373,7 +381,7 @@ function FilterOption({ active, onClick, children }: { active: boolean; onClick:
   )
 }
 
-export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onSendToReview, onAutoDetected, onReviewNotify, onAppendHistory, boardRequest = null, onBoardRequestDone, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, publishFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros , boardFixo, tituloEsteira, semVisaoEquipe }: Props) {
+export default function ProducaoTab({ items, states, onStatusChange, onDelete, onEdit, onUpdateState, onAddItem, onDuplicate, allClients, onSendToClient, onSendToReview, onAutoDetected, onReviewNotify, onAppendHistory, boardRequest = null, onBoardRequestDone, onBulkSendToClient, onRemindClient, clientColors, clientHashtags, captionTemplates, onSaveHashtags, onSaveTemplates, currentUser, roteiros = {}, clientFolders = {}, publishFolders = {}, onUpdateRoteiro, onImportRoteiroBatch, onDeleteManyRoteiros, onAddRoteiro, onAddManyRoteiros , boardFixo, tituloEsteira, semVisaoEquipe, esteiraTodosTipos, esteiraDe }: Props) {
   const [subTab, setSubTab]         = useState(boardFixo ?? 0)
   const [entreguesAberto, setEntreguesAberto] = useState(false)
   const doQuadroFixo = useCallback((it: ContentItem) => boardFixo === 0 ? it.tp === 'Reel' : it.tp !== 'Reel', [boardFixo])
@@ -388,6 +396,11 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   const [tipoProd, setTipoProd] = useState<'todos' | 'reel' | 'design' | 'feed'>('todos')
   /** Quem produz o card (designer/editor) — gaveta → assignedEditor → responsible. */
   const [filterEncarregado, setFilterEncarregado] = useState('all')
+  // Encarregados e Painéis vêm do cadastro editável (lib/equipeProducao).
+  const equipe = useEquipe()
+  const [filterGrupo, setFilterGrupo] = useState('all')
+  const [equipeAberta, setEquipeAberta] = useState(false)
+  const gestorDaEquipe = isSocio(currentUser) || cargoDe(currentUser) === 'social'
   const [filterStuck, setFilterStuck] = useState(false)
   /** Busca do board: casa cliente, título do card e nome original do conteúdo. */
   const [boardSearch, setBoardSearch] = useState('')
@@ -771,7 +784,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
   // Com o quadro de Produção junto e "Todos" no tipo, os três viram um só.
   // Vídeo, Design e Feed têm as mesmas colunas (PRODUCAO_COLS), então dá para
   // somar sem trocar a esteira de ninguém.
-  const prodCombinado = boardFixo === undefined && subTab < 3 && tipoProd === 'todos'
+  const prodCombinado = (boardFixo === undefined || !!esteiraTodosTipos) && subTab < 3 && tipoProd === 'todos'
   const baseFilter = useCallback(
     (item: ContentItem, st: ItemState) => prodCombinado
       ? videoFilter(item, st) || designFilter(item, st) || feedFilter(item, st)
@@ -810,7 +823,18 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       }
       if (filterPriority !== 'all' && st.priority !== filterPriority) return false
       if (filterResponsible !== 'all' && st.responsible !== filterResponsible) return false
-      if (filterEncarregado !== 'all' && donoDoCard(item.i, st, atribuicoes, paineisStore) !== filterEncarregado) return false
+      if (filterEncarregado !== 'all' || filterGrupo !== 'all' || esteiraDe) {
+        const dono = donoDoCard(item.i, st, atribuicoes, paineisStore)
+        if (filterEncarregado !== 'all' && dono !== filterEncarregado) return false
+        if (filterGrupo !== 'all') {
+          const grupo = equipe.grupos[filterGrupo]
+          if (grupo && (!dono || !chavesDoGrupo(equipe, grupo).has(dono))) return false
+        }
+        if (esteiraDe) {
+          const meu = encarregadoDoPerfil(equipe, esteiraDe)
+          if (dono !== esteiraDe && !(meu && cardEhDoEncarregado(dono, meu))) return false
+        }
+      }
 
       if (filterPreview !== 'all') {
         const pronta = getCardPreview(item, boardMediaLinks, st.status).kind === 'ready'
@@ -825,7 +849,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       return true
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subTab, baseFilter, filterToday, filterOverdue, filterStuck, filterPriority, filterResponsible, filterEncarregado, atribuicoes, paineisStore, filterPreview, boardMediaLinks, boardSearch])
+  }, [subTab, baseFilter, filterToday, filterOverdue, filterStuck, filterPriority, filterResponsible, filterEncarregado, filterGrupo, esteiraDe, equipe, atribuicoes, paineisStore, filterPreview, boardMediaLinks, boardSearch])
 
   // ── Painéis: área atual, contagem e filtro ────────────────
   const areaAtual: PainelArea | null = prodCombinado ? null : subTab === 0 ? 'vid' : subTab === 1 ? 'des' : null
@@ -884,6 +908,14 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     setPaineisStore(semeado)
     salvarPaineis(semeado)
   }, [areaAtual, paineisStore])
+
+  // Cadastro de encarregados mudou (aqui, em outra aba ou pelo sync): as gavetas
+  // são derivadas dele, então relê.
+  useEffect(() => {
+    const reler = () => setPaineisStore(carregarPaineis())
+    window.addEventListener(EVENTO_EQUIPE, reler)
+    return () => window.removeEventListener(EVENTO_EQUIPE, reler)
+  }, [])
 
   const mudarPaineis = useCallback((next: PaineisStore) => {
     setPaineisStore(next)
@@ -1088,8 +1120,13 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           },
           filterEncarregado !== 'all' && {
             key: 'enc',
-            label: NAME_MAP[filterEncarregado]?.fullName ?? filterEncarregado,
+            label: nomeDoResponsavel(equipe, filterEncarregado),
             clear: () => setFilterEncarregado('all'),
+          },
+          filterGrupo !== 'all' && {
+            key: 'grupo',
+            label: `Painel ${equipe.grupos[filterGrupo]?.nome ?? ''}`,
+            clear: () => setFilterGrupo('all'),
           },
           filterToday && { key: 'today', label: 'Hoje', clear: () => setFilterToday(false) },
           filterOverdue && { key: 'overdue', label: 'Atrasados', clear: () => setFilterOverdue(false) },
@@ -1099,7 +1136,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         ].filter(Boolean) as { key: string; label: string; clear: () => void }[]
         const clearAll = () => {
           setFilterToday(false); setFilterOverdue(false); setFilterStuck(false)
-          setFilterPriority('all'); setFilterResponsible('all'); setFilterPreview('all'); setFilterEncarregado('all')
+          setFilterPriority('all'); setFilterResponsible('all'); setFilterPreview('all'); setFilterEncarregado('all'); setFilterGrupo('all')
         }
         const board = subTab < 4
         const abas = boardFixo === undefined
@@ -1321,7 +1358,7 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                 >
                   Todos
                 </Box>
-                {[...membrosDoCargo('design'), ...membrosDoCargo('editor')].map(u => (
+                {responsaveisDaArea(equipe, 'todas').map(e => chaveDoEncarregado(e)).map(u => (
                 <Box key={u}
                   {...clickable(() => setFilterEncarregado(v => v === u ? 'all' : u))}
                   sx={{
@@ -1334,7 +1371,56 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
                     '&:hover': { borderColor: DS.accent },
                   }}
                 >
-                  {NAME_MAP[u]?.fullName.split(' ')[0] ?? u}
+                  {nomeDoResponsavel(equipe, u).split(' ')[0]}
+                </Box>
+                ))}
+                {gestorDaEquipe && (
+                  <Tooltip title="Encarregados e painéis — adicionar, editar funções, vincular perfil">
+                    <IconButton size="small" aria-label="Editar encarregados e painéis" onClick={() => setEquipeAberta(true)}
+                      sx={{ p: 0.4, color: DS.t3, '&:hover': { color: DS.accent } }}>
+                      <ManageAccountsIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
+              )}
+
+              {abas && subTab < 4 && listaGrupos(equipe).length > 0 && (
+              <Box sx={{
+                display: 'flex', alignItems: 'center', gap: 0.6, pl: 1.2, pr: 0.5, py: 0.5,
+                borderRadius: '11px', border: `1px solid ${DS.border}`, bgcolor: DS.surface,
+              }}>
+                <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: DS.t3, mr: 0.2 }}>
+                  Painel
+                </Typography>
+                <Box
+                  {...clickable(() => setFilterGrupo('all'))}
+                  sx={{
+                    px: 1.2, height: 26, display: 'flex', alignItems: 'center', borderRadius: '999px', cursor: 'pointer',
+                    fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap',
+                    bgcolor: filterGrupo === 'all' ? DS.accent : 'transparent',
+                    color: filterGrupo === 'all' ? DS.onAccent : DS.t2,
+                    border: `1px solid ${filterGrupo === 'all' ? DS.accent : DS.border}`,
+                    transition: 'all 0.15s ease',
+                    '&:hover': { borderColor: DS.accent },
+                  }}
+                >
+                  Todos
+                </Box>
+                {listaGrupos(equipe).map(g => (
+                <Box key={g.id}
+                  {...clickable(() => setFilterGrupo(v => v === g.id ? 'all' : g.id))}
+                  sx={{
+                    px: 1.2, height: 26, display: 'flex', alignItems: 'center', borderRadius: '999px', cursor: 'pointer',
+                    fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap',
+                    bgcolor: filterGrupo === g.id ? DS.accent : 'transparent',
+                    color: filterGrupo === g.id ? DS.onAccent : DS.t2,
+                    border: `1px solid ${filterGrupo === g.id ? DS.accent : DS.border}`,
+                    transition: 'all 0.15s ease',
+                    '&:hover': { borderColor: DS.accent },
+                  }}
+                >
+                  {g.nome}
                 </Box>
                 ))}
               </Box>
@@ -2328,14 +2414,14 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
           <TextField
             label="Responsável" size="small" fullWidth select
             value={addResp} onChange={e => setAddResp(e.target.value)}
-            SelectProps={{ displayEmpty: true, renderValue: v => v ? `${NAME_MAP[String(v)]?.fullName ?? v} · ${NAME_MAP[String(v)]?.role ?? ''}` : 'Definir depois' }}
+            SelectProps={{ displayEmpty: true, renderValue: v => v ? nomeDoResponsavel(equipe, String(v)) : 'Definir depois' }}
             slotProps={{ inputLabel: { shrink: true } }}
           >
             <MenuItem value="" sx={{ fontSize: '0.72rem', color: DS.t3 }}>Definir depois</MenuItem>
-            {[...membrosDoCargo('design'), ...membrosDoCargo('editor'), ...membrosDoCargo('socio')].map(u => (
+            {[...new Set([...responsaveisDaArea(equipe, 'todas').map(chaveDoEncarregado), ...membrosDoCargo('socio')])].map(u => (
               <MenuItem key={u} value={u} sx={{ fontSize: '0.72rem' }}>
-                {NAME_MAP[u]?.fullName ?? u}
-                <Box component="span" sx={{ ml: 1, color: DS.t3 }}>{NAME_MAP[u]?.role}</Box>
+                {nomeDoResponsavel(equipe, u)}
+                <Box component="span" sx={{ ml: 1, color: DS.t3 }}>{NAME_MAP[u]?.role ?? 'Encarregado'}</Box>
               </MenuItem>
             ))}
           </TextField>
@@ -2909,6 +2995,9 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
         </MenuItem>
       </Menu>
 
+      {equipeAberta && (
+        <EquipeProducaoDialog open onClose={() => setEquipeAberta(false)} items={items} states={states} atribuicoes={atribuicoes} paineis={paineisStore} />
+      )}
       {(boardFixo === 0 || boardFixo === 1) && (
         <EntreguesDoMesDialog open={entreguesAberto} onClose={() => setEntreguesAberto(false)}
           items={items} states={states} doQuadro={doQuadroFixo} rotulo={boardFixo === 0 ? 'vídeos' : 'artes'} />

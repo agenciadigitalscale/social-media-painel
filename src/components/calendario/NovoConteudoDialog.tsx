@@ -15,7 +15,7 @@ import { clickable } from '../../shared/a11y'
 import { TIPOS_CRIACAO, corDoConteudo } from '../../lib/padraoEditorial'
 import { horaValida } from '../../lib/programacao'
 import EscolherQuando, { dataInput } from './EscolherQuando'
-import { ETAPAS_CONTEUDO, RESPONSAVEIS, nomeDe } from './equipe'
+import { ETAPAS_CONTEUDO, responsaveisDoCalendario, nomeDe } from './equipe'
 import { nomeDoCliente } from '../../lib/clientes'
 
 export interface NovoConteudo {
@@ -133,7 +133,7 @@ export default function NovoConteudoDialog({ open, dia, clientes, clientePadrao,
           <TextField select size="small" label="Responsável" value={responsavel} onChange={e => setResponsavel(e.target.value)} sx={CAMPO}
             slotProps={{ inputLabel: { shrink: true }, select: { displayEmpty: true } }}>
             <MenuItem value="" sx={{ fontSize: '0.8rem' }}>Sem responsável</MenuItem>
-            {RESPONSAVEIS.map(u => <MenuItem key={u} value={u} sx={{ fontSize: '0.8rem' }}>{nomeDe(u)}</MenuItem>)}
+            {responsaveisDoCalendario().map(u => <MenuItem key={u} value={u} sx={{ fontSize: '0.8rem' }}>{nomeDe(u)}</MenuItem>)}
           </TextField>
           <TextField select size="small" label="Status inicial" value={status} onChange={e => setStatus(Number(e.target.value) as Status)} sx={CAMPO}
             slotProps={{ inputLabel: { shrink: true } }}>

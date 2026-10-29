@@ -8,11 +8,12 @@ import { IconButton, Menu, MenuItem, Tooltip, Typography } from '@mui/material'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import { membrosDoCargo } from '../lib/access'
 import { NAME_MAP } from '../lib/users'
+import { chaveDoEncarregado, equipeAtual, nomeDoResponsavel, responsaveisDaArea } from '../lib/equipeProducao'
 import { DS } from '../theme'
 
-/** Quem pode receber a peça, por área: quem produz a área + os dois sócios. */
+/** Quem pode receber a peça, por área: os encarregados com a função (cadastro) + os sócios. */
 export function profissionaisDaArea(area: 'video' | 'design'): string[] {
-  return [...membrosDoCargo(area === 'video' ? 'editor' : 'design'), ...membrosDoCargo('socio')]
+  return [...new Set([...responsaveisDaArea(equipeAtual(), area).map(chaveDoEncarregado), ...membrosDoCargo('socio')])]
 }
 
 export default function TrocarProfissional({ area, atual, titulo, onEscolher }: {
@@ -38,8 +39,8 @@ export default function TrocarProfissional({ area, atual, titulo, onEscolher }: 
           <MenuItem key={u} selected={u === atual} disabled={u === atual}
             onClick={() => { setAncora(null); onEscolher(u) }}
             sx={{ fontSize: '0.78rem', gap: 1 }}>
-            {NAME_MAP[u]?.fullName ?? u}
-            <Typography component="span" sx={{ fontSize: '0.68rem', color: DS.t3 }}>{NAME_MAP[u]?.role}</Typography>
+            {nomeDoResponsavel(equipeAtual(), u)}
+            <Typography component="span" sx={{ fontSize: '0.68rem', color: DS.t3 }}>{NAME_MAP[u]?.role ?? 'Encarregado'}</Typography>
           </MenuItem>
         ))}
       </Menu>

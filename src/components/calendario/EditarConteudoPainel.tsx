@@ -17,7 +17,7 @@ import { horaValida, postagemDoCard } from '../../lib/programacao'
 import { TIPOS_CRIACAO, rotuloDoTipo } from '../../lib/padraoEditorial'
 import { corDaEtiqueta, type Etiqueta } from '../../lib/etiquetas'
 import EscolherQuando, { dataInput } from './EscolherQuando'
-import { ETAPAS_CONTEUDO, RESPONSAVEIS, nomeDe } from './equipe'
+import { ETAPAS_CONTEUDO, responsaveisDoCalendario, nomeDe } from './equipe'
 import { nomeDoCliente } from '../../lib/clientes'
 
 export interface EdicaoConteudo {
@@ -84,6 +84,7 @@ export default function EditarConteudoPainel({ item, st, clientes, podeTrocarCli
   const entregaAntes = st?.deliveryDate ? dataInput(new Date(st.deliveryDate)) : ''
   // Story/Carrossel antigos continuam selecionáveis NESTE card; conteúdo novo não os oferece.
   const tipos = TIPOS_CRIACAO.some(t => t.tp === item.tp) ? TIPOS_CRIACAO : [...TIPOS_CRIACAO, { tp: item.tp, rotulo: rotuloDoTipo(item.tp) }]
+  const RESPONSAVEIS = responsaveisDoCalendario()
   const responsaveis = responsavelAtual && !RESPONSAVEIS.includes(responsavelAtual) ? [...RESPONSAVEIS, responsavelAtual] : RESPONSAVEIS
 
   const salvar = () => {

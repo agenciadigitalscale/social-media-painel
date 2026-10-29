@@ -20,6 +20,7 @@ import { DS } from '../theme'
 import { NAME_MAP, getDisplayName } from './users'
 import type { ItemState } from '../types'
 import { GAVETAS_ANTIGAS, membrosDoCargo } from './access'
+import { aplicarNasGavetas, carregarEquipe } from './equipeProducao'
 
 export const PAINEIS_KEY    = 'sm_paineis'
 export const ATRIBUICOES_KEY = 'sm_card_painel'
@@ -35,6 +36,10 @@ export interface Painel {
   membro?: string
   ordem: number
   criadoEm: number
+  /** Encarregado dono desta gaveta (lib/equipeProducao). */
+  encarregado?: string
+  /** Pessoa desativada ou sem a função: some das escolhas, mantém os cards. */
+  inativa?: boolean
 }
 
 export interface PaineisStore {
@@ -70,7 +75,7 @@ function novoId(): string {
 
 // ── Leitura da área ───────────────────────────────────────────────────
 export function paineisDaArea(store: PaineisStore, area: PainelArea): Painel[] {
-  return store.paineis.filter(p => p.area === area).sort((a, b) => a.ordem - b.ordem)
+  return store.paineis.filter(p => p.area === area && !p.inativa).sort((a, b) => a.ordem - b.ordem)
 }
 
 // ── Edição ────────────────────────────────────────────────────────────
@@ -272,7 +277,7 @@ export function garantirGavetasDaEquipe(
   let mudou = s !== store
   for (const { membro, area } of equipe) {
     const daArea = paineisDaArea(s, area)
-    if (daArea.some(p => p.membro === membro)) continue
+    if (s.paineis.some(p => p.area === area && p.membro === membro)) continue
     const id = `pn_auto_${area}_${membro}`
     if (s.paineis.some(p => p.id === id)) continue
     const painel: Painel = {
@@ -305,6 +310,10 @@ export function carregarPaineis(): PaineisStore {
     // gaveta na tela, o vínculo é salvo de vez. Idem a gaveta de quem entrou na
     // equipe: aparece em todo aparelho já, com id fixo (não duplica), e o sócio a
     // grava de vez no servidor.
+    // Com o cadastro de Encarregados (lib/equipeProducao), é ELE quem diz as
+    // gavetas — editar a equipe na tela não depende mais do código.
+    const equipe = carregarEquipe()
+    if (equipe) return aplicarNasGavetas(equipe, vincularGavetasPorNome(limpo).store)
     return garantirGavetasDaEquipe(limpo, EQUIPE_COM_GAVETA()).store
   } catch { return { ...PAINEIS_VAZIO } }
 }

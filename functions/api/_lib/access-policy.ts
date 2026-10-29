@@ -40,7 +40,7 @@ export const CHAVES_CONTEXTO = ['sm_states', 'sm_card_painel', 'sm_paineis'] as 
  * conteúdo não é ação de editor/designer.
  */
 const ISOLADO_SEM_ACESSO = new Set(['sm_activity_log'])
-const ISOLADO_SO_LEITURA = new Set(['sm_deleted', 'sm_card_painel', 'sm_paineis'])
+const ISOLADO_SO_LEITURA = new Set(['sm_deleted', 'sm_card_painel', 'sm_paineis', 'sm_equipe_producao'])
 
 /** Membro da equipe dono da sessão, ou `null` (sessão desconhecida/anônima). */
 export function usuarioDaSessao(identidade: string | null | undefined): string | null {

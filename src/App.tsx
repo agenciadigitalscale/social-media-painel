@@ -50,6 +50,7 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import theme, { BRAND, DS } from './theme'
 import { PESQ_LOGO } from './lib/pesq/brand'
+import { EQUIPE_KEY, EVENTO_EQUIPE, carregarEquipe, equipeAtual, funcoesDoPerfil, montarDoQueExiste, salvarEquipe } from './lib/equipeProducao'
 import { ATRIBUICOES_KEY, PAINEIS_KEY, EVENTO_ATRIBUICOES, atribuirAoMembro, carregarAtribuicoes, carregarPaineis, salvarAtribuicoes, paineisGravados, salvarPaineis, type PainelArea } from './lib/paineis'
 import { cargoDe, donoDoCard, isIsolado, isSocio, podeVerCard } from './lib/access'
 import { motivoDoBloqueio, podeMover } from './lib/fluxo'
@@ -438,8 +439,23 @@ export default function App() {
     !localStorage.getItem('sm_states') && !localStorage.getItem('sm_custom')
   )
 
-  // Permissões calculadas uma vez por sessão
-  const perms = getUserPerms(currentUser)
+  // Encarregados e Painéis (lib/equipeProducao): editados na tela, relidos ao mudar.
+  const [equipeVersao, setEquipeVersao] = useState(0)
+  useEffect(() => {
+    const subir = () => setEquipeVersao(v => v + 1)
+    window.addEventListener(EVENTO_EQUIPE, subir)
+    return () => window.removeEventListener(EVENTO_EQUIPE, subir)
+  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- equipeVersao: sinal de cadastro novo
+  const minhasFuncoes = useMemo(() => funcoesDoPerfil(equipeAtual(), currentUser), [currentUser, equipeVersao])
+
+  // Permissões do cargo. A "Minha esteira" aparece também para quem o cadastro
+  // de Encarregados marca como editor/designer — sem mexer no código.
+  const perms = useMemo(() => {
+    const p = getUserPerms(currentUser)
+    const produz = minhasFuncoes.some(f => f === 'editor' || f === 'design')
+    return produz && p.hiddenTabs.includes(31) ? { ...p, hiddenTabs: p.hiddenTabs.filter(t => t !== 31) } : p
+  }, [currentUser, minhasFuncoes])
 
   // Refs para detectar mudanças de status vindas do cliente (polling)
   const statesRef      = useRef<Record<number, ItemState>>(loadStates())
@@ -613,6 +629,11 @@ export default function App() {
           // chave com gravação local pendente, então aplicar direto é o certo:
           // comparar tamanho, como o bloco abaixo faz, perderia a confirmação
           // de uma publicação (que ENCURTA a lista de lembretes pendentes).
+          case EQUIPE_KEY:
+            localStorage.setItem(key, value)
+            setPesqSyncVersion(v => v + 1)
+            window.dispatchEvent(new Event(EVENTO_EQUIPE))
+            break
           case PAINEIS_KEY:
           case ATRIBUICOES_KEY:
           case PESQ_PUBS_KEY:
@@ -1507,15 +1528,23 @@ export default function App() {
   // e na contagem sem ninguém criar gaveta à mão. Roda no aparelho de um sócio,
   // depois de baixar o que está no servidor; o id é fixo por pessoa (não duplica).
   useEffect(() => {
-    if (!isSocio(currentUser) || !dadosDoServidor) return
-    // O carregarPaineis já mostra a gaveta de quem entrou; aqui ela é GRAVADA.
+    const gestor = isSocio(currentUser) || cargoDe(currentUser) === 'social'
+    if (!gestor || !dadosDoServidor) return
+    // Estreia do cadastro de Encarregados: nasce das gavetas e do time de hoje,
+    // adotando as gavetas pelo id (nenhum card muda de dono).
+    if (!carregarEquipe()) {
+      salvarEquipe(montarDoQueExiste(
+        { paineis: paineisGravados(), semeado: {} }, carregarAtribuicoes(), Date.now()))
+    }
+    // O carregarPaineis já mostra as gavetas como o cadastro manda; aqui elas são
+    // GRAVADAS — é o `sm_paineis` que o servidor lê para saber de quem é o card.
     const store = carregarPaineis()
-    const gravados = new Set(paineisGravados().map(p => p.id))
-    if (store.paineis.every(p => gravados.has(p.id))) return
+    const gravados = new Map(paineisGravados().map(p => [p.id, JSON.stringify(p)]))
+    if (store.paineis.every(p => gravados.get(p.id) === JSON.stringify(p))) return
     salvarPaineis(store)
     setPesqSyncVersion(v => v + 1)
     window.dispatchEvent(new Event(EVENTO_ATRIBUICOES))
-  }, [currentUser, dadosDoServidor])
+  }, [currentUser, dadosDoServidor, equipeVersao])
 
   // Uma vez só (pedido do dono, 2026-09-29): todo Reel de trabalho real sem
   // ninguém atribuído vai para o Kaique, o editor da casa. Roda no aparelho de um
@@ -3212,12 +3241,16 @@ export default function App() {
       }
       case 31: {
         const cargo = cargoDe(currentUser)
-        const board = cargo === 'editor' ? 0 : cargo === 'design' ? 1 : cargo === 'copy' ? 4 : null
+        // O cadastro de Encarregados manda: editor → Vídeo, designer → Design, os dois → tudo.
+        const edita = minhasFuncoes.includes('editor') || (!minhasFuncoes.length && cargo === 'editor')
+        const desenha = minhasFuncoes.includes('design') || (!minhasFuncoes.length && cargo === 'design')
+        const board = edita ? 0 : desenha ? 1 : cargo === 'copy' ? 4 : null
         if (board === null) return null
         const copy = cargo === 'copy'
         return (
           <ProducaoTab
             boardFixo={board} tituloEsteira="Minha esteira" semVisaoEquipe
+            esteiraTodosTipos={edita && desenha} esteiraDe={isIsolado(currentUser) ? undefined : currentUser ?? undefined}
             items={allItems} states={states} onStatusChange={setStatus}
             onEdit={editItem} onUpdateState={updateItem}
             allClients={allClients}

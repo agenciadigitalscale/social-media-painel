@@ -148,6 +148,7 @@ export const SYNC_KEYS = [
   'sm_pesq_publicacoes',
   'sm_pesq_config',
   'sm_paineis',
+  'sm_equipe_producao',
   'sm_card_painel',
   'sm_producao_manual',
   'sm_producao_ajuste_manual',
