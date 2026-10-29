@@ -23,7 +23,7 @@ import {
   reabrirMes, mesFechado, chaveMes, rotuloMes, DESIGNERS_FECHAMENTO,
   type FechamentosStore,
 } from '../lib/designerFechamento'
-import { carregarPaineis, carregarAtribuicoes } from '../lib/paineis'
+import { useGavetas } from '../lib/useGavetas'
 import { getDisplayName, NAME_MAP } from '../lib/users'
 import { DS } from '../theme'
 import { clickable } from '../shared/a11y'
@@ -46,8 +46,7 @@ export default function FechamentoTab({ items, states, now, currentUser }: {
     return () => window.removeEventListener('ds:designerFechamento', recarregar)
   }, [])
 
-  const paineis = useMemo(() => carregarPaineis(), [])
-  const atrib = useMemo(() => carregarAtribuicoes(), [])
+  const { paineis, atrib } = useGavetas()
 
   // Peças ENTREGUES no mês selecionado, por pessoa (ao vivo) — artes e vídeos,
   // mesma regra da produção (inclui o registro manual).

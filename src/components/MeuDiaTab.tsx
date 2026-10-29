@@ -27,7 +27,8 @@ import { NAME_MAP, getDisplayName, membroDoCargo } from '../lib/users'
 import type { AlertType } from '../lib/alerts'
 import { computeAlerts, alertsForUser, loadDismissed, dismissAlert, pruneOldDismissals } from '../lib/alerts'
 import AlertBanner from './AlertBanner'
-import { carregarAtribuicoes, carregarPaineis, editorDoCard, paineisDaArea } from '../lib/paineis'
+import { editorDoCard, paineisDaArea } from '../lib/paineis'
+import { useGavetas } from '../lib/useGavetas'
 import MinhaProducaoPanel from './MinhaProducaoPanel'
 import { Reveal } from '../shared/motion'
 import MinhaProducaoDesigner from './MinhaProducaoDesigner'
@@ -774,10 +775,9 @@ function KaiqueView({ items, states, now, onTabChange, editor = 'kaique' }: {
   const pct = doMes.length > 0 ? Math.round((publicadosMes / doMes.length) * 100) : 0
 
   // Quem edita cada card, pela mesma regra do selo no board.
-  const { paineisVid, atribuicoes } = useMemo(() => ({
-    paineisVid: paineisDaArea(carregarPaineis(), 'vid'),
-    atribuicoes: carregarAtribuicoes(),
-  }), [])
+  const gavetas = useGavetas()
+  const paineisVid = useMemo(() => paineisDaArea(gavetas.paineis, 'vid'), [gavetas])
+  const atribuicoes = gavetas.atrib
 
   const meus = useMemo(() => {
     const abertos = reels.filter(i => isOpenStatus(states[i.i]?.status ?? i.s))

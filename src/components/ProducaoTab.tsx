@@ -87,7 +87,7 @@ import MiniKanban from './producao/MiniKanban'
 import PaineisBar, { type PainelSelecionado } from './producao/PaineisBar'
 import {
   atribuirCards, carregarAtribuicoes, carregarPaineis, contarPorPainel, criarPainel,
-  editarPainel, editorDoCard, painelDoCard, paineisDaArea, removerPainel, reordenarPainel, salvarAtribuicoes,
+  editarPainel, editorDoCard, painelDoCard, paineisDaArea, removerPainel, reordenarPainel, salvarMudancaAtribuicoes, EVENTO_ATRIBUICOES,
   salvarPaineis, semearPadrao, type Atribuicoes, type PainelArea, type PaineisStore,
 } from '../lib/paineis'
 import {
@@ -523,18 +523,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
       const area: PainelArea = addType === 'Reel' ? 'vid' : 'des'
       const gaveta = paineisDaArea(paineisStore, area).find(p => p.membro === addResp)
       if (gaveta) {
-        setAtribuicoes(prev => {
-          const next = atribuirCards(prev, [novoId], gaveta.id)
-          salvarAtribuicoes(next)
-          return next
-        })
+        setAtribuicoes(prev => salvarMudancaAtribuicoes(prev, atribuirCards(prev, [novoId], gaveta.id)))
       }
     } else if (addPainel && typeof novoId === 'number') {
-      setAtribuicoes(prev => {
-        const next = atribuirCards(prev, [novoId], addPainel)
-        salvarAtribuicoes(next)
-        return next
-      })
+      setAtribuicoes(prev => salvarMudancaAtribuicoes(prev, atribuirCards(prev, [novoId], addPainel)))
     }
     setAddOpen(false)
   }
@@ -911,10 +903,16 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
 
   // Cadastro de encarregados mudou (aqui, em outra aba ou pelo sync): as gavetas
   // são derivadas dele, então relê.
+  // Atribuições também: chegaram do servidor ou outra tela mexeu. Sem isso a
+  // Produção trabalhava com o mapa de quando abriu.
   useEffect(() => {
-    const reler = () => setPaineisStore(carregarPaineis())
+    const reler = () => { setPaineisStore(carregarPaineis()); setAtribuicoes(carregarAtribuicoes()) }
     window.addEventListener(EVENTO_EQUIPE, reler)
-    return () => window.removeEventListener(EVENTO_EQUIPE, reler)
+    window.addEventListener(EVENTO_ATRIBUICOES, reler)
+    return () => {
+      window.removeEventListener(EVENTO_EQUIPE, reler)
+      window.removeEventListener(EVENTO_ATRIBUICOES, reler)
+    }
   }, [])
 
   const mudarPaineis = useCallback((next: PaineisStore) => {
@@ -922,9 +920,10 @@ export default function ProducaoTab({ items, states, onStatusChange, onDelete, o
     salvarPaineis(next)
   }, [])
 
+  // `next` foi calculado a partir do mapa desta tela; só a diferença vai para o
+  // armazenamento, por cima do que já chegou de outras pessoas.
   const mudarAtribuicoes = useCallback((next: Atribuicoes) => {
-    setAtribuicoes(next)
-    salvarAtribuicoes(next)
+    setAtribuicoes(prev => salvarMudancaAtribuicoes(prev, next))
   }, [])
 
   // ── KPI metrics for current board ──────────────────────────

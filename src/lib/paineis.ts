@@ -344,6 +344,32 @@ export function salvarAtribuicoes(atrib: Atribuicoes): void {
 }
 
 /**
+ * Aplica sobre `atual` só o que mudou de `antes` para `depois`.
+ *
+ * Uma tela que guarda o mapa desde que abriu (Produção) não pode gravá-lo
+ * inteiro: as atribuições que outra pessoa fez nesse meio-tempo sumiriam, e os
+ * cards dela sairiam da contagem de entregas (2026-10-29).
+ */
+export function aplicarMudancaAtribuicoes(atual: Atribuicoes, antes: Atribuicoes, depois: Atribuicoes): Atribuicoes {
+  const out = { ...atual }
+  for (const id of new Set([...Object.keys(antes), ...Object.keys(depois)])) {
+    const k = id as unknown as number
+    if (antes[k] === depois[k]) continue
+    if (depois[k]) out[k] = depois[k]
+    else delete out[k]
+  }
+  return out
+}
+
+/** Grava a mudança por cima da cópia MAIS NOVA do navegador e avisa as telas. */
+export function salvarMudancaAtribuicoes(antes: Atribuicoes, depois: Atribuicoes): Atribuicoes {
+  const out = aplicarMudancaAtribuicoes(carregarAtribuicoes(), antes, depois)
+  salvarAtribuicoes(out)
+  window.dispatchEvent(new Event(EVENTO_ATRIBUICOES))
+  return out
+}
+
+/**
  * Troca o profissional de cards (2026-09-29). Quem tem gaveta na área recebe o
  * card NELA — é o que o board e a "Minha esteira" leem primeiro. Quem não tem
  * gaveta (os sócios) tira o card de qualquer gaveta: aí quem decide é o

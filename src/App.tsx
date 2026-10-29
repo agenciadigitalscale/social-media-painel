@@ -636,6 +636,10 @@ export default function App() {
             break
           case PAINEIS_KEY:
           case ATRIBUICOES_KEY:
+            localStorage.setItem(key, value)
+            setPesqSyncVersion(v => v + 1)
+            window.dispatchEvent(new Event(EVENTO_ATRIBUICOES))
+            break
           case PESQ_PUBS_KEY:
           case PESQ_CONFIG_KEY:
             localStorage.setItem(key, value)

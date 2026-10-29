@@ -38,9 +38,10 @@ import {
 } from './filters'
 import { loadVip, persistVip } from './smartCard'
 import {
-  carregarPaineis, carregarAtribuicoes, paineisDaArea, painelDoCard,
+  carregarPaineis, paineisDaArea, painelDoCard,
   type PainelArea,
 } from '../../lib/paineis'
+import { useGavetas } from '../../lib/useGavetas'
 import { NAME_MAP } from '../../lib/users'
 
 /** 'todos' = tudo · 'sem' = sem gaveta · id = uma gaveta. (mesmo do PaineisBar) */
@@ -170,8 +171,7 @@ export default function MobileKanban({
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
 
   // ── Painéis (boards Vídeo e Design) — como no desktop, abre no SEU painel ──
-  const [paineisStore] = useState(() => carregarPaineis())
-  const [atribuicoes]  = useState(() => carregarAtribuicoes())
+  const { paineis: paineisStore, atrib: atribuicoes } = useGavetas()
   const [painelAtivo, setPainelAtivo] = useState<Record<PainelArea, PainelSelecionado>>(() => {
     const meu = (area: PainelArea): PainelSelecionado => {
       if (!currentUser) return 'todos'

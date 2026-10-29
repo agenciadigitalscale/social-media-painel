@@ -24,7 +24,7 @@ import {
   serieDiariaAprovadas, CONTA_POR_ENTREGA, TIPOS_VIDEO, type ArteDesigner,
 } from '../lib/designerProducao'
 import { carregarManuais } from '../lib/producaoEditor'
-import { carregarPaineis, carregarAtribuicoes } from '../lib/paineis'
+import { useGavetas } from '../lib/useGavetas'
 import { membrosDoCargo } from '../lib/access'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { DS, ctaGradient } from '../theme'
@@ -151,8 +151,7 @@ export default function DesignersTab({ items, states, allClients = [], now }: Pr
   const [clienteFiltro, setClienteFiltro] = useState<'todos' | string>('todos')
   const [auditoriaAberta, setAuditoriaAberta] = useState(false)
 
-  const paineis = useMemo(() => carregarPaineis(), [])
-  const atrib = useMemo(() => carregarAtribuicoes(), [])
+  const { paineis, atrib } = useGavetas()
   const pessoas = useMemo(() => pessoasDoTime(), [])
 
   const janela = useMemo(() => janelaDoPeriodo(periodo, now, de, ate), [periodo, now, de, ate])

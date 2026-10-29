@@ -5,6 +5,7 @@ import { protectMediaLinksValue } from './_lib/drive-video-links'
 import { encolhimentoSuspeito } from './_lib/encolhimento'
 import { mesclarEstados } from './_lib/mergeStates'
 import { protegerEsteira } from './_lib/esteiraGuard'
+import { protegerAtribuicoes } from './_lib/atribuicoesGuard'
 import { resolveWorkspace, scopedKey, workspaceKeyPrefix, unscopeKey } from './_lib/workspace'
 import {
   CHAVES_CONTEXTO, contextoDe, decidirEscrita, precisaContexto, usuarioDaSessao, valorVisivel,
@@ -342,6 +343,13 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
         const atual = await env.DB.prepare('SELECT value FROM app_data WHERE key = ?1').bind(dbKey).first<{ value: string }>()
         const p = protegerEsteira(atual?.value, protectedValue)
         if (p.corrigidos) console.warn(`[sync] sm_esteira_roteiros: ${p.corrigidos} card(s) protegidos de cópia velha`)
+        protectedValue = p.value
+      }
+      // Atribuições: cópia velha não tira cards de quem os fez (contagem de entregas).
+      if (body.key === 'sm_card_painel' && typeof protectedValue === 'string') {
+        const atual = await env.DB.prepare('SELECT value FROM app_data WHERE key = ?1').bind(dbKey).first<{ value: string }>()
+        const p = protegerAtribuicoes(atual?.value, protectedValue)
+        if (p.restaurados) console.warn(`[sync] sm_card_painel: ${p.restaurados} atribuição(ões) protegidas de cópia velha`)
         protectedValue = p.value
       }
       const after = await env.DB.prepare(`
