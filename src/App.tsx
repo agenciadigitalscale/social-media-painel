@@ -51,7 +51,8 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import theme, { BRAND, DS } from './theme'
 import { PESQ_LOGO } from './lib/pesq/brand'
 import { EQUIPE_KEY, EVENTO_EQUIPE, carregarEquipe, equipeAtual, funcoesDoPerfil, montarDoQueExiste, salvarEquipe } from './lib/equipeProducao'
-import { ATRIBUICOES_KEY, PAINEIS_KEY, EVENTO_ATRIBUICOES, atribuirAoMembro, carregarAtribuicoes, carregarPaineis, salvarAtribuicoes, paineisGravados, salvarPaineis, type PainelArea } from './lib/paineis'
+import { ATRIBUICOES_KEY, PAINEIS_KEY, EVENTO_ATRIBUICOES, atribuirAoMembro, carregarAtribuicoes, carregarPaineis, salvarAtribuicoes, salvarMudancaAtribuicoes, paineisGravados, salvarPaineis, type PainelArea } from './lib/paineis'
+import { designerFixo } from './lib/designerFixo'
 import { acessoBloqueado, cargoDe, donoDoCard, isIsolado, isSocio, podeVerCard } from './lib/access'
 import { motivoDoBloqueio, podeMover } from './lib/fluxo'
 import { TextField } from '@mui/material'
@@ -2116,6 +2117,15 @@ export default function App() {
       syncToCloud('sm_states', next)
       return next
     })
+    // Cliente com designer fixo: a arte nasce na gaveta dele. Quem cria e escolhe
+    // outra gaveta logo depois (Produção) sobrescreve — a escolha vence. Só card
+    // que ainda vai ser produzido: post criado já pronto ("Criar publicação")
+    // viraria entrega do designer sem ele ter feito.
+    const fixo = responsible || (status !== 0 && status !== 1) ? null : designerFixo(clientName, type)
+    if (fixo) {
+      const antes = carregarAtribuicoes()
+      salvarMudancaAtribuicoes(antes, atribuirAoMembro(antes, carregarPaineis(), [newId], fixo, 'des'))
+    }
     // Devolve o id para quem criou poder agir sobre o card recém-nascido — é
     // assim que o Produções o coloca na gaveta do editor escolhido no diálogo.
     return newId
