@@ -102,11 +102,16 @@ export const ABA_PAINEL_TRAFEGO = 34
 export const EQUIPE_ROTEIROS: readonly string[] = ['kaique', 'arthur', 'kerges']
 export const ABA_ROTEIROS = 37
 
+/** 25 Entregas do time: sócios + quem o dono liberou por nome (2026-11-03: Arthur). */
+export const VEEM_ENTREGAS_DO_TIME: readonly string[] = ['arthur']
+export const ABA_ENTREGAS_DO_TIME = 25
+
 export function getUserPerms(username: string): Permissions {
   let p = permissoesDo(cargoDe(username))
   const u = (username ?? '').toLowerCase().trim()
   if (GESTORES_DE_TRAFEGO.includes(u)) p = { ...p, hiddenTabs: p.hiddenTabs.filter(i => i !== ABA_PAINEL_TRAFEGO) }
   if (EQUIPE_ROTEIROS.includes(u)) p = { ...p, hiddenTabs: p.hiddenTabs.filter(i => i !== ABA_ROTEIROS) }
+  if (VEEM_ENTREGAS_DO_TIME.includes(u)) p = { ...p, hiddenTabs: p.hiddenTabs.filter(i => i !== ABA_ENTREGAS_DO_TIME) }
   return p
 }
 
@@ -123,7 +128,7 @@ export function isAdminRole(username: string): boolean {
 export const DESIGNER_MANAGERS: readonly string[] = ['pradox', 'testa']
 
 export function canViewDesignerManagement(username: string): boolean {
-  return isSocio(username)
+  return isSocio(username) || VEEM_ENTREGAS_DO_TIME.includes((username ?? '').toLowerCase().trim())
 }
 
 /** É um dos designers cuja produção este módulo acompanha? */

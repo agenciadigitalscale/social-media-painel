@@ -40,6 +40,18 @@ export const CARGO_DO_USUARIO: Readonly<Record<string, Cargo>> = {
   julio: 'design',
 }
 
+/**
+ * Acesso bloqueado (2026-11-03, pedido do dono): não entra no painel — nem por
+ * senha, nem pelo Google, nem offline — e a sessão que já tinha deixa de valer
+ * no servidor. Continua no time: os cards, a gaveta e as entregas seguem dele.
+ * Para liberar, tirar daqui e publicar.
+ */
+export const ACESSO_BLOQUEADO: ReadonlySet<string> = new Set(['kaique'])
+
+export function acessoBloqueado(user: string | null | undefined): boolean {
+  return !!user && ACESSO_BLOQUEADO.has(user.toLowerCase().trim())
+}
+
 /** Cargo do usuário. Desconhecido = o mais restrito que ainda não vê trabalho alheio. */
 export function cargoDe(user: string | null | undefined): Cargo | null {
   if (!user) return null

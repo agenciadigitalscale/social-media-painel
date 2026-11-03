@@ -52,7 +52,7 @@ import theme, { BRAND, DS } from './theme'
 import { PESQ_LOGO } from './lib/pesq/brand'
 import { EQUIPE_KEY, EVENTO_EQUIPE, carregarEquipe, equipeAtual, funcoesDoPerfil, montarDoQueExiste, salvarEquipe } from './lib/equipeProducao'
 import { ATRIBUICOES_KEY, PAINEIS_KEY, EVENTO_ATRIBUICOES, atribuirAoMembro, carregarAtribuicoes, carregarPaineis, salvarAtribuicoes, paineisGravados, salvarPaineis, type PainelArea } from './lib/paineis'
-import { cargoDe, donoDoCard, isIsolado, isSocio, podeVerCard } from './lib/access'
+import { acessoBloqueado, cargoDe, donoDoCard, isIsolado, isSocio, podeVerCard } from './lib/access'
 import { motivoDoBloqueio, podeMover } from './lib/fluxo'
 import { TextField } from '@mui/material'
 import { MANUAIS_KEY, EXCLUIR_KEY } from './lib/producaoEditor'
@@ -2743,6 +2743,17 @@ export default function App() {
     setShowSplash(true)
   }, [])
 
+  // Acesso bloqueado (lib/access): quem estava com o painel aberto sai na hora,
+  // sem esperar a sessão expirar.
+  useEffect(() => {
+    if (!acessoBloqueado(currentUser)) return
+    fetch('/api/auth', { method: 'DELETE', credentials: 'include' }).catch(() => {})
+    sessionStorage.removeItem('sm_tab_user')
+    setCurrentUser('')
+    setShowSplash(true)
+    setSnack({ msg: 'Acesso bloqueado. Fale com um sócio.', severity: 'error' })
+  }, [currentUser])
+
   // O mesmo tratamento quando quem detecta o 401 é a fila de gravação.
   useEffect(() => onSessionExpired(handleSessionExpired), [handleSessionExpired])
 
@@ -3131,7 +3142,7 @@ export default function App() {
         : <Box sx={{ display:'flex', alignItems:'center', justifyContent:'center', height:'50vh', flexDirection:'column', gap:2 }}>
             <Typography sx={{ fontSize:'2rem' }}>🔒</Typography>
             <Typography sx={{ fontWeight:700, color:'text.secondary' }}>Acesso restrito</Typography>
-            <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente os sócios veem as entregas do time.</Typography>
+            <Typography sx={{ fontSize:'0.78rem', color:'text.disabled' }}>Somente os sócios e quem eles liberaram veem as entregas do time.</Typography>
           </Box>
       case 26: return canViewProducaoKaique(currentUser ?? '')
         ? <ProducaoKaiqueTab items={itensProducao} states={states} allClients={allClients} now={now} currentUser={currentUser ?? ''} onReatribuir={(id, m) => reatribuir([id], m)} />

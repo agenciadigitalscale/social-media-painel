@@ -1,3 +1,4 @@
+import { acessoBloqueado } from '../../../src/lib/access'
 // Web Push (RFC 8291) + VAPID (RFC 8292) — Cloudflare Workers / Web Crypto API
 
 function b64url(buf: ArrayBuffer | Uint8Array): string {
@@ -168,7 +169,9 @@ export async function broadcastPush(
   const row = await db.prepare('SELECT value FROM app_data WHERE key = ?').bind('push_subscriptions').first<{ value: string }>()
   if (!row) return
   const todas: StoredSubscription[] = JSON.parse(row.value)
-  const subs = paraUsuarios ? todas.filter(x => paraUsuarios.includes(x.userId)) : todas
+  // Quem teve o acesso bloqueado não recebe aviso (traz cliente e conteúdo).
+  const subs = (paraUsuarios ? todas.filter(x => paraUsuarios.includes(x.userId)) : todas)
+    .filter(x => !acessoBloqueado(x.userId))
   if (!subs.length) return
 
   const privateKeyJwk: JsonWebKey = JSON.parse(privateKeyJwkStr)

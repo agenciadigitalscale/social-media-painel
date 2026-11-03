@@ -1,4 +1,6 @@
 import { verifySession, issueSession } from './_lib/session'
+import { usuarioDaSessao } from './_lib/access-policy'
+import { acessoBloqueado } from '../../src/lib/access'
 
 interface Env {
   SESSION_SECRET?: string
@@ -87,6 +89,10 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
         { ok: false, error: 'Esse e-mail não tem permissão de acesso ao DS HUB.' },
         { status: 403, headers: c },
       )
+    }
+
+    if (acessoBloqueado(usuarioDaSessao(email))) {
+      return Response.json({ ok: false, error: 'Acesso bloqueado. Fale com um sócio.' }, { status: 403, headers: c })
     }
 
     // Cookie de sessão pelo emissor compartilhado — o mesmo que a senha do

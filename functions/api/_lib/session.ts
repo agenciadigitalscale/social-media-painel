@@ -1,3 +1,5 @@
+import { usuarioDaSessao } from './access-policy'
+import { acessoBloqueado } from '../../../src/lib/access'
 // Sessão assinada do painel — a mesma que o /api/auth emite.
 //
 // Vive aqui, e não dentro do auth.ts, porque quem precisa CONFERIR a sessão são
@@ -93,6 +95,8 @@ export async function verifySession(
   try {
     const [email, expiry] = atob(payload).split(':')
     if (!email || Date.now() > Number(expiry)) return null
+    // Sessão de quem teve o acesso bloqueado não vale mais, mesmo dentro das 8h.
+    if (acessoBloqueado(usuarioDaSessao(email))) return null
     return email
   } catch {
     return null

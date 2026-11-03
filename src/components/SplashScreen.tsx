@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { Box, Typography, TextField, Button, CircularProgress, MenuItem } from '@mui/material'
 import { NAME_MAP } from '../lib/users'
+import { acessoBloqueado } from '../lib/access'
 import SplashBackdrop from './splash/SplashBackdrop'
 import { sessaoExistente } from './splash/googleAuth'
 import { CAPA } from './splash/palette'
@@ -8,6 +9,7 @@ import { DS, ctaGradient } from '../theme'
 
 // ── Ordenação dos membros na tela de login ─────────────────
 const MEMBER_ORDER = ['pradox', 'testa', 'kaique', 'emanuelly', 'arthur', 'jhones', 'julio', 'kerges', 'robson']
+  .filter(u => !acessoBloqueado(u))
 
 interface Props {
   showLogin: boolean
@@ -107,6 +109,8 @@ export default function SplashScreen({ showLogin, onFinish, onLogin, currentUser
     if (entrando) return
     if (!selectedUser) { setLoginError('Escolha seu nome.'); return }
     const user = selectedUser
+    // Vale também offline: sem esta linha, "sem rede, entra" deixaria passar.
+    if (acessoBloqueado(user)) { setLoginError('Acesso bloqueado. Fale com um sócio.'); return }
     const senha = pwd.trim()
     setLoginError('')
     setEntrando(true)

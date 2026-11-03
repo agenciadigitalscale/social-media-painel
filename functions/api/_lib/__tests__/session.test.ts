@@ -10,7 +10,7 @@ import { signSession, verifySession, getCookie, SESSION_MS } from '../session'
  */
 
 const SECRET = 'segredo-de-teste-nao-usar-em-producao'
-const EMAIL  = 'kaique@role.dshub'
+const EMAIL  = 'emanuelly@role.dshub'
 
 /** Monta o header Cookie como o navegador manda. */
 const cookieHeader = (val: string, name = 'ds_session') => `${name}=${encodeURIComponent(val)}`

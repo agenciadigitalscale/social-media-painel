@@ -10,6 +10,7 @@
 
 import { issueSession } from './_lib/session'
 import { ADMIN_USERS, isValidUser } from './_lib/users'
+import { acessoBloqueado } from '../../src/lib/access'
 
 interface Env {
   DB: D1Database
@@ -136,6 +137,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
        */
       if (!isValidUser(role))
         return new Response(JSON.stringify({ ok: false }), { headers: CORS })
+      // Acesso bloqueado: nem com a senha certa. `user` também, porque é ele
+      // que vira a identidade da sessão.
+      if (acessoBloqueado(role) || acessoBloqueado(user))
+        return new Response(JSON.stringify({ ok: false, bloqueado: true }), { headers: CORS })
 
       const row = await env.DB
         .prepare('SELECT hash FROM role_passwords WHERE role = ?')
