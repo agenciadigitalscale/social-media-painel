@@ -31,6 +31,7 @@ import { DS, ctaGradient } from '../theme'
 import { clickable } from '../shared/a11y'
 import { nomeDoCliente } from '../lib/clientes'
 import MetaDoMesTime from './entregas/MetaDoMesTime'
+import { ETAPAS, naEtapa, type EtapaFiltro } from '../lib/etapaEntrega'
 
 interface Props {
   items: ContentItem[]
@@ -149,6 +150,7 @@ export default function DesignersTab({ items, states, allClients = [], now }: Pr
   const [pessoaFiltro, setPessoaFiltro] = useState<'todos' | string>('todos')
   const [tipoFiltro, setTipoFiltro] = useState<TipoFiltro>('todos')
   const [clienteFiltro, setClienteFiltro] = useState<'todos' | string>('todos')
+  const [etapaFiltro, setEtapaFiltro] = useState<EtapaFiltro>('todos')
   const [auditoriaAberta, setAuditoriaAberta] = useState(false)
 
   const { paineis, atrib } = useGavetas()
@@ -179,7 +181,8 @@ export default function DesignersTab({ items, states, allClients = [], now }: Pr
     const mostrados = pessoaFiltro === 'todos' ? pessoas : [pessoaFiltro]
     return mostrados.map(p => {
       const artes = (todasPorPessoa[p] ?? []).filter(a =>
-        (tipoFiltro === 'todos' || a.tipo === tipoFiltro) && (clienteFiltro === 'todos' || a.cliente === clienteFiltro))
+        (tipoFiltro === 'todos' || a.tipo === tipoFiltro) && (clienteFiltro === 'todos' || a.cliente === clienteFiltro)
+        && naEtapa(a, etapaFiltro))
       const doPeriodo = aprovadasEntre(artes, janela.inicio, janela.fim) as Entrega[]
       return {
         designer: p,
@@ -191,6 +194,16 @@ export default function DesignersTab({ items, states, allClients = [], now }: Pr
         artesN: doPeriodo.filter(a => a.tipo === 'arte').length,
       }
     })
+  }, [pessoaFiltro, pessoas, todasPorPessoa, janela, tipoFiltro, clienteFiltro, etapaFiltro])
+
+  // Quantas entregas do período estão em cada etapa — com os outros filtros, sem o de etapa.
+  const contagemEtapa = useMemo(() => {
+    const mostrados = pessoaFiltro === 'todos' ? pessoas : [pessoaFiltro]
+    const base = mostrados.flatMap(p => (aprovadasEntre(todasPorPessoa[p] ?? [], janela.inicio, janela.fim) as Entrega[])
+      .filter(a => (tipoFiltro === 'todos' || a.tipo === tipoFiltro) && (clienteFiltro === 'todos' || a.cliente === clienteFiltro)))
+    const m = {} as Record<EtapaFiltro, number>
+    for (const e of ETAPAS) m[e.key] = base.filter(a => naEtapa(a, e.key)).length
+    return m
   }, [pessoaFiltro, pessoas, todasPorPessoa, janela, tipoFiltro, clienteFiltro])
 
   // Total esperado no mês: as entregas do MÊS CORRENTE de todo o time, sem os
@@ -282,12 +295,20 @@ export default function DesignersTab({ items, states, allClients = [], now }: Pr
             {clientesDisponiveis.map(c => <MenuItem key={c} value={c} sx={{ fontSize: '0.8rem' }}>{nomeDoCliente(c)}</MenuItem>)}
           </TextField>
         </Box>
+        <Box sx={{ display: 'flex', gap: 0.6, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Typography sx={{ fontSize: '0.6rem', fontWeight: 800, color: DS.t3, letterSpacing: '0.08em', mr: 0.4 }}>ETAPA ATUAL</Typography>
+          {ETAPAS.map(e => (
+            <Chip key={e.key} ativo={etapaFiltro === e.key} onClick={() => setEtapaFiltro(e.key)}>
+              {e.rotulo} <Box component="span" sx={{ opacity: 0.7, ml: 0.3, fontVariantNumeric: 'tabular-nums' }}>{contagemEtapa[e.key]}</Box>
+            </Chip>
+          ))}
+        </Box>
       </Paper>
 
       {/* ── Totais do período ── */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(3, 1fr)' }, gap: 1.5, mb: 2 }}>
         {[
-          { rotulo: `Total · ${janela.label}`, valor: total },
+          { rotulo: etapaFiltro === 'todos' ? `Total · ${janela.label}` : `${ETAPAS.find(e => e.key === etapaFiltro)?.rotulo} · ${janela.label}`, valor: total },
           { rotulo: 'Vídeos', valor: totalVideos },
           { rotulo: 'Artes', valor: totalArtes },
         ].map(k => (
