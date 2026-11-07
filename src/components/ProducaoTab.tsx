@@ -14,7 +14,7 @@ import { snapCenterToCursor } from '@dnd-kit/modifiers'
 import {
   Box, Typography, Paper, Chip, Tooltip, Badge, Menu,
   Button, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions,
-  ToggleButtonGroup, ToggleButton, IconButton, Drawer, Portal, Snackbar, Alert, Popover,
+  ToggleButtonGroup, ToggleButton, IconButton, Drawer, Portal, Snackbar, Alert, Popover, useMediaQuery,
 } from '@mui/material'
 import ContentCard from './ContentCard'
 import EditItemDialog from './EditItemDialog'
@@ -230,6 +230,9 @@ function BoardScrollbar({ targetRef, color }: { targetRef: React.RefObject<HTMLD
   const [m, setM] = useState({ ratio: 1, left: 0, scrollable: false, x: 0, w: 0 })
   const trackRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ startX: number; startScroll: number } | null>(null)
+  // No celular o dedo já rola o quadro para os lados, e esta barra (fixa no
+  // rodapé) ficava por cima da barra de navegação de baixo (2026-11-07).
+  const estreito = useMediaQuery('(max-width:767px)')
 
   const recompute = useCallback(() => {
     const el = targetRef.current
@@ -278,7 +281,7 @@ function BoardScrollbar({ targetRef, color }: { targetRef: React.RefObject<HTMLD
     return () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp) }
   }, [targetRef])
 
-  if (!m.scrollable) return null
+  if (!m.scrollable || estreito) return null
 
   return (
     <Portal>

@@ -1,34 +1,25 @@
 import { type ReactNode } from 'react'
 import { Box, Typography } from '@mui/material'
 import { motion } from 'framer-motion'
-import HomeRoundedIcon from '@mui/icons-material/HomeRounded'
-import ViewKanbanRoundedIcon from '@mui/icons-material/ViewKanbanRounded'
-import AddRoundedIcon from '@mui/icons-material/AddRounded'
-import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded'
-import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded'
 import { DS } from '../../theme'
 import { spring } from '../system/motion'
 import { haptic } from '../system/haptics'
 
-export type TabKey = 'hoje' | 'kanban' | 'acoes' | 'clientes' | 'mais'
+/** Chave de um botão da barra: as telas próprias do celular, uma aba do painel
+    (`tab:N`), o "Criar" do meio e o "Mais". A barra é montada por cargo no
+    MobileShell — quem não pode ver uma tela não ganha o botão dela. */
+export type TabKey = 'hoje' | 'kanban' | 'clientes' | 'acoes' | 'mais' | `tab:${number}`
 
-interface TabDef { key: TabKey; label: string; icon: ReactNode }
-
-const TABS: TabDef[] = [
-  { key: 'hoje',     label: 'Hoje',      icon: <HomeRoundedIcon /> },
-  { key: 'kanban',   label: 'Produções', icon: <ViewKanbanRoundedIcon /> },
-  { key: 'acoes',    label: 'Criar',     icon: <AddRoundedIcon /> },
-  { key: 'clientes', label: 'Clientes',  icon: <PeopleRoundedIcon /> },
-  { key: 'mais',     label: 'Mais',      icon: <MoreHorizRoundedIcon /> },
-]
+export interface TabDef { key: TabKey; label: string; icon: ReactNode }
 
 interface Props {
+  tabs: TabDef[]
   active: TabKey
   onSelect: (key: TabKey) => void
   badges?: Partial<Record<TabKey, number>>
 }
 
-export default function TabBar({ active, onSelect, badges }: Props) {
+export default function TabBar({ tabs, active, onSelect, badges }: Props) {
   return (
     <Box
       sx={{
@@ -44,7 +35,7 @@ export default function TabBar({ active, onSelect, badges }: Props) {
         borderTop: `1px solid ${DS.border}`,
       }}
     >
-      {TABS.map((t) => {
+      {tabs.map((t) => {
         const selected = active === t.key
         const badge = badges?.[t.key] ?? 0
         const central = t.key === 'acoes'

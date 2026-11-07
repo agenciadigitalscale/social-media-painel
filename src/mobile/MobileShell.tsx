@@ -1,5 +1,5 @@
-import { type ReactNode, useMemo, useState } from 'react'
-import { Box, Typography } from '@mui/material'
+import { type ReactNode, Suspense, useMemo, useState } from 'react'
+import { Box, CircularProgress, Typography } from '@mui/material'
 import { motion } from 'framer-motion'
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded'
@@ -9,14 +9,24 @@ import { dismissAssignment } from '../lib/assignments'
 import { DS } from '../theme'
 import { screenSwap } from './system/motion'
 import { haptic } from './system/haptics'
-import TabBar, { type TabKey } from './nav/TabBar'
-import MoreSheet, { type NavItemLike } from './nav/MoreSheet'
+import HomeRoundedIcon from '@mui/icons-material/HomeRounded'
+import ViewKanbanRoundedIcon from '@mui/icons-material/ViewKanbanRounded'
+import AddRoundedIcon from '@mui/icons-material/AddRounded'
+import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded'
+import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded'
+import PersonRoundedIcon from '@mui/icons-material/PersonRounded'
+import VideocamRoundedIcon from '@mui/icons-material/VideocamRounded'
+import NoteAddRoundedIcon from '@mui/icons-material/NoteAddRounded'
+import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded'
+import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded'
+import TabBar, { type TabKey, type TabDef } from './nav/TabBar'
+import MoreSheet, { type NavItemLike, type GrupoNav } from './nav/MoreSheet'
 import PullToRefresh from './system/PullToRefresh'
 import MobileKanban from './kanban/MobileKanban'
 import type { QuickKey } from './kanban/filters'
 import MobileToday from './today/MobileToday'
 import MobileClients from './clients/MobileClients'
-import QuickActionSheet from './nav/QuickActionSheet'
+import QuickActionSheet, { type AcaoRapida } from './nav/QuickActionSheet'
 import PwaStatusBar from './system/PwaStatusBar'
 import MobileNotificationCenter from './notifications/MobileNotificationCenter'
 import { useSmartNotifications } from './notifications/useSmartNotifications'
@@ -44,6 +54,7 @@ interface Props {
   tab: number
   setTab: (t: number) => void
   navItems: NavItemLike[]
+  navGroups: GrupoNav[]
   onRefresh?: () => Promise<void> | void
   onLogout?: () => void
   userInfo?: { name: string; role: string; emoji: string; color: string }
@@ -56,18 +67,34 @@ interface Props {
 
 type PrimaryKey = Exclude<TabKey, 'mais' | 'acoes'>
 
-const PRIMARY_TO_TAB: Record<PrimaryKey, number> = {
-  hoje: 1, kanban: 4, clientes: 6,
-}
-const TITLES: Record<PrimaryKey, string> = {
-  hoje: 'Hoje', kanban: 'Produções', clientes: 'Clientes',
-}
+const TELA_PROPRIA: Record<'hoje' | 'kanban' | 'clientes', number> = { hoje: 1, kanban: 4, clientes: 6 }
+const tabDaChave = (k: PrimaryKey): number =>
+  k.startsWith('tab:') ? Number(k.slice(4)) : TELA_PROPRIA[k as keyof typeof TELA_PROPRIA]
 
 export default function MobileShell(props: Props) {
   const { items, states, now, currentUser, clientColors, allClients, hiddenTabs, onStatusChange, onUpdate, onSendToClient, onBulkSendToClient, onRemindClient, onAddItem, onAppendHistory, onReviewNotify,
-    renderTab, tab, setTab, navItems, onRefresh, onLogout, userInfo, badges, notifications, assignmentTrigger, onMarkNotificationRead, onMarkAllNotificationsRead } = props
+    renderTab, tab, setTab, navItems, navGroups, onRefresh, onLogout, userInfo, badges, notifications, assignmentTrigger, onMarkNotificationRead, onMarkAllNotificationsRead } = props
 
-  const [primary, setPrimary] = useState<PrimaryKey>('hoje')
+  // Barra por cargo (2026-11-07). Antes era fixa — Hoje · Produções · Clientes —
+  // e editor/designer viam telas que nem são do cargo deles, enquanto a "Minha
+  // esteira" (o trabalho deles) ficava escondida no Mais.
+  const pode = (idx: number) => !!navItems[idx] && !navItems[idx].hidden && !hiddenTabs.includes(idx)
+  const barra: TabDef[] = []
+  barra.push(pode(1) ? { key: 'hoje', label: 'Hoje', icon: <HomeRoundedIcon /> } : { key: 'tab:0', label: 'Meu Dia', icon: <PersonRoundedIcon /> })
+  if (pode(4)) barra.push({ key: 'kanban', label: 'Produções', icon: <ViewKanbanRoundedIcon /> })
+  else if (pode(31)) barra.push({ key: 'tab:31', label: 'Esteira', icon: <ViewKanbanRoundedIcon /> })
+  const acoes: AcaoRapida[] = []
+  if (onAddItem && pode(32)) acoes.push({ key: 'novo', label: 'Novo conteúdo', descricao: 'Criar no Calendário de postagem', icon: <NoteAddRoundedIcon />, onClick: () => selectFallback(32) })
+  if (pode(4)) acoes.push({ key: 'aprov', label: 'Aprovações', descricao: 'Revisar e decidir o que está esperando', icon: <FactCheckRoundedIcon />, onClick: () => openProductions('aprovacao') })
+  if (pode(33)) acoes.push({ key: 'agenda', label: 'Agendar post', descricao: 'Aprovar, programar e publicar', icon: <EventAvailableRoundedIcon />, onClick: () => selectFallback(33) })
+  if (pode(9)) acoes.push({ key: 'grav', label: 'Gravação', descricao: 'Marcar ou ver gravações', icon: <VideocamRoundedIcon />, onClick: () => selectFallback(9) })
+  if (onAddItem && acoes.length) barra.push({ key: 'acoes', label: 'Criar', icon: <AddRoundedIcon /> })
+  if (pode(6)) barra.push({ key: 'clientes', label: 'Clientes', icon: <PeopleRoundedIcon /> })
+  else if (pode(9)) barra.push({ key: 'tab:9', label: 'Gravações', icon: <VideocamRoundedIcon /> })
+  barra.push({ key: 'mais', label: 'Mais', icon: <MoreHorizRoundedIcon /> })
+  const naBarra = barra.filter(b => b.key !== 'acoes' && b.key !== 'mais').map(b => tabDaChave(b.key as PrimaryKey))
+
+  const [primary, setPrimary] = useState<PrimaryKey>(() => barra[0].key as PrimaryKey)
   const [fallback, setFallback] = useState<number | null>(null)
   const [moreOpen, setMoreOpen] = useState(false)
   const [quickOpen, setQuickOpen] = useState(false)
@@ -81,27 +108,31 @@ export default function MobileShell(props: Props) {
   })
 
   const activeKey: TabKey = fallback !== null ? 'mais' : primary
-  const title = searchOpen ? 'Buscar no DSHub' : notificationsOpen ? 'Notificações' : fallback !== null ? (navItems[fallback]?.label ?? '') : TITLES[primary]
+  const title = searchOpen ? 'Buscar no DSHub' : notificationsOpen ? 'Notificações' : fallback !== null ? (navItems[fallback]?.label ?? '') : (navItems[tabDaChave(primary)]?.label ?? '')
   const viewId = searchOpen ? 'search' : notificationsOpen ? 'notifications' : fallback !== null ? `fb-${fallback}` : primary
 
-  const selectPrimary = (key: TabKey) => {
+  function selectPrimary(key: TabKey) {
     setNotificationsOpen(false)
     setSearchOpen(false)
     if (key === 'mais') { setMoreOpen(true); return }
     if (key === 'acoes') { setQuickOpen(true); return }
     setFallback(null)
     setPrimary(key)
-    setTab(PRIMARY_TO_TAB[key])
+    setTab(tabDaChave(key))
   }
 
-  const selectFallback = (idx: number) => {
+  function selectFallback(idx: number) {
     setNotificationsOpen(false)
     setSearchOpen(false)
-    setFallback(idx)
+    // Aba que está na barra abre pelo botão dela (fica marcado lá, não no Mais).
+    const naBarraKey = barra.find(b => b.key !== 'acoes' && b.key !== 'mais' && tabDaChave(b.key as PrimaryKey) === idx)
+    if (naBarraKey) { setFallback(null); setPrimary(naBarraKey.key as PrimaryKey) } else setFallback(idx)
     setTab(idx)
   }
 
-  const openProductions = (filter?: QuickKey, client?: string, focus?: { itemId: number; destination: 'approval' | 'card' }, responsible?: string) => {
+  function openProductions(filter?: QuickKey, client?: string, focus?: { itemId: number; destination: 'approval' | 'card' }, responsible?: string) {
+    // Quem não tem Produções (editor/designer/copy) vai para a esteira dele.
+    if (!pode(4)) { if (pode(31)) selectPrimary('tab:31'); return }
     const approvals = filter === 'aprovacao' || focus?.destination === 'approval'
     sessionStorage.setItem('dshub-mobile-production-view', JSON.stringify(approvals ? 'approvals' : 'kanban'))
     sessionStorage.setItem('dshub-mobile-filters', JSON.stringify({ quick: filter ? [filter] : [], ...(client ? { client } : {}), ...(responsible ? { responsible } : {}) }))
@@ -153,9 +184,15 @@ export default function MobileShell(props: Props) {
   }
 
   const scrollBox = (node: ReactNode) => (
-    <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch',
+    <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch',
       '&::-webkit-scrollbar': { width: 3 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(255,122,0,0.4)', borderRadius: 3 } }}>
-      {node}
+      {/* Suspense AQUI, não só no App: as abas são carregadas sob demanda, e sem
+          esta fronteira a primeira abertura de uma aba suspendia o celular inteiro
+          — a animação de fechar o "Mais" morria no meio e a folha ficava presa
+          por cima da tela (2026-11-07). */}
+      <Suspense fallback={<Box sx={{ display: 'grid', placeItems: 'center', py: 8 }}><CircularProgress size={28} sx={{ color: DS.accent }} /></Box>}>
+        {node}
+      </Suspense>
     </Box>
   )
 
@@ -181,6 +218,7 @@ export default function MobileShell(props: Props) {
       />
     )
     if (fallback !== null) return scrollBox(renderTab(fallback))
+    if (primary.startsWith('tab:')) return scrollBox(renderTab(tabDaChave(primary)))
     if (primary === 'kanban') {
       return (
         <MobileKanban
@@ -293,29 +331,22 @@ export default function MobileShell(props: Props) {
         </motion.div>
       </Box>
 
-      <TabBar active={activeKey} onSelect={selectPrimary} badges={computedBadges} />
+      <TabBar tabs={barra} active={activeKey} onSelect={selectPrimary} badges={computedBadges} />
 
       <MoreSheet
         open={moreOpen}
         onClose={() => setMoreOpen(false)}
+        groups={navGroups}
+        naBarra={naBarra}
         navItems={navItems}
         hiddenTabs={hiddenTabs}
-        currentTab={fallback ?? tab}
+        currentTab={fallback ?? -1}
         onSelectTab={selectFallback}
         userInfo={userInfo}
         onLogout={onLogout}
       />
 
-      <QuickActionSheet
-        open={quickOpen}
-        onClose={() => setQuickOpen(false)}
-        clients={allClients}
-        now={now}
-        onAddItem={onAddItem}
-        onRecording={() => selectFallback(9)}
-        onApprovals={() => openProductions('aprovacao')}
-        onCalendar={() => selectFallback(5)}
-      />
+      <QuickActionSheet open={quickOpen} onClose={() => setQuickOpen(false)} acoes={acoes} />
     </Box>
   )
 }

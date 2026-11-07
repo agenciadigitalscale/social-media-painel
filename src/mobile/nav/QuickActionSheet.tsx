@@ -1,27 +1,53 @@
-import { Box, Typography, Button } from '@mui/material'
-import type { Client, ContentType, Status } from '../../types'
+import { type ReactNode } from 'react'
+import { Box, Typography } from '@mui/material'
+import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded'
+import BottomSheet from '../system/BottomSheet'
+import { DS } from '../../theme'
+import { haptic } from '../system/haptics'
 
-interface QuickActionSheetProps {
+export interface AcaoRapida { key: string; label: string; descricao: string; icon: ReactNode; onClick: () => void }
+
+interface Props {
   open: boolean
   onClose: () => void
-  clients: Client[]
-  now: Date
-  onAddItem?: (clientName: string, title: string, type: ContentType, date: Date, status: Status) => void
-  onRecording: () => void
-  onApprovals: () => void
-  onCalendar: () => void
+  acoes: AcaoRapida[]
 }
 
-export default function QuickActionSheet({ open, onClose, onRecording, onApprovals, onCalendar }: QuickActionSheetProps) {
-  if (!open) return null
-
+/** O "Criar" do meio da barra. As ações vêm prontas do MobileShell, já filtradas pelo cargo. */
+export default function QuickActionSheet({ open, onClose, acoes }: Props) {
   return (
-    <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, bgcolor: '#070b16', p: 2, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
-      <Typography sx={{ fontSize: '0.9rem', fontWeight: 700, color: '#fff', mb: 1 }}>Ações rápidas</Typography>
-      <Button fullWidth sx={{ mb: 1 }} variant="contained" onClick={onRecording}>Gravação</Button>
-      <Button fullWidth sx={{ mb: 1 }} variant="contained" onClick={onApprovals}>Aprovações</Button>
-      <Button fullWidth sx={{ mb: 1 }} variant="contained" onClick={onCalendar}>Calendário</Button>
-      <Button fullWidth sx={{ mt: 1 }} variant="text" onClick={onClose}>Fechar</Button>
-    </Box>
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      title={<Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: DS.t1 }}>O que você quer fazer?</Typography>}
+    >
+      <Box sx={{ px: 1.6, pt: 0.5, pb: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+        {acoes.map(a => (
+          <Box
+            key={a.key}
+            role="button"
+            onClick={() => { haptic('selection'); onClose(); a.onClick() }}
+            sx={{
+              display: 'flex', alignItems: 'center', gap: 1.4, p: 1.4, borderRadius: 3, cursor: 'pointer',
+              background: 'rgba(247,247,245,0.03)', border: `1px solid ${DS.border}`,
+              transition: 'transform 0.15s ease', '&:active': { transform: 'scale(0.98)' },
+            }}
+          >
+            <Box sx={{
+              width: 42, height: 42, borderRadius: 2.5, flexShrink: 0, display: 'grid', placeItems: 'center',
+              color: DS.accent, background: 'rgba(255,122,0,0.1)', border: '1px solid rgba(255,122,0,0.25)',
+              '& .MuiSvgIcon-root': { fontSize: '1.35rem' },
+            }}>
+              {a.icon}
+            </Box>
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, color: DS.t1 }}>{a.label}</Typography>
+              <Typography sx={{ fontSize: '0.7rem', color: DS.t2, lineHeight: 1.3 }}>{a.descricao}</Typography>
+            </Box>
+            <ChevronRightRoundedIcon sx={{ color: DS.t3, fontSize: 20 }} />
+          </Box>
+        ))}
+      </Box>
+    </BottomSheet>
   )
 }

@@ -52,7 +52,9 @@ type Lateral = 'aprovar' | 'falhas' | 'contas'
 const MODO_KEY = 'sm_agendamento_modo'
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 function lerModo(): Modo {
-  try { const m = localStorage.getItem(MODO_KEY); return m === 'mes' || m === 'lista' ? m : 'semana' } catch { return 'semana' }
+  // Celular sem escolha salva abre na Lista: a semana em 7 colunas não cabe em 390px.
+  const padrao: Modo = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 767px)').matches ? 'lista' : 'semana'
+  try { const m = localStorage.getItem(MODO_KEY); return m === 'mes' || m === 'lista' || m === 'semana' ? m : padrao } catch { return padrao }
 }
 
 export default function AgendamentoTab({ items, states, clients, podeConectar, onProgramar, onRevisar, onDesagendar, onPubliqueiManual, onCriarPublicacao, onAbrirCalendario }: {

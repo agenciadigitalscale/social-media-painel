@@ -3402,6 +3402,7 @@ export default function App() {
             tab={tab}
             setTab={setTab}
             navItems={navItems}
+            navGroups={NAV_GROUPS}
             onRefresh={() => forceSync().catch(() => {})}
             onLogout={handleLogout}
             userInfo={userInfo ? { name: displayName, role: userInfo.role, emoji: userInfo.initials, color: userInfo.color } : undefined}

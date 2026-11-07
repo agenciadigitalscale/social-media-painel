@@ -15,8 +15,14 @@ export interface NavItemLike {
   highlight?: boolean
 }
 
+export interface GrupoNav { key: string; label: string; tabs: number[] }
+
 interface Props {
   open: boolean
+  /** Os grupos da barra lateral do desktop — a mesma organização nos dois. */
+  groups: GrupoNav[]
+  /** Abas que já estão na barra de baixo (não repetir aqui). */
+  naBarra: number[]
   onClose: () => void
   navItems: NavItemLike[]
   hiddenTabs: number[]
@@ -26,13 +32,15 @@ interface Props {
   onLogout?: () => void
 }
 
-// Índices já cobertos pela TabBar (não repetir no menu Mais)
-const PRIMARY = new Set([1, 4, 6])
-
-export default function MoreSheet({ open, onClose, navItems, hiddenTabs, currentTab, onSelectTab, userInfo, onLogout }: Props) {
-  const entries = navItems
-    .map((item, idx) => ({ item, idx }))
-    .filter(({ item, idx }) => !item.hidden && !item.mobileHidden && !PRIMARY.has(idx) && !hiddenTabs.includes(idx))
+export default function MoreSheet({ open, onClose, groups, naBarra, navItems, hiddenTabs, currentTab, onSelectTab, userInfo, onLogout }: Props) {
+  // Tudo que o cargo pode ver, inclusive o que antes era "só desktop": esconder
+  // aqui deixava Dashboard, Equipe, Entregas do time e outras sem caminho nenhum
+  // no celular (2026-11-07).
+  const pode = (idx: number) => !!navItems[idx] && !navItems[idx].hidden && !hiddenTabs.includes(idx) && !naBarra.includes(idx)
+  const secoes = groups
+    .map(g => ({ ...g, tabs: g.tabs.filter(pode) }))
+    .filter(g => g.tabs.length > 0)
+  let ordem = 0
 
   return (
     <BottomSheet
@@ -75,40 +83,44 @@ export default function MoreSheet({ open, onClose, navItems, hiddenTabs, current
         )
       }
     >
-      <Box sx={{
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, px: 1.6, pt: 0.5, pb: 2,
-      }}>
-        {entries.map(({ item, idx }, i) => {
-          const active = idx === currentTab
-          return (
-            <motion.div key={item.label} variants={listItem} initial="initial" animate="animate" custom={i}>
-              <Box
-                onClick={() => { haptic('selection'); onSelectTab(idx); onClose() }}
-                sx={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  gap: 0.7, py: 1.8, borderRadius: 3, cursor: 'pointer',
-                  background: active ? 'rgba(255,122,0,0.12)' : 'rgba(247,247,245,0.03)',
-                  border: `1px solid ${active ? 'rgba(255,122,0,0.3)' : DS.border}`,
-                  transition: 'transform 0.15s ease, background 0.2s',
-                  '&:active': { transform: 'scale(0.95)' },
-                }}
-              >
-                <Box sx={{
-                  color: active ? DS.orange : (item.highlight ? DS.orange : DS.t2),
-                  '& .MuiSvgIcon-root': { fontSize: '1.5rem' },
-                }}>
-                  {item.icon}
-                </Box>
-                <Typography sx={{
-                  fontSize: '0.62rem', fontWeight: 700, textAlign: 'center', lineHeight: 1.1,
-                  color: active ? DS.orange : DS.t2,
-                }}>
-                  {item.label}
-                </Typography>
-              </Box>
-            </motion.div>
-          )
-        })}
+      <Box sx={{ px: 1.6, pt: 0.5, pb: 2, display: 'flex', flexDirection: 'column', gap: 1.6 }}>
+        {secoes.map(g => (
+          <Box key={g.key}>
+            <Typography sx={{ fontSize: '0.62rem', fontWeight: 800, color: DS.t3, textTransform: 'uppercase', letterSpacing: '0.1em', px: 0.4, mb: 0.8 }}>
+              {g.label}
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
+              {g.tabs.map(idx => {
+                const item = navItems[idx]
+                const active = idx === currentTab
+                return (
+                  <motion.div key={idx} variants={listItem} initial="initial" animate="animate" custom={ordem++}>
+                    <Box
+                      role="button"
+                      onClick={() => { haptic('selection'); onSelectTab(idx); onClose() }}
+                      sx={{
+                        height: '100%', minHeight: 84,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        gap: 0.7, px: 0.6, py: 1.4, borderRadius: 3, cursor: 'pointer',
+                        background: active ? 'rgba(255,122,0,0.12)' : 'rgba(247,247,245,0.03)',
+                        border: `1px solid ${active ? 'rgba(255,122,0,0.3)' : DS.border}`,
+                        transition: 'transform 0.15s ease, background 0.2s',
+                        '&:active': { transform: 'scale(0.95)' },
+                      }}
+                    >
+                      <Box sx={{ color: active ? DS.accent : DS.t2, '& .MuiSvgIcon-root': { fontSize: '1.5rem' } }}>
+                        {item.icon}
+                      </Box>
+                      <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, textAlign: 'center', lineHeight: 1.15, color: active ? DS.accent : DS.t1 }}>
+                        {item.label}
+                      </Typography>
+                    </Box>
+                  </motion.div>
+                )
+              })}
+            </Box>
+          </Box>
+        ))}
       </Box>
     </BottomSheet>
   )
