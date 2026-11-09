@@ -819,14 +819,31 @@ export default function App() {
     return () => { clearInterval(t); window.removeEventListener(EVENTO_PADRAO, preencher) }
   }, [dadosDoServidor, allClients])
 
-  // ── Sync D1 no mount — restaura dados se cache estiver vazio ──────────────
+  // ── Carga completa do D1 — restaura dados se cache estiver vazio ──────────
+  // Roda na montagem E de novo quando alguém entra. Em computador novo a
+  // montagem acontece na tela de login, sem sessão: o /api/sync responde 401.
+  // Antes isso era ignorado e o painel marcava a carga como feita — depois do
+  // login só desciam as MUDANÇAS, e o computador novo ficava vazio (2026-11-09).
+  const cargaCompletaRef = useRef(false)
+  const filaInicialRef = useRef(false)
+  // Logo após o login a sessão pode ainda estar chegando (o login sem senha não
+  // espera o cookie): tenta de novo antes de concluir que a sessão caiu.
+  const [tentativaCarga, setTentativaCarga] = useState(0)
   useEffect(() => {
+    if (cargaCompletaRef.current) return
+    // Entrou num computador sem nada guardado: mostra que está baixando.
+    if (currentUser && !localStorage.getItem('sm_custom')) setRestoringData(true)
     // Flush qualquer fila pendente do reload anterior (F5 no meio de um sync)
-    forceSync().catch(() => {})
+    if (!filaInicialRef.current) { filaInicialRef.current = true; forceSync().catch(() => {}) }
+    let semSessao = false
     fetch('/api/sync')
-      .then(r => r.json())
+      .then(r => {
+        if (r.status === 401) { semSessao = true; return { ok: false, data: [] } }
+        return r.json()
+      })
       .then((res: { ok: boolean; data: { key: string; value: string }[] }) => {
         if (!res.ok) return
+        cargaCompletaRef.current = true
         if (res.data?.length) {
           // D1 tem dados — restaura tudo (importante quando cache foi limpo)
           applyRemoteSync(res.data)
@@ -857,6 +874,17 @@ export default function App() {
         }
       })
       .finally(() => {
+        if (semSessao) {
+          // Sem sessão a carga NÃO está feita: o efeito roda de novo no login.
+          // O aviso de "restaurando" sai para a tela de entrada aparecer.
+          setRestoringData(false)
+          // Já havia alguém na tela (sessão caiu): pede para entrar de novo.
+          if (currentUser) {
+            if (tentativaCarga < 3) setTimeout(() => setTentativaCarga(t => t + 1), 2500)
+            else { sessionStorage.removeItem('sm_tab_user'); setCurrentUser(''); setShowSplash(true); setTentativaCarga(0) }
+          }
+          return
+        }
         initialSyncRef.current = true
         lastPullRef.current = new Date().toISOString()
         setRestoringData(false)
@@ -872,7 +900,7 @@ export default function App() {
           })
         } catch {}
       })
-  }, [applyRemoteSync])
+  }, [applyRemoteSync, currentUser, tentativaCarga]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Poll D1 a cada 8s — detecta reprovações do cliente em tempo real ──
   useEffect(() => {
@@ -1551,22 +1579,10 @@ export default function App() {
     window.dispatchEvent(new Event(EVENTO_ATRIBUICOES))
   }, [currentUser, dadosDoServidor, equipeVersao])
 
-  // Uma vez só (pedido do dono, 2026-09-29): todo Reel de trabalho real sem
-  // ninguém atribuído vai para o Kaique, o editor da casa. Roda no aparelho de um
-  // sócio depois da primeira sincronização — antes dela, "sem dono" seria só
-  // dado local desatualizado. Refazer é inofensivo: só pega quem ainda está sem dono.
-  useEffect(() => {
-    if (!isSocio(currentUser) || restoringData || !initialSyncRef.current) return
-    const MARCA = 'sm_mig_reels_kaique_v1'
-    try { if (localStorage.getItem(MARCA) === '1') return } catch { return }
-    const atrib = carregarAtribuicoes()
-    const store = carregarPaineis()
-    const semDono = allItems
-      .filter(i => i.tp === 'Reel' && isRealWork(i, states[i.i]) && !donoDoCard(i.i, states[i.i], atrib, store))
-      .map(i => i.i)
-    if (semDono.length) reatribuir(semDono, 'kaique')
-    try { localStorage.setItem(MARCA, '1') } catch { /* sem armazenamento: roda de novo, sem efeito */ }
-  }, [currentUser, restoringData, allItems, states, reatribuir])
+  // (2026-11-09) Saiu a migração "todo Reel sem dono vai para o Kaique" de
+  // 2026-09-29. Ela já rodou; a marca de "feito" ficava no NAVEGADOR, então todo
+  // computador novo de sócio a rodava de novo e jogava os Reels sem dono para o
+  // Kaique — que hoje nem acessa o painel.
 
   /** Card esperando dia/hora para entrar em "Programado" (9). */
   const [programarId, setProgramarId] = useState<number | null>(null)
