@@ -115,7 +115,7 @@ import PresentationMode from './components/PresentationMode'
 import ScaleAI from './components/ScaleAI'
 import CalendarioPostagem from './components/CalendarioPostagem'
 import AgendamentoTab from './components/AgendamentoTab'
-import PainelTrafegoTab, { PropostaTab } from './components/PainelTrafegoTab'
+import PainelTrafegoTab, { FinanceiroAtalhoTab, PropostaTab } from './components/PainelTrafegoTab'
 import CronogramaTab from './components/CronogramaTab'
 import EsteiraRoteirosTab from './components/EsteiraRoteirosTab'
 import UltimaPostagemTab from './components/UltimaPostagemTab'
@@ -3069,6 +3069,9 @@ export default function App() {
     { label: 'Roteiros', icon: <AutoStoriesIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 37
     // 38 — última postagem de cada cliente (2026-10-20): o aviso para nenhum ficar sem post. Sócios + Social.
     { label: 'Última postagem', icon: <HistoryIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 38
+    // 39 — atalho para o DS Financeiro (cobranças, 2026-11-12): só sócios. Abre em aba nova
+    // porque o login do Cloudflare Access não aceita moldura (X-Frame-Options: DENY).
+    { label: 'Financeiro', icon: <RequestQuoteIcon />, mobileOnly: false, hidden: false, mobileHidden: false }, // 39
   ]
 
   // Mantém os atalhos de dígito (1–9) fora das abas ocultas e das restritas
@@ -3103,7 +3106,7 @@ export default function App() {
     { key: 'clientes',  label: 'Clientes',     tabs: [6, 38, 30, 21, 23] },
     { key: 'equipe',    label: 'Equipe',       tabs: [12, 25, 26, 27, 28, 29] },
     { key: 'trafego',   label: 'Tráfego',      tabs: [34] },
-    { key: 'comercial', label: 'Comercial',    tabs: [35] },
+    { key: 'comercial', label: 'Comercial',    tabs: [35, 39] },
   ]
 
   // Mobile: barra inferior com 4 abas fixas; o resto vai pro menu "Mais"
@@ -3202,6 +3205,8 @@ export default function App() {
         return <PainelTrafegoTab />
       case 35:
         return <PropostaTab />
+      case 39:
+        return <FinanceiroAtalhoTab />
       case 38:
         return <UltimaPostagemTab items={allItems} states={states} clients={allClients.map(c => c.name)} now={now} />
       case 37:

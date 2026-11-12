@@ -48,3 +48,26 @@ export default function PainelTrafegoTab() {
 export function PropostaTab() {
   return <SiteEmbutido titulo="Proposta" subtitulo="Propostas comerciais da agência — só sócios." url={PROPOSTA_URL} />
 }
+
+/** DS Financeiro (cobranças, WhatsApp da Gisele), hospedado à parte, atrás do Cloudflare Access. */
+export const FINANCEIRO_URL = 'https://financeiro-staging.agenciadigitalscale.com/'
+
+/**
+ * Aba 39: só sócios. Não dá para embutir: a tela de login do Cloudflare Access
+ * recusa moldura (X-Frame-Options: DENY), então é um atalho que abre em aba nova.
+ */
+export function FinanceiroAtalhoTab() {
+  return (
+    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: { md: 720, xl: 900 } }}>
+      <Typography sx={{ fontSize: { xs: '0.66rem', xl: '0.74rem' }, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: DS.accent }}>Atalho</Typography>
+      <Typography sx={{ fontFamily: DS.fontDisplay, textTransform: 'uppercase', fontSize: { xs: '1.9rem', xl: '2.4rem' }, fontWeight: 400, color: DS.t1, letterSpacing: '0.01em', lineHeight: 1.05, mb: 1 }}>Financeiro</Typography>
+      <Typography sx={{ fontSize: { xs: '0.86rem', xl: '0.96rem' }, color: DS.t2, mb: 2.5, maxWidth: 560 }}>
+        Cobranças dos clientes, pagamentos recebidos e o WhatsApp da Gisele. Abre numa aba nova
+        e pede o login por código no e-mail na primeira vez.
+      </Typography>
+      <Button variant="contained" size="large" startIcon={<OpenInNewIcon />} href={FINANCEIRO_URL} target="_blank" rel="noopener noreferrer" sx={{ fontWeight: 800, px: 3 }}>
+        Abrir o Financeiro
+      </Button>
+    </Box>
+  )
+}

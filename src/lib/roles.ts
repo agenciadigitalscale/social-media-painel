@@ -28,10 +28,10 @@ export interface Permissions {
   hiddenTabs:         number[] // índices das abas escondidas para este cargo
 }
 
-/** Todas as abas do `navItems` do App (0–36). */
+/** Todas as abas do `navItems` do App (0–39). 39 = Financeiro (atalho, só sócios). */
 // Ao criar aba nova no fim do navItems, aumente este número — senão ela fica
 // visível para todo cargo com lista (foi o que aconteceu com a 32).
-const TODAS_AS_ABAS = Array.from({ length: 39 }, (_, i) => i)
+const TODAS_AS_ABAS = Array.from({ length: 40 }, (_, i) => i)
 
 /**
  * Abas que cada cargo VÊ. O resto fica escondido — e bloqueado: a trava
