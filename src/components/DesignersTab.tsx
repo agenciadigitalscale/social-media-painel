@@ -26,6 +26,7 @@ import {
 import { carregarManuais } from '../lib/producaoEditor'
 import { useGavetas } from '../lib/useGavetas'
 import { membrosDoCargo } from '../lib/access'
+import { carregarEquipe, chaveDoEncarregado, encarregadosDaFuncao } from '../lib/equipeProducao'
 import { NAME_MAP, getDisplayName } from '../lib/users'
 import { DS, ctaGradient } from '../theme'
 import { clickable } from '../shared/a11y'
@@ -48,14 +49,27 @@ type TipoFiltro = 'todos' | Tipo
 /** Uma entrega com o tipo — vídeo (Reel) ou arte (o resto). */
 type Entrega = ArteDesigner & { tipo: Tipo }
 
-/** Quem produz: editor(es) primeiro, depois designers. */
+/**
+ * Quem produz: editor(es) primeiro, depois designers. Vale o cargo (access.ts) E a
+ * equipe de produção da tela (sm_equipe_producao): o Prado é sócio no cargo, mas
+ * edita vídeo e os vídeos dele contam aqui (pedido do dono, 2026-11-13).
+ */
+function daEquipe(funcao: 'editor' | 'design'): string[] {
+  const eq = carregarEquipe()
+  return eq ? encarregadosDaFuncao(eq, funcao).map(chaveDoEncarregado) : []
+}
+function editoresDoTime(): string[] {
+  return [...new Set([...membrosDoCargo('editor'), ...daEquipe('editor')])]
+}
 function pessoasDoTime(): string[] {
-  const editores = membrosDoCargo('editor')
-  const designers = membrosDoCargo('design').sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)))
+  const editores = editoresDoTime()
+  const designers = [...new Set([...membrosDoCargo('design'), ...daEquipe('design')])]
+    .filter(u => !editores.includes(u))
+    .sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)))
   return [...editores, ...designers]
 }
 
-const ehEditor = (u: string) => membrosDoCargo('editor').includes(u)
+const ehEditor = (u: string) => editoresDoTime().includes(u)
 const funcaoDe = (u: string) => (ehEditor(u) ? 'Vídeo' : 'Design')
 
 type PeriodoKey = 'hoje' | 'ontem' | 'semana' | 'mes' | 'mesAnterior' | 'custom'
