@@ -21,7 +21,7 @@ import type { Client, ContentItem, ItemState } from '../types'
 import { STATUS_CONFIG } from '../types'
 import {
   artesDoDesigner, resumoDesigner, contarEntre, aprovadasEntre, porClienteEntre,
-  serieDiariaAprovadas, CONTA_POR_ENTREGA, TIPOS_VIDEO, type ArteDesigner,
+  serieDiariaAprovadas, CONTA_POR_ENTREGA, TIPOS_VIDEO, entregasPorDia, type ArteDesigner,
 } from '../lib/designerProducao'
 import { carregarManuais } from '../lib/producaoEditor'
 import { useGavetas } from '../lib/useGavetas'
@@ -185,7 +185,8 @@ export default function DesignersTab({ items, states, allClients = [], now }: Pr
     const manuais = carregarManuais()
     const m: Record<string, Entrega[]> = {}
     for (const p of pessoas) {
-      m[p] = artesDoDesigner(items, states, atrib, paineis, p, new Set(), { ...CONTA_POR_ENTREGA, manuais })
+      // Um dia de trabalho por linha: entrega nova E ajuste reenviado contam no dia em que saíram.
+      m[p] = entregasPorDia(artesDoDesigner(items, states, atrib, paineis, p, new Set(), { ...CONTA_POR_ENTREGA, manuais }), states)
         .map(a => ({ ...a, tipo: tipoDoItem.get(a.itemId) ?? (ehEditor(p) ? 'video' : 'arte') }))
     }
     return m
@@ -206,6 +207,7 @@ export default function DesignersTab({ items, states, allClients = [], now }: Pr
         noPeriodo: contarEntre(artes, janela.inicio, janela.fim),
         videos: doPeriodo.filter(a => a.tipo === 'video').length,
         artesN: doPeriodo.filter(a => a.tipo === 'arte').length,
+        ajustesN: doPeriodo.filter(a => a.ajuste).length,
       }
     })
   }, [pessoaFiltro, pessoas, todasPorPessoa, janela, tipoFiltro, clienteFiltro, etapaFiltro])
@@ -225,12 +227,13 @@ export default function DesignersTab({ items, states, allClients = [], now }: Pr
   const feitosNoMes = useMemo(() => {
     const ini = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
     const fim = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime() - 1
-    return pessoas.flatMap(p => (aprovadasEntre(todasPorPessoa[p] ?? [], ini, fim) as Entrega[]).map(a => ({ cliente: a.cliente, tipo: a.tipo })))
+    return pessoas.flatMap(p => (aprovadasEntre(todasPorPessoa[p] ?? [], ini, fim) as Entrega[]).filter(a => !a.ajuste).map(a => ({ cliente: a.cliente, tipo: a.tipo })))
   }, [pessoas, todasPorPessoa, now])
 
   const total = dados.reduce((s, d) => s + d.noPeriodo, 0)
   const totalVideos = dados.reduce((s, d) => s + d.videos, 0)
   const totalArtes = dados.reduce((s, d) => s + d.artesN, 0)
+  const totalAjustes = dados.reduce((s, d) => s + d.ajustesN, 0)
 
   const ranking = [...dados].sort((a, b) => b.noPeriodo - a.noPeriodo)
   const maxPeriodo = Math.max(1, ...dados.map(d => d.noPeriodo))
@@ -320,11 +323,12 @@ export default function DesignersTab({ items, states, allClients = [], now }: Pr
       </Paper>
 
       {/* ── Totais do período ── */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(3, 1fr)' }, gap: 1.5, mb: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 1.5, mb: 2 }}>
         {[
           { rotulo: etapaFiltro === 'todos' ? `Total · ${janela.label}` : `${ETAPAS.find(e => e.key === etapaFiltro)?.rotulo} · ${janela.label}`, valor: total },
           { rotulo: 'Vídeos', valor: totalVideos },
           { rotulo: 'Artes', valor: totalArtes },
+          { rotulo: 'Ajustes reenviados', valor: totalAjustes },
         ].map(k => (
           <Paper key={k.rotulo} sx={{ p: 2, borderRadius: 3, border: `1px solid ${DS.border}` }}>
             <Typography sx={{ fontSize: { xs: '0.6rem', xl: '0.68rem' }, fontWeight: 800, color: DS.t3, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.8 }}>{k.rotulo}</Typography>
@@ -356,7 +360,7 @@ export default function DesignersTab({ items, states, allClients = [], now }: Pr
                 <Box sx={{ width: { xs: 70, md: 160 }, textAlign: 'right', flexShrink: 0 }}>
                   <Typography component="span" sx={{ fontSize: '1.05rem', fontWeight: 900, color: DS.t1 }}>{d.noPeriodo}</Typography>
                   <Typography component="span" sx={{ display: { xs: 'none', md: 'inline' }, fontSize: '0.62rem', color: DS.t3, ml: 0.8 }}>
-                    {plural(d.videos, 'vídeo', 'vídeos')} · {plural(d.artesN, 'arte', 'artes')}
+                    {plural(d.videos, 'vídeo', 'vídeos')} · {plural(d.artesN, 'arte', 'artes')}{d.ajustesN ? ` · ${plural(d.ajustesN, 'ajuste', 'ajustes')}` : ''}
                   </Typography>
                 </Box>
               </Box>
@@ -407,6 +411,7 @@ export default function DesignersTab({ items, states, allClients = [], now }: Pr
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               <MiniStat rotulo="Vídeos" valor={d.videos} />
               <MiniStat rotulo="Artes" valor={d.artesN} />
+              <MiniStat rotulo="Ajustes" valor={d.ajustesN} />
               <MiniStat rotulo="Hoje" valor={d.resumo.aprovadasHoje} />
               <MiniStat rotulo="Semana" valor={d.resumo.aprovadasSemana} />
               <MiniStat rotulo="Mês" valor={d.resumo.aprovadasMes} />
@@ -445,7 +450,7 @@ export default function DesignersTab({ items, states, allClients = [], now }: Pr
             {auditoria.map(a => {
               const cfg = STATUS_CONFIG[a.status]
               return (
-                <Box key={`${a.designer}-${a.manual ? a.manualId : a.itemId}`} sx={{ display: 'contents' }}>
+                <Box key={`${a.designer}-${a.manual ? a.manualId : a.itemId}-${a.dia ?? ''}`} sx={{ display: 'contents' }}>
                   <Cel>{a.cliente}</Cel>
                   <Cel forte>{a.titulo}</Cel>
                   <Cel>{a.tipo === 'video' ? 'Vídeo' : 'Arte'}</Cel>
@@ -453,7 +458,7 @@ export default function DesignersTab({ items, states, allClients = [], now }: Pr
                   <Cel>{getDisplayName(a.designer)}</Cel>
                   <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, py: 0.6 }}>
                     <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: cfg?.color, flexShrink: 0 }} />
-                    <Typography sx={{ fontSize: '0.66rem', color: DS.t2 }} noWrap>{a.manual ? 'Registro manual' : cfg?.shortLabel}</Typography>
+                    <Typography sx={{ fontSize: '0.66rem', color: DS.t2 }} noWrap>{a.manual ? 'Registro manual' : a.ajuste ? `Ajuste reenviado · ${cfg?.shortLabel ?? ''}` : cfg?.shortLabel}</Typography>
                   </Box>
                 </Box>
               )

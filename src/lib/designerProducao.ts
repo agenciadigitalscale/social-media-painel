@@ -136,6 +136,10 @@ export interface ArteDesigner {
   /** Veio de registro manual — só essas podem ser removidas na tela. */
   manual?: boolean
   manualId?: string
+  /** Linha de UM DIA de trabalho no card (ver `entregasPorDia`): o dia, em chave local. */
+  dia?: string
+  /** Reenvio depois de ajuste (o card já tinha sido entregue num dia anterior). */
+  ajuste?: boolean
 }
 
 /**
@@ -155,7 +159,42 @@ export interface ContagemOpts {
 /** Chave única de uma linha — manual pelo próprio id, card pelo itemId. Sem isto
     dois registros manuais (itemId -1) colidiriam e a conta cairia para 1. */
 function chaveArte(a: ArteDesigner): string {
-  return a.manual ? `m:${a.manualId}` : `i:${a.itemId}`
+  return a.manual ? `m:${a.manualId}` : a.dia ? `i:${a.itemId}:${a.dia}` : `i:${a.itemId}`
+}
+
+/* Envio para a Revisão gravado no histórico (rótulo atual e o de antes da esteira única). */
+const ACAO_REVISAO = new Set([`→ ${STATUS_CONFIG[2].label}`, '→ Revisão interna'])
+
+/**
+ * "Quantos fez por dia" (pedido do dono, 2026-11-16: "a Manu fez 5 e contabilizou 3").
+ *
+ * Cada DIA em que a pessoa entregou o card (mandou para a Revisão, ou o primeiro
+ * carimbo de entrega) vira uma linha naquele dia — entrega nova ou AJUSTE reenviado.
+ * Várias idas e voltas no MESMO dia contam 1. O primeiro dia é a entrega nova; os
+ * outros são `ajuste: true`. Card que voltou para produção continua com os dias em
+ * que de fato entregou. Registros manuais passam como estão.
+ *
+ * Usado só na aba "Entregas do time". Fechamento e produção individual seguem
+ * contando o vídeo uma vez (`CONTA_POR_ENTREGA`).
+ */
+export function entregasPorDia(artes: ArteDesigner[], states: Record<number, ItemState>): ArteDesigner[] {
+  const out: ArteDesigner[] = []
+  for (const a of artes) {
+    if (a.manual) { out.push(a); continue }
+    const porDia = new Map<string, number>()
+    const marca = (ts: number | null | undefined) => {
+      if (typeof ts !== 'number' || !Number.isFinite(ts) || ts <= 0) return
+      const k = chaveDoDia(ts)
+      const atual = porDia.get(k)
+      if (atual === undefined || ts < atual) porDia.set(k, ts)
+    }
+    if (a.aprovada) marca(a.aprovadaEm)
+    for (const h of states[a.itemId]?.history ?? []) if (ACAO_REVISAO.has(h.action)) marca(h.ts)
+    if (porDia.size === 0) { out.push(a); continue }
+    const dias = [...porDia.entries()].sort((x, y) => x[1] - y[1])
+    dias.forEach(([dia, ts], i) => out.push({ ...a, aprovada: true, aprovadaEm: ts, dia, ajuste: i > 0 }))
+  }
+  return out
 }
 
 /**
@@ -440,8 +479,9 @@ export function resumoDesigner(artes: ArteDesigner[], ref: Date): ResumoDesigner
 
   const contadas = new Set<string>()
   for (const a of artes) {
-    if (!a.manual && a.status === STATUS_AGUARDANDO) aguardando++
-    if (!a.manual && a.status === STATUS_CORRECAO) correcao++
+    // Fila é por CARD: a linha de reenvio (ajuste) do mesmo card não conta de novo.
+    if (!a.manual && !a.ajuste && a.status === STATUS_AGUARDANDO) aguardando++
+    if (!a.manual && !a.ajuste && a.status === STATUS_CORRECAO) correcao++
     const chave = chaveArte(a)
     if (!a.aprovada || contadas.has(chave)) continue
     contadas.add(chave)
