@@ -244,7 +244,7 @@ function CardDetailSheetContent({
       </Box>
 
       <Box sx={{ px: 2, pb: 1.25 }}>
-        <Box sx={{ position: 'relative', overflow: 'hidden', p: 1.25, borderRadius: 3.1, background: 'linear-gradient(125deg, rgba(13,28,49,.98), rgba(7,13,24,.98))', border: `1px solid ${expressTone}42`, boxShadow: '0 18px 36px rgba(0,0,0,.24)' }}>
+        <Box sx={{ position: 'relative', overflow: 'hidden', p: 1.25, borderRadius: 3.1, background: DS.surfaceAlt, border: `1px solid ${expressTone}42` }}>
           <Box sx={{ position: 'absolute', top: 0, left: 22, right: 22, height: 1, background: `linear-gradient(90deg, transparent, ${expressTone}, transparent)` }} />
           <Box sx={{ display: 'flex', alignItems: 'center', gap: .65 }}>
             <BoltRoundedIcon sx={{ fontSize: 16, color: expressTone }} />
@@ -364,7 +364,7 @@ function CardDetailSheetContent({
 
             {previewReady && (
               <Box sx={{ minHeight: 42, px: 1.1, borderRadius: 2.3, display: 'flex', alignItems: 'center', gap: 0.7, bgcolor: 'rgba(32,216,120,0.08)', border: '1px solid rgba(32,216,120,0.25)' }}>
-                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: DS.green, boxShadow: '0 0 8px rgba(32,216,120,.55)' }} />
+                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: DS.green }} />
                 <Typography sx={{ fontSize: '0.62rem', fontWeight: 780, color: DS.green }}>Prévia pronta e reproduzível</Typography>
                 <Box sx={{ flex: 1 }} />
                 {link && <Box onClick={() => openLink(link)} sx={{ width: 36, height: 36, display: 'grid', placeItems: 'center', cursor: 'pointer' }}><OpenInNewRoundedIcon sx={{ fontSize: 17, color: DS.green }} /></Box>}
@@ -448,8 +448,8 @@ function CardDetailSheetContent({
         )}
       </Box>
       {undo && (
-        <Box role="status" sx={{ position: 'fixed', zIndex: 1600, left: 14, right: 14, bottom: 'max(env(safe-area-inset-bottom), 18px)', minHeight: 54, px: 1.15, display: 'flex', alignItems: 'center', gap: .8, borderRadius: 2.8, background: 'rgba(8,15,27,.97)', border: '1px solid rgba(255,212,0,.32)', boxShadow: '0 18px 42px rgba(0,0,0,.5)', backdropFilter: 'blur(18px)' }}>
-          <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: DS.cyan, boxShadow: '0 0 12px rgba(255,212,0,.65)' }} />
+        <Box role="status" sx={{ position: 'fixed', zIndex: 1600, left: 14, right: 14, bottom: 'max(env(safe-area-inset-bottom), 18px)', minHeight: 54, px: 1.15, display: 'flex', alignItems: 'center', gap: .8, borderRadius: 2.8, background: DS.surfaceAlt, border: `1px solid ${DS.border}`, boxShadow: '0 18px 42px rgba(0,0,0,.5)', backdropFilter: 'blur(18px)' }}>
+          <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: DS.accent }} />
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography sx={{ fontSize: '.61rem', fontWeight: 820, color: DS.t1 }}>“{undo.label}” aplicado</Typography>
             <Typography sx={{ mt: .15, fontSize: '.49rem', color: DS.t3 }}>{STATUS_CONFIG[undo.from].shortLabel} → {STATUS_CONFIG[undo.to].shortLabel}</Typography>

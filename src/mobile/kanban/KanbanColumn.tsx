@@ -114,7 +114,7 @@ export default function KanbanColumn({
         {items.length === 0 ? (
           <Box sx={{ flex: 1, minHeight: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', px: 4, textAlign: 'center' }}>
             <Box sx={{ width: 48, height: 48, borderRadius: '50%', display: 'grid', placeItems: 'center', mb: 1.2, background: `${color}10`, border: `1px solid ${color}2b` }}>
-              <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: color, boxShadow: `0 0 12px ${color}` }} />
+              <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: color, boxShadow: 'none' }} />
             </Box>
             <Typography sx={{ fontSize: '0.8rem', fontWeight: 750, color: DS.t2 }}>{isOver ? 'Solte para mover' : 'Nenhum card nesta etapa'}</Typography>
             {!isOver && <Typography sx={{ mt: 0.4, fontSize: '0.66rem', color: DS.t3 }}>Deslize para mudar de etapa ou ajuste os filtros.</Typography>}

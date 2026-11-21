@@ -82,10 +82,10 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
         position: 'relative', minHeight: compact ? 96 : 116,
         p: compact ? 1 : 1.25, pl: preview.kind === 'ready' && preview.thumbUrl ? 10.5 : 1.6, pr: 6.4,
         borderRadius: 3, overflow: 'hidden',
-        background: overlay ? 'rgba(18,24,36,0.99)' : 'linear-gradient(155deg, rgba(18,25,39,0.98), rgba(11,16,27,0.98))',
-        border: `1px solid ${glowing ? `${glow.color}66` : dragging ? `${cfg.color}88` : 'rgba(146,152,165,0.13)'}`,
+        background: overlay ? DS.surfaceAlt : DS.surface,
+        border: `1px solid ${dragging ? `${cfg.color}88` : DS.border}`,
         cursor: onClick ? 'pointer' : 'default', opacity: dragging && !overlay ? 0.28 : 1,
-        boxShadow: overlay ? `0 22px 52px rgba(0,0,0,0.62), 0 0 0 1px ${cfg.color}44` : glowing ? `0 0 18px -5px ${glow.color}70` : '0 10px 24px rgba(0,0,0,0.2)',
+        boxShadow: overlay ? `0 22px 52px rgba(0,0,0,0.62), 0 0 0 1px ${cfg.color}44` : 'none',
         transition: 'border-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease',
         WebkitTapHighlightColor: 'transparent', contentVisibility: overlay ? 'visible' : 'auto',
         containIntrinsicSize: compact ? '96px' : '116px',
@@ -97,7 +97,7 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
           animation: 'none',
           '@keyframes mobImpPulse': {
             '0%,100%': { boxShadow: `0 0 0 0 ${DS.amber}00, 0 10px 24px rgba(0,0,0,0.2)` },
-            '50%':      { boxShadow: `0 0 15px 1px ${DS.amber}70, 0 10px 24px rgba(0,0,0,0.2)` },
+            '50%':      { boxShadow: 'none' },
           },
         }),
         '&:active': onClick && !dragging ? { transform: 'scale(0.992)' } : undefined,
@@ -139,7 +139,7 @@ export default function MobileCard({ item, state, now, clientColor, dragging, ov
 
       {!compact && (
         <Box sx={{ mt: 0.7, display: 'flex', alignItems: 'center', gap: 0.6 }}>
-          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: creative.color, boxShadow: creative.color === DS.t3 ? 'none' : `0 0 7px ${creative.color}66` }} />
+          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: creative.color, boxShadow: 'none' }} />
           <Typography sx={{ fontSize: '0.55rem', fontWeight: 750, color: creative.color }}>{creative.label}</Typography>
         </Box>
       )}

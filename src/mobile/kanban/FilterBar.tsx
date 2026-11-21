@@ -81,7 +81,7 @@ export default function FilterBar(p: Props) {
                   px: 1.05, py: 0.55, borderRadius: 5, cursor: 'pointer',
                   background: active ? `${DS.orange}1e` : 'rgba(247,247,245,0.035)',
                   border: `1px solid ${active ? `${DS.orange}66` : DS.border}`,
-                  boxShadow: active ? `0 0 10px ${DS.orange}22` : 'none',
+                  boxShadow: 'none',
                   '&:active': { transform: 'scale(0.94)' }, transition: 'transform 0.12s, background 0.15s',
                 }}
               >

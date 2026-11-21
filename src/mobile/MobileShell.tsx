@@ -1,5 +1,6 @@
 import { type ReactNode, Suspense, useMemo, useState } from 'react'
 import { Box, CircularProgress, Typography } from '@mui/material'
+import { ThemeProvider, type Theme } from '@mui/material/styles'
 import { motion } from 'framer-motion'
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded'
@@ -265,7 +266,10 @@ export default function MobileShell(props: Props) {
   }
 
   return (
-    <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: `radial-gradient(circle at 72% -12%, rgba(255,122,0,0.1), transparent 34%), ${DS.bg}`, overflow: 'hidden' }}>
+    // No celular os cantos ficam mais contidos: o `borderRadius: 3` das telas (feito para o
+    // desktop, 3 × 12 = 36px) virava pílula na tela pequena. Aqui a unidade é 6px (3 → 18px).
+    <ThemeProvider theme={(outer: Theme) => ({ ...outer, shape: { ...outer.shape, borderRadius: 6 } })}>
+    <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: DS.bg, overflow: 'hidden' }}>
       {/* header slim */}
       <Box sx={{
         flexShrink: 0, display: 'flex', alignItems: 'center', gap: 1.2,
@@ -282,7 +286,7 @@ export default function MobileShell(props: Props) {
           <Typography sx={{ fontSize: '0.56rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: DS.t3 }}>
             DS HUB
           </Typography>
-          <Typography sx={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.02em', color: DS.t1, lineHeight: 1.1 }} noWrap>
+          <Typography sx={{ fontFamily: DS.fontDisplay, textTransform: 'uppercase', fontSize: '1.35rem', fontWeight: 400, letterSpacing: '0.01em', color: DS.t1, lineHeight: 1.05 }} noWrap>
             {title}
           </Typography>
         </Box>
@@ -295,7 +299,7 @@ export default function MobileShell(props: Props) {
           <Box onClick={() => { haptic('selection'); setNotificationsOpen(true); setSearchOpen(false) }} role="button" aria-label={`Notificações${smart.unread ? `, ${smart.unread} não lidas` : ''}`} sx={{ position: 'relative', width: 38, height: 38, borderRadius: '50%', display: 'grid', placeItems: 'center', color: smart.priorityUnread ? DS.cyan : DS.t2, background: smart.unread ? 'rgba(255,122,0,.11)' : 'rgba(247,247,245,.03)', border: `1px solid ${smart.unread ? 'rgba(255,122,0,.3)' : DS.border}`, cursor: 'pointer', flexShrink: 0 }}>
             <NotificationsRoundedIcon sx={{ fontSize: 20 }} />
             {smart.unread > 0 && (
-              <Box sx={{ position: 'absolute', top: -3, right: -3, minWidth: 16, height: 16, px: .3, borderRadius: 8, display: 'grid', placeItems: 'center', background: smart.priorityUnread ? DS.red : DS.orange, boxShadow: '0 0 0 2px #080c14' }}>
+              <Box sx={{ position: 'absolute', top: -3, right: -3, minWidth: 16, height: 16, px: .3, borderRadius: 8, display: 'grid', placeItems: 'center', background: smart.priorityUnread ? DS.red : DS.orange, boxShadow: `0 0 0 2px ${DS.bg}` }}>
                 <Typography sx={{ fontSize: '.48rem', lineHeight: 1, fontWeight: 900, color: '#fff' }}>{smart.unread > 9 ? '9+' : smart.unread}</Typography>
               </Box>
             )}
@@ -348,5 +352,6 @@ export default function MobileShell(props: Props) {
 
       <QuickActionSheet open={quickOpen} onClose={() => setQuickOpen(false)} acoes={acoes} />
     </Box>
+    </ThemeProvider>
   )
 }

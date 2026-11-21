@@ -103,7 +103,7 @@ export default function SendSocialSheet({ item, state, onCancel, onConfirm }: Pr
               onClick={() => { if (allRequired) { haptic('success'); onConfirm(item, obs) } }}
               sx={{
                 flex: 1.5, textAlign: 'center', py: 1.3, borderRadius: 2.5, cursor: allRequired ? 'pointer' : 'default',
-                background: allRequired ? `linear-gradient(135deg, ${DS.green}, #16a34a)` : 'rgba(247,247,245,0.06)',
+                background: allRequired ? DS.green : 'rgba(247,247,245,0.06)',
                 boxShadow: allRequired ? '0 6px 20px rgba(32,216,120,0.3)' : 'none', opacity: allRequired ? 1 : 0.5,
               }}
             >

@@ -258,7 +258,7 @@ export default function DesignersTab({ items, states, allClients = [], now }: Pr
   const colunasCartoes = dados.length > 2 ? 'repeat(3, 1fr)' : dados.length > 1 ? '1fr 1fr' : '1fr'
 
   return (
-    <Box sx={{ maxWidth: { xs: 1160, xl: 1400 }, mx: 'auto', px: { xs: 0, md: 0.5 }, animation: 'fadeInUp 0.4s cubic-bezier(0.16,1,0.3,1) both' }}>
+    <Box sx={{ maxWidth: { xs: 1160, xl: 1400 }, mx: 'auto', px: { xs: 1.5, md: 0.5 }, pt: { xs: 1.5, md: 0 }, animation: 'fadeInUp 0.4s cubic-bezier(0.16,1,0.3,1) both' }}>
       {/* ── Cabeçalho ── */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.4, mb: 2 }}>
         <Box sx={{

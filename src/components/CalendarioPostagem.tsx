@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Snackbar, TextField, Tooltip, Typography } from '@mui/material'
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Snackbar, TextField, Tooltip, Typography, useMediaQuery, useTheme } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import type { Client, ContentItem, ContentType, ItemState, Status } from '../types'
@@ -111,6 +111,9 @@ interface Props {
 export default function CalendarioPostagem({ items, states, now, clients, podeRemarcar, onReschedule, onAbrirProducao, planos, podeExcluirTudo, onAdicionar, onMudarTipo, onArquivar, arquivados, onRestaurar, onExcluirDefinitivo, onProgramar, onMudarHora, onReprogramar, onAbrirFila, onEditarConteudo, onAdicionarVarios, onReordenar, idsCriadosAMao }: Props) {
   const [ref, setRef] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1))
   const [modo, setModo] = useState<'mes' | 'semana'>('mes')
+  // Celular: a grade do mês mostra só bolinhas por tipo (o nome cortado em 7 colunas
+  // de 50px era ilegível); tocar no dia abre a lista completa.
+  const compacto = useMediaQuery(useTheme().breakpoints.down('sm')) && modo === 'mes'
   const [cliente, setCliente] = useState('todos')
   const [tipo, setTipo] = useState<'todos' | TipoPadrao>('todos')
   const [etapa, setEtapa] = useState<Etapa>('todas')
@@ -618,7 +621,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
                 onDragLeave={podeRemarcar && visao === 'postagem' ? () => setAlvo(a => (a === k ? null : a)) : undefined}
                 onDrop={podeRemarcar && visao === 'postagem' ? e => { e.preventDefault(); soltar(dia) } : undefined}
                 sx={{
-                  minHeight: modo === 'mes' ? { xs: 84, md: 120, xl: 150 } : { xs: 220, md: 420 },
+                  minHeight: modo === 'mes' ? { xs: 58, sm: 84, md: 120, xl: 150 } : { xs: 220, md: 420 },
                   p: { xs: 0.5, md: 0.9 }, cursor: 'pointer', position: 'relative',
                   borderRight: (idx % 7) !== 6 ? `1px solid ${DS.border}` : 'none',
                   borderBottom: idx < dias.length - 7 ? `1px solid ${DS.border}` : 'none',
@@ -651,10 +654,10 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
                           </Typography>
                         </Tooltip>
                       )
-                    })() : lista.length > 0 && (
+                    })() : lista.length > 0 && !compacto && (
                       <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: DS.t3 }}>{lista.length}</Typography>
                     )}
-                    {podeRemarcar && (
+                    {podeRemarcar && !compacto && (
                       <Tooltip title="Adicionar conteúdo neste dia">
                         <IconButton size="small" aria-label={`Adicionar conteúdo em ${dia.getDate()}/${dia.getMonth() + 1}`}
                           onClick={e => { e.stopPropagation(); setNovoDia(dia) }}
@@ -665,6 +668,16 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
                     )}
                   </Box>
                 </Box>
+                {compacto ? (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.4, px: 0.2 }}>
+                    {Object.entries(lista.reduce<Record<string, number>>((m, it) => { const c = corDoConteudo(it.tp); m[c] = (m[c] ?? 0) + 1; return m }, {})).map(([cor, n]) => (
+                      <Box key={cor} sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                        <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: cor }} />
+                        {n > 1 && <Typography sx={{ fontSize: '0.58rem', fontWeight: 700, color: DS.t2, lineHeight: 1 }}>{n}</Typography>}
+                      </Box>
+                    ))}
+                  </Box>
+                ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
                   {(modo === 'mes' ? lista.slice(0, POR_CELULA) : lista).map(it => (
                     <MiniConteudo key={it.i} item={it} st={states[it.i]} arrastavel={podeRemarcar && visao === 'postagem'} ig={ig.porItem[it.i]} etiquetasBase={etiquetasBase}
@@ -686,6 +699,7 @@ export default function CalendarioPostagem({ items, states, now, clients, podeRe
                     </Box>
                   )}
                 </Box>
+                )}
               </Box>
             )
           })}

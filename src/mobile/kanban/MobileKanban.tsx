@@ -112,7 +112,7 @@ function StageDropTarget({ status, active }: { status: Status; active: boolean }
       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.45,
       background: isOver ? `${cfg.color}22` : active ? `${cfg.color}12` : 'rgba(247,247,245,0.035)',
       border: `1px solid ${isOver ? `${cfg.color}aa` : active ? `${cfg.color}55` : 'rgba(146,152,165,0.14)'}`,
-      boxShadow: isOver ? `0 0 18px ${cfg.color}44` : 'none',
+      boxShadow: 'none',
       transition: 'all 0.15s ease',
     }}>
       <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: cfg.color }} />
@@ -125,7 +125,7 @@ function Metric({ label, value, color, onClick }: { label: string; value: number
   return (
     <Box onClick={onClick} sx={{
       p: 1.35, minHeight: 82, borderRadius: 3, cursor: onClick ? 'pointer' : 'default',
-      background: 'linear-gradient(145deg, rgba(18,25,39,0.9), rgba(9,14,24,0.9))',
+      background: DS.surface,
       border: '1px solid rgba(146,152,165,0.13)', boxShadow: '0 12px 30px rgba(0,0,0,0.18)',
       '&:active': onClick ? { transform: 'scale(0.98)' } : undefined,
     }}>
@@ -431,7 +431,7 @@ export default function MobileKanban({
 
   return (
     <Box sx={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <Box sx={{ flexShrink: 0, pt: 0.8, background: 'linear-gradient(180deg, rgba(12,18,30,0.98), rgba(5,9,18,0.96))', borderBottom: '1px solid rgba(146,152,165,0.12)' }}>
+      <Box sx={{ flexShrink: 0, pt: 0.8, background: DS.bg, borderBottom: `1px solid ${DS.border}` }}>
         <Box sx={{ display: view === 'approvals' ? 'none' : 'flex', gap: 0.65, px: 1.5, overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } }}>
           {BOARDS.map((candidate, index) => {
             const active = index === boardIdx
@@ -476,7 +476,9 @@ export default function MobileKanban({
           {isAreaBoard && (
             <Box sx={{ flexShrink: 0, display: 'flex', gap: 0.5, px: 1.5, pt: 0.8, overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } }}>
               {[
-                ...paineisArea.map(p => ({
+                // Gaveta vazia ("Editor 2", "Editor 3") só ocupava a fileira no celular: some,
+                // a não ser que seja a escolhida agora.
+                ...paineisArea.filter(p => (contagemPainel.porPainel[p.id] ?? 0) > 0 || painelFiltro === p.id).map(p => ({
                   chave: p.id as PainelSelecionado, nome: p.nome, n: contagemPainel.porPainel[p.id] ?? 0, cor: p.cor,
                   avatar: (p.membro && NAME_MAP[p.membro]) ? NAME_MAP[p.membro].initials : (p.nome.trim()[0] ?? '•').toUpperCase(),
                 })),
@@ -527,7 +529,7 @@ export default function MobileKanban({
                 <Box onClick={() => goStage(-1)} role="button" aria-label="Etapa anterior" sx={{ width: 44, height: 44, display: 'grid', placeItems: 'center', borderRadius: 2.3, opacity: currentStageIndex === 0 ? 0.3 : 1, cursor: currentStageIndex === 0 ? 'default' : 'pointer' }}><ChevronLeftRoundedIcon sx={{ color: DS.t2 }} /></Box>
                 <Box sx={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.6 }}>
-                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: STATUS_CONFIG[currentStatus].color, boxShadow: `0 0 9px ${STATUS_CONFIG[currentStatus].color}` }} />
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: STATUS_CONFIG[currentStatus].color, boxShadow: 'none' }} />
                     <Typography sx={{ fontSize: '0.82rem', fontWeight: 880, color: DS.t1 }} noWrap>{STATUS_CONFIG[currentStatus].label}</Typography>
                     <Box sx={{ px: 0.7, py: 0.08, borderRadius: 8, bgcolor: `${STATUS_CONFIG[currentStatus].color}18` }}><Typography sx={{ fontSize: '0.56rem', fontWeight: 900, color: STATUS_CONFIG[currentStatus].color }}>{byStatus[currentStatus]?.length ?? 0}</Typography></Box>
                   </Box>
@@ -646,7 +648,7 @@ export default function MobileKanban({
                 if (inboxFilter === 'linked') return video.status === 'linked'
                 return true
               }).map(video => (
-                <Box key={video.drive_file_id} sx={{ display: 'flex', gap: 1, p: 1, borderRadius: 3, bgcolor: 'rgba(15,22,35,0.92)', border: '1px solid rgba(146,152,165,0.13)' }}>
+                <Box key={video.drive_file_id} sx={{ display: 'flex', gap: 1, p: 1, borderRadius: 3, bgcolor: DS.surface, border: `1px solid ${DS.border}` }}>
                   <Box sx={{ width: 76, minHeight: 76, flexShrink: 0, borderRadius: 2.2, overflow: 'hidden', bgcolor: 'rgba(247,247,245,0.04)', display: 'grid', placeItems: 'center' }}>
                     {video.thumbnail_url ? <Box component="img" src={video.thumbnail_url} alt="" loading="lazy" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Typography sx={{ fontSize: '1.25rem' }}>{isImageFile(video) ? '🖼' : '🎬'}</Typography>}
                   </Box>
@@ -669,7 +671,7 @@ export default function MobileKanban({
       <AnimatePresence>
         {feedback && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} style={{ position: 'absolute', left: 14, right: 14, bottom: 78, zIndex: 30, pointerEvents: 'none' }}>
-            <Box sx={{ px: 1.3, py: 1.05, borderRadius: 2.5, bgcolor: 'rgba(12,18,30,0.96)', border: `1px solid ${feedback.tone === 'error' ? 'rgba(239,68,68,0.45)' : feedback.tone === 'warning' ? 'rgba(255,181,46,0.45)' : 'rgba(32,216,120,0.42)'}`, boxShadow: '0 16px 38px rgba(0,0,0,0.4)' }}>
+            <Box sx={{ px: 1.3, py: 1.05, borderRadius: 2.5, bgcolor: DS.surfaceAlt, border: `1px solid ${feedback.tone === 'error' ? 'rgba(239,68,68,0.45)' : feedback.tone === 'warning' ? 'rgba(255,181,46,0.45)' : 'rgba(32,216,120,0.42)'}`, boxShadow: '0 16px 38px rgba(0,0,0,0.4)' }}>
               <Typography sx={{ fontSize: '0.68rem', fontWeight: 760, color: DS.t1 }}>{feedback.msg}</Typography>
             </Box>
           </motion.div>
